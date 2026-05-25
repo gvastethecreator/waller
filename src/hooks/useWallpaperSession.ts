@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 import {
   createWallpaperSessionStore,
+  type WallpaperSessionSnapshot,
   type WallpaperSessionRuntime,
 } from '../lib/wallpaperSession';
 import type { FitMode, WallpaperSourceType } from '../lib/types';
@@ -10,10 +11,68 @@ interface UseWallpaperSessionOptions {
   identifyFallbackDelayMs?: number;
 }
 
+export interface WallpaperSessionFlowActions {
+  refresh(preserveDrafts?: boolean): Promise<void>;
+  applyAll(): Promise<void>;
+  identify(): Promise<void>;
+}
+
+export interface WallpaperDraftActions {
+  chooseImage(monitorId: string): Promise<string | null>;
+  setSourceType(monitorId: string, sourceType: WallpaperSourceType): Promise<void>;
+  setSolidColor(monitorId: string, color: string): Promise<void>;
+  setFitMode(fitMode: FitMode): Promise<void>;
+  clear(monitorId: string): Promise<void>;
+  apply(monitorId: string): Promise<void>;
+}
+
+export interface WallpaperProfileActions {
+  load(name: string): Promise<void>;
+  save(name: string): Promise<void>;
+  delete(name: string): Promise<void>;
+}
+
+export interface WallpaperEditorActions {
+  open(monitorId: string): Promise<void>;
+  pickImage(): Promise<string | null>;
+  save(dataUrl: string): Promise<void>;
+  close(): Promise<void>;
+}
+
+export interface WallpaperPreviewActions {
+  resolveDataUrl(imagePath: string): Promise<string>;
+}
+
+export interface UseWallpaperSessionResult {
+  snapshot: WallpaperSessionSnapshot;
+  session: WallpaperSessionFlowActions;
+  monitorDrafts: WallpaperDraftActions;
+  profiles: WallpaperProfileActions;
+  editor: WallpaperEditorActions;
+  previews: WallpaperPreviewActions;
+  refresh: WallpaperSessionFlowActions['refresh'];
+  chooseMonitorImage: WallpaperDraftActions['chooseImage'];
+  setSourceType: WallpaperDraftActions['setSourceType'];
+  setSolidColor: WallpaperDraftActions['setSolidColor'];
+  setFitMode: WallpaperDraftActions['setFitMode'];
+  clearMonitor: WallpaperDraftActions['clear'];
+  applyMonitor: WallpaperDraftActions['apply'];
+  applyAll: WallpaperSessionFlowActions['applyAll'];
+  loadProfile: WallpaperProfileActions['load'];
+  saveProfile: WallpaperProfileActions['save'];
+  deleteProfile: WallpaperProfileActions['delete'];
+  openEditor: WallpaperEditorActions['open'];
+  pickEditorImage: WallpaperEditorActions['pickImage'];
+  saveEditor: WallpaperEditorActions['save'];
+  closeEditor: WallpaperEditorActions['close'];
+  identify: WallpaperSessionFlowActions['identify'];
+  resolvePreviewDataUrl: WallpaperPreviewActions['resolveDataUrl'];
+}
+
 export function useWallpaperSession({
   runtime,
   identifyFallbackDelayMs,
-}: UseWallpaperSessionOptions) {
+}: UseWallpaperSessionOptions): UseWallpaperSessionResult {
   const store = useMemo(
     () => {
       const options = identifyFallbackDelayMs === undefined
@@ -93,8 +152,60 @@ export function useWallpaperSession({
     [store],
   );
 
+  const session = useMemo<WallpaperSessionFlowActions>(
+    () => ({
+      refresh,
+      applyAll,
+      identify,
+    }),
+    [applyAll, identify, refresh],
+  );
+
+  const monitorDrafts = useMemo<WallpaperDraftActions>(
+    () => ({
+      chooseImage: chooseMonitorImage,
+      setSourceType,
+      setSolidColor,
+      setFitMode,
+      clear: clearMonitor,
+      apply: applyMonitor,
+    }),
+    [applyMonitor, chooseMonitorImage, clearMonitor, setFitMode, setSolidColor, setSourceType],
+  );
+
+  const profiles = useMemo<WallpaperProfileActions>(
+    () => ({
+      load: loadProfile,
+      save: saveProfile,
+      delete: deleteProfile,
+    }),
+    [deleteProfile, loadProfile, saveProfile],
+  );
+
+  const editor = useMemo<WallpaperEditorActions>(
+    () => ({
+      open: openEditor,
+      pickImage: pickEditorImage,
+      save: saveEditor,
+      close: closeEditor,
+    }),
+    [closeEditor, openEditor, pickEditorImage, saveEditor],
+  );
+
+  const previews = useMemo<WallpaperPreviewActions>(
+    () => ({
+      resolveDataUrl: resolvePreviewDataUrl,
+    }),
+    [resolvePreviewDataUrl],
+  );
+
   return {
     snapshot,
+    session,
+    monitorDrafts,
+    profiles,
+    editor,
+    previews,
     refresh,
     chooseMonitorImage,
     setSourceType,

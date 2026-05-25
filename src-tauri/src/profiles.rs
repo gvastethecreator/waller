@@ -1,4 +1,7 @@
-use crate::error::{AppError, AppResult};
+use crate::{
+    error::{AppError, AppResult},
+    wallpaper_value::is_supported_fit_mode,
+};
 use serde::{Deserialize, Serialize};
 use std::{collections::HashSet, fs, path::PathBuf};
 
@@ -53,10 +56,6 @@ fn sanitize_profile_name(name: &str) -> String {
             }
         })
         .collect()
-}
-
-fn is_supported_fit_mode(value: &str) -> bool {
-    matches!(value, "Center" | "Tile" | "Stretch" | "Fit" | "Fill" | "Span")
 }
 
 fn validate_profile_name(name: &str) -> AppResult<()> {

@@ -34,23 +34,11 @@ export default function App() {
     const { t, locale, setLocale } = useI18n();
     const {
         snapshot,
-        refresh,
-        chooseMonitorImage,
-        setSourceType,
-        setSolidColor,
-        setFitMode,
-        clearMonitor,
-        applyMonitor,
-        applyAll,
-        loadProfile,
-        saveProfile,
-        deleteProfile: deleteSessionProfile,
-        openEditor,
-        pickEditorImage,
-        saveEditor,
-        closeEditor,
-        identify,
-        resolvePreviewDataUrl,
+        session,
+        monitorDrafts,
+        profiles,
+        editor,
+        previews,
     } = useWallpaperSession({
         runtime: tauriWallpaperSessionRuntime,
         identifyFallbackDelayMs: IDENTIFY_FALLBACK_DELAY_MS,
@@ -139,10 +127,10 @@ export default function App() {
 
     useEffect(() => {
         void initializeLogging();
-        void refresh(false).catch((error) => {
+        void session.refresh(false).catch((error) => {
             pushToast(t('error.detectMonitors', { error: formatError(error) }), 'error');
         });
-    }, [refresh, t]);
+    }, [session, t]);
 
     useEffect(() => {
         const handleWindowError = (event: ErrorEvent) => {
@@ -170,7 +158,7 @@ export default function App() {
 
     const handleRefresh = async () => {
         try {
-            await refresh(true);
+            await session.refresh(true);
         } catch (error) {
             pushToast(t('error.detectMonitors', { error: formatError(error) }), 'error');
         }
@@ -178,7 +166,7 @@ export default function App() {
 
     const handleBrowseMonitorImage = async (monitorId: string) => {
         try {
-            await chooseMonitorImage(monitorId);
+            await monitorDrafts.chooseImage(monitorId);
         } catch (error) {
             pushToast(t('error.fileDialog', { error: formatError(error) }), 'error');
         }
@@ -186,7 +174,7 @@ export default function App() {
 
     const handleSourceChange = async (monitorId: string, nextType: WallpaperSourceType) => {
         try {
-            await setSourceType(monitorId, nextType);
+            await monitorDrafts.setSourceType(monitorId, nextType);
         } catch (error) {
             const message = nextType === 'image'
                 ? t('error.fileDialog', { error: formatError(error) })
@@ -197,27 +185,27 @@ export default function App() {
 
     const handleFitChange = async (fitMode: FitMode) => {
         try {
-            await setFitMode(fitMode);
+            await monitorDrafts.setFitMode(fitMode);
         } catch (error) {
             pushToast(formatError(error), 'error');
         }
     };
 
     const handleSolidColorChange = (monitorId: string, color: string) => {
-        void setSolidColor(monitorId, color).catch((error) => {
+        void monitorDrafts.setSolidColor(monitorId, color).catch((error) => {
             pushToast(formatError(error), 'error');
         });
     };
 
     const handleClearMonitor = (monitorId: string) => {
-        void clearMonitor(monitorId).catch((error) => {
+        void monitorDrafts.clear(monitorId).catch((error) => {
             pushToast(formatError(error), 'error');
         });
     };
 
     const handleApplyMonitor = async (monitorId: string) => {
         try {
-            await applyMonitor(monitorId);
+            await monitorDrafts.apply(monitorId);
             pushToast(t('monitor.applied'), 'success');
         } catch (error) {
             pushToast(t('monitor.applyFailed', { error: formatError(error) }), 'error');
@@ -226,7 +214,7 @@ export default function App() {
 
     const handleApplyConfiguration = async () => {
         try {
-            await applyAll();
+            await session.applyAll();
             pushToast(t('apply.success'), 'success');
         } catch (error) {
             pushToast(t('apply.failed', { error: formatError(error) }), 'error');
@@ -245,7 +233,7 @@ export default function App() {
         }
 
         try {
-            await openEditor(monitorId);
+            await editor.open(monitorId);
         } catch (error) {
             pushToast(formatError(error), 'error');
         }
@@ -258,7 +246,7 @@ export default function App() {
         }
 
         try {
-            await identify();
+            await session.identify();
             pushToast(t('identify.showing'), 'success');
         } catch (error) {
             pushToast(formatError(error), 'error');
@@ -272,7 +260,7 @@ export default function App() {
         }
 
         try {
-            await loadProfile(selectedProfileName);
+            await profiles.load(selectedProfileName);
             pushToast(t('profile.loaded', { name: selectedProfileName }), 'success');
         } catch (error) {
             pushToast(t('profile.loadFailed', { error: formatError(error) }), 'error');
@@ -287,7 +275,7 @@ export default function App() {
         }
 
         try {
-            await saveProfile(name);
+            await profiles.save(name);
             setSaveModalOpen(false);
             setProfileNameInput('');
             setSelectedProfileName(name);
@@ -311,7 +299,7 @@ export default function App() {
         }
 
         try {
-            await deleteSessionProfile(selectedProfileName);
+            await profiles.delete(selectedProfileName);
             setSelectedProfileName('');
             pushToast(t('profile.deleted', { name: selectedProfileName }), 'success');
         } catch (error) {
@@ -558,12 +546,12 @@ export default function App() {
                 fitMode={snapshot.editor.fitMode}
                 monitor={snapshot.editor.monitor}
                 open={snapshot.editor.open}
-                resolvePreviewDataUrl={resolvePreviewDataUrl}
+                resolvePreviewDataUrl={previews.resolveDataUrl}
                 sourceImagePath={snapshot.editor.sourceImagePath}
-                onClose={() => void closeEditor()}
-                onPickImage={pickEditorImage}
+                onClose={() => void editor.close()}
+                onPickImage={editor.pickImage}
                 onSave={async ({ dataUrl }) => {
-                    await saveEditor(dataUrl);
+                    await editor.save(dataUrl);
                     pushToast(t('editor.saved'), 'success');
                 }}
             />

@@ -7,6 +7,9 @@ import {
   FIT_OPTIONS,
   NONE_MARKER,
   SOLID_PREFIX,
+  decodeWallpaperSource,
+  encodeWallpaperSource,
+  isSupportedFitMode,
   makeSolidMarker,
   normalizeColorHex,
   normalizeFitMode,
@@ -65,6 +68,18 @@ describe('wallpaper helpers', () => {
       imagePath: 'image.png',
     });
     expect(makeSolidMarker('#112233')).toBe(`${SOLID_PREFIX}#112233`);
+  });
+
+  it('roundtrips wallpaper source representations across the seam', () => {
+    const imageSource = decodeWallpaperSource('image.png');
+    const solidSource = decodeWallpaperSource(makeSolidMarker('#336699'));
+    const noneSource = decodeWallpaperSource(NONE_MARKER);
+
+    expect(encodeWallpaperSource(imageSource)).toBe('image.png');
+    expect(encodeWallpaperSource(solidSource)).toBe(makeSolidMarker('#336699'));
+    expect(encodeWallpaperSource(noneSource)).toBe(NONE_MARKER);
+    expect(isSupportedFitMode('Fill')).toBe(true);
+    expect(isSupportedFitMode('wat')).toBe(false);
   });
 
   it('snapshots drafts into persistible normalized values', () => {

@@ -1,3 +1,12 @@
+import { formatError, normalizeErrorPayload } from './appErrors';
+import {
+  composeProfileSave,
+  createDraftsFromProfile,
+} from './profileComposition';
+import {
+  createPreviewRegistry,
+  type PreviewRegistry,
+} from './previewRegistry';
 import type {
   AppErrorPayload,
   FitMode,
@@ -9,7 +18,6 @@ import type {
   WallpaperSource,
   WallpaperSourceType,
 } from './types';
-import { formatError, normalizeErrorPayload } from './appErrors';
 import {
   DEFAULT_FIT_MODE,
   DEFAULT_SOLID_COLOR,
@@ -20,13 +28,19 @@ import {
   snapshotDraft,
 } from './wallpaperSource';
 import {
-  buildApplyConfiguration,
-  countDirtyMonitors,
-  createDraftsFromMonitors,
-  isMonitorDirty,
-  removeKey,
+  buildWallpaperSessionApplyConfiguration,
+  countWallpaperSessionDirtyMonitors,
+  createWallpaperSessionDraftState,
+  isWallpaperSessionDirty,
+  markWallpaperSessionApplied,
+  markWallpaperSessionMonitorApplied,
+  readWallpaperDraft,
+  refreshWallpaperSessionDraftState,
+  replaceWallpaperSessionDrafts,
+  setWallpaperSessionFitMode,
   sortMonitors,
-  updateBaselineAfterSingleApply,
+  type WallpaperSessionDraftState,
+  updateWallpaperSessionDraft,
 } from './wallpaperSessionState';
 
 const IDENTIFY_FALLBACK_DELAY_MS = 700;
@@ -139,12 +153,8 @@ interface InternalEditorState {
 interface InternalState {
   status: WallpaperSessionStatus;
   monitors: MonitorInfo[];
-  drafts: Record<string, WallpaperDraft>;
-  baseline: Record<string, WallpaperDraft>;
+  draftState: WallpaperSessionDraftState;
   profiles: string[];
-  previewCache: Record<string, string>;
-  previewPending: Record<string, boolean>;
-  previewErrors: Record<string, AppErrorPayload>;
   editor: InternalEditorState;
   identifyOverlay: {
     highlightedMonitorId: string | null;
@@ -174,12 +184,8 @@ function createEmptyState(): InternalState {
   return {
     status: 'idle',
     monitors: [],
-    drafts: {},
-    baseline: {},
+    draftState: createWallpaperSessionDraftState(),
     profiles: [],
-    previewCache: {},
-    previewPending: {},
-    previewErrors: {},
     editor: createClosedEditorState(),
     identifyOverlay: {
       highlightedMonitorId: null,
@@ -198,86 +204,35 @@ function delay(milliseconds: number): Promise<void> {
   });
 }
 
-function toProfileMonitors(
-  drafts: Record<string, WallpaperDraft>,
-): ProfileMonitor[] {
-  return Object.entries(drafts).map(([monitorId, draft]) => ({
-    monitorId,
-    imagePath: draft.imagePath,
-    fitMode: draft.fitMode,
-  }));
-}
-
-function mergeDraftsFromMonitors(
-  previousDrafts: Record<string, WallpaperDraft>,
-  monitors: readonly MonitorInfo[],
-  preserveDrafts: boolean,
-): Record<string, WallpaperDraft> {
-  return Object.fromEntries(
-    monitors.map((monitor) => [
-      monitor.id,
-      preserveDrafts && previousDrafts[monitor.id]
-        ? snapshotDraft(previousDrafts[monitor.id])
-        : snapshotDraft({
-            imagePath: monitor.currentWallpaper,
-            fitMode: normalizeFitMode(monitor.currentFit),
-          }),
-    ]),
-  ) as Record<string, WallpaperDraft>;
-}
-
-function mergeBaselineFromMonitors(
-  previousBaseline: Record<string, WallpaperDraft>,
-  monitors: readonly MonitorInfo[],
-  preserveDrafts: boolean,
-): Record<string, WallpaperDraft> {
-  if (!preserveDrafts || Object.keys(previousBaseline).length === 0) {
-    return createDraftsFromMonitors(monitors);
-  }
-
-  return Object.fromEntries(
-    monitors.map((monitor) => [
-      monitor.id,
-      previousBaseline[monitor.id]
-        ? snapshotDraft(previousBaseline[monitor.id])
-        : snapshotDraft({
-            imagePath: monitor.currentWallpaper,
-            fitMode: normalizeFitMode(monitor.currentFit),
-          }),
-    ]),
-  ) as Record<string, WallpaperDraft>;
-}
-
-function buildMonitorViews(state: InternalState): WallpaperSessionMonitorView[] {
+function buildMonitorViews(
+  state: InternalState,
+  previewRegistry: PreviewRegistry,
+): WallpaperSessionMonitorView[] {
   const sortedMonitors = sortMonitors(state.monitors);
 
   return sortedMonitors.map((monitor) => {
-    const draft = state.drafts[monitor.id] ?? snapshotDraft({
-      imagePath: monitor.currentWallpaper,
-      fitMode: normalizeFitMode(monitor.currentFit),
-    });
+    const draft = readWallpaperDraft(state.draftState, monitor);
     const source = parseWallpaperSource(draft.imagePath);
 
     let preview: WallpaperSessionPreviewState = { kind: 'not-applicable' };
     if (source.type === 'image' && source.imagePath) {
-      const previewError = state.previewErrors[source.imagePath];
-      const cachedPreview = state.previewCache[source.imagePath];
-      if (cachedPreview) {
+      const previewEntry = previewRegistry.read(source.imagePath);
+      if (previewEntry.kind === 'ready') {
         preview = {
           kind: 'ready',
           imagePath: source.imagePath,
-          dataUrl: cachedPreview,
+          dataUrl: previewEntry.dataUrl,
         };
-      } else if (state.previewPending[source.imagePath]) {
+      } else if (previewEntry.kind === 'loading') {
         preview = {
           kind: 'loading',
           imagePath: source.imagePath,
         };
-      } else if (previewError) {
+      } else if (previewEntry.kind === 'error') {
         preview = {
           kind: 'error',
           imagePath: source.imagePath,
-          error: previewError,
+          error: previewEntry.error,
         };
       }
     }
@@ -287,32 +242,36 @@ function buildMonitorViews(state: InternalState): WallpaperSessionMonitorView[] 
       draft,
       source,
       preview,
-      dirty: isMonitorDirty(monitor.id, state.drafts, state.baseline),
+      dirty: isWallpaperSessionDirty(state.draftState, monitor.id),
       canEdit: !monitor.id.startsWith('GDI_MONITOR_'),
     };
   });
 }
 
-function buildSnapshot(state: InternalState): WallpaperSessionSnapshot {
-  const monitors = buildMonitorViews(state);
+function buildSnapshot(
+  state: InternalState,
+  previewRegistry: PreviewRegistry,
+): WallpaperSessionSnapshot {
+  const monitors = buildMonitorViews(state, previewRegistry);
   const sortedMonitors = monitors.map((entry) => entry.monitor);
   const editorMonitor = state.editor.monitorId
     ? sortedMonitors.find((monitor) => monitor.id === state.editor.monitorId) ?? null
+    : null;
+  const editorDraft = editorMonitor
+    ? readWallpaperDraft(state.draftState, editorMonitor)
     : null;
 
   return {
     status: state.status,
     monitors,
     profiles: [...state.profiles],
-    dirtyCount: countDirtyMonitors(sortedMonitors, state.drafts, state.baseline),
+    dirtyCount: countWallpaperSessionDirtyMonitors(state.draftState, sortedMonitors),
     diagnosticMode: hasFallbackMonitorIds(sortedMonitors),
     editor: {
       open: state.editor.open && editorMonitor !== null,
       monitor: editorMonitor,
       sourceImagePath: state.editor.sourceImagePath,
-      fitMode: editorMonitor
-        ? normalizeFitMode(state.drafts[editorMonitor.id]?.fitMode)
-        : DEFAULT_FIT_MODE,
+      fitMode: editorDraft ? normalizeFitMode(editorDraft.fitMode) : DEFAULT_FIT_MODE,
       isSaving: state.editor.isSaving,
       error: state.editor.error,
     },
@@ -323,37 +282,42 @@ function buildSnapshot(state: InternalState): WallpaperSessionSnapshot {
   };
 }
 
-function createSnapshotRecord(
-  record: Record<string, WallpaperDraft>,
-): Record<string, WallpaperDraft> {
-  return Object.fromEntries(
-    Object.entries(record).map(([id, draft]) => [id, snapshotDraft(draft)]),
-  ) as Record<string, WallpaperDraft>;
-}
-
 export function createWallpaperSessionStore({
   runtime,
   identifyFallbackDelayMs = IDENTIFY_FALLBACK_DELAY_MS,
 }: WallpaperSessionStoreOptions): WallpaperSessionStore {
   let state = createEmptyState();
-  let snapshot = buildSnapshot(state);
+  let snapshot: WallpaperSessionSnapshot;
+  let previewRegistry: PreviewRegistry;
   let disposed = false;
   let commandQueue: Promise<void> = Promise.resolve();
   const listeners = new Set<() => void>();
-  const inFlightPreviews = new Map<string, Promise<string>>();
 
   const notify = () => {
     if (disposed) {
       return;
     }
+
     for (const listener of listeners) {
       listener();
     }
   };
 
+  const rebuildSnapshot = () => {
+    snapshot = buildSnapshot(state, previewRegistry);
+  };
+
+  previewRegistry = createPreviewRegistry({
+    onChange: () => {
+      rebuildSnapshot();
+      notify();
+    },
+  });
+  rebuildSnapshot();
+
   const setState = (updater: (previous: InternalState) => InternalState) => {
     state = updater(state);
-    snapshot = buildSnapshot(state);
+    rebuildSnapshot();
     notify();
   };
 
@@ -361,6 +325,7 @@ export function createWallpaperSessionStore({
     if (!runtime.log) {
       return;
     }
+
     void runtime.log(scope, message, level).catch(() => undefined);
   };
 
@@ -377,66 +342,31 @@ export function createWallpaperSessionStore({
       throw createSessionError('preview_source_required', 'Image path cannot be empty');
     }
 
-    if (state.previewCache[imagePath]) {
-      return state.previewCache[imagePath];
-    }
-
-    const existingRequest = inFlightPreviews.get(imagePath);
-    if (existingRequest) {
-      return existingRequest;
-    }
-
-    setState((previous) => ({
-      ...previous,
-      previewPending: { ...previous.previewPending, [imagePath]: true },
-      previewErrors: removeKey(previous.previewErrors, imagePath),
-    }));
-
-    const request = runtime.getImageDataUrl(imagePath)
-      .then((dataUrl) => {
-        setState((previous) => ({
-          ...previous,
-          previewCache: { ...previous.previewCache, [imagePath]: dataUrl },
-          previewErrors: removeKey(previous.previewErrors, imagePath),
-        }));
+    return previewRegistry.resolve(imagePath, async () => {
+      try {
+        const dataUrl = await runtime.getImageDataUrl(imagePath);
         log('preview', `preview success for ${imagePath}`, 'debug');
         return dataUrl;
-      })
-      .catch((error) => {
+      } catch (error) {
         const normalized = normalizeErrorPayload(error);
-        setState((previous) => ({
-          ...previous,
-          previewErrors: { ...previous.previewErrors, [imagePath]: normalized },
-        }));
         log('preview', `preview error for ${imagePath}: ${formatError(normalized)}`, 'warn');
         throw normalized;
-      })
-      .finally(() => {
-        inFlightPreviews.delete(imagePath);
-        setState((previous) => ({
-          ...previous,
-          previewPending: removeKey(previous.previewPending, imagePath),
-        }));
-      });
-
-    inFlightPreviews.set(imagePath, request);
-    return request;
+      }
+    });
   };
 
   const warmPreview = (imagePath: string) => {
     if (!imagePath) {
       return;
     }
+
     void resolvePreviewDataUrl(imagePath).catch(() => undefined);
   };
 
   const warmVisiblePreviews = () => {
     const imagePaths = new Set<string>();
     for (const monitor of sortMonitors(state.monitors)) {
-      const draft = state.drafts[monitor.id] ?? snapshotDraft({
-        imagePath: monitor.currentWallpaper,
-        fitMode: normalizeFitMode(monitor.currentFit),
-      });
+      const draft = readWallpaperDraft(state.draftState, monitor);
       const source = parseWallpaperSource(draft.imagePath);
       if (source.type === 'image' && source.imagePath) {
         imagePaths.add(source.imagePath);
@@ -455,13 +385,7 @@ export function createWallpaperSessionStore({
   const updateDraft = (monitorId: string, nextDraft: Partial<WallpaperDraft>) => {
     setState((previous) => ({
       ...previous,
-      drafts: {
-        ...previous.drafts,
-        [monitorId]: snapshotDraft({
-          ...previous.drafts[monitorId],
-          ...nextDraft,
-        }),
-      },
+      draftState: updateWallpaperSessionDraft(previous.draftState, monitorId, nextDraft),
     }));
   };
 
@@ -475,15 +399,11 @@ export function createWallpaperSessionStore({
     log('browse', `selected image for monitor ${monitorId}: ${path}`, 'info');
     setState((previous) => ({
       ...previous,
-      drafts: {
-        ...previous.drafts,
-        [monitorId]: snapshotDraft({
-          ...previous.drafts[monitorId],
-          imagePath: path,
-        }),
-      },
-      previewErrors: removeKey(previous.previewErrors, path),
+      draftState: updateWallpaperSessionDraft(previous.draftState, monitorId, {
+        imagePath: path,
+      }),
     }));
+    previewRegistry.clear(path);
     warmPreview(path);
     return path;
   };
@@ -519,8 +439,11 @@ export function createWallpaperSessionStore({
           ...previous,
           status: 'ready',
           monitors: nextMonitors,
-          drafts: mergeDraftsFromMonitors(previous.drafts, nextMonitors, preserveDrafts),
-          baseline: mergeBaselineFromMonitors(previous.baseline, nextMonitors, preserveDrafts),
+          draftState: refreshWallpaperSessionDraftState(
+            previous.draftState,
+            nextMonitors,
+            preserveDrafts,
+          ),
           profiles,
           editor: editorStillAvailable ? previous.editor : createClosedEditorState(),
         };
@@ -567,8 +490,8 @@ export function createWallpaperSessionStore({
 
       case 'set-source-type':
         return queue(async () => {
-          ensureMonitor(command.monitorId);
-          const currentDraft = state.drafts[command.monitorId] ?? snapshotDraft();
+          const monitor = ensureMonitor(command.monitorId);
+          const currentDraft = readWallpaperDraft(state.draftState, monitor);
           const currentSource = parseWallpaperSource(currentDraft.imagePath);
 
           if (command.sourceType === 'image') {
@@ -601,15 +524,9 @@ export function createWallpaperSessionStore({
 
       case 'set-fit-mode':
         return queue(async () => {
-          const normalized = normalizeFitMode(command.fitMode);
           setState((previous) => ({
             ...previous,
-            drafts: Object.fromEntries(
-              Object.entries(previous.drafts).map(([monitorId, draft]) => [
-                monitorId,
-                snapshotDraft({ ...draft, fitMode: normalized }),
-              ]),
-            ) as Record<string, WallpaperDraft>,
+            draftState: setWallpaperSessionFitMode(previous.draftState, command.fitMode),
           }));
         });
 
@@ -621,14 +538,14 @@ export function createWallpaperSessionStore({
 
       case 'apply-monitor':
         return queue(async () => {
-          ensureMonitor(command.monitorId);
-          const draft = snapshotDraft(state.drafts[command.monitorId]);
+          const monitor = ensureMonitor(command.monitorId);
+          const draft = snapshotDraft(readWallpaperDraft(state.draftState, monitor));
           log('apply', `apply_wallpaper start: ${command.monitorId}`, 'info');
           await runtime.applyWallpaper(command.monitorId, draft.imagePath, draft.fitMode);
           setState((previous) => ({
             ...previous,
-            baseline: updateBaselineAfterSingleApply(
-              previous.baseline,
+            draftState: markWallpaperSessionMonitorApplied(
+              previous.draftState,
               command.monitorId,
               draft,
             ),
@@ -646,7 +563,10 @@ export function createWallpaperSessionStore({
             );
           }
 
-          const configs = buildApplyConfiguration(sortedMonitors, state.drafts);
+          const configs = buildWallpaperSessionApplyConfiguration(
+            state.draftState,
+            sortedMonitors,
+          );
           if (!configs.length) {
             throw createSessionError('no_wallpapers', 'No wallpapers configured to apply');
           }
@@ -655,7 +575,7 @@ export function createWallpaperSessionStore({
           await runtime.applyConfiguration(configs);
           setState((previous) => ({
             ...previous,
-            baseline: createSnapshotRecord(previous.drafts),
+            draftState: markWallpaperSessionApplied(previous.draftState),
           }));
           log('apply', 'apply_configuration success', 'info');
         });
@@ -664,35 +584,20 @@ export function createWallpaperSessionStore({
         return queue(async () => {
           const profile = await runtime.loadProfile(command.name);
           const sortedMonitors = sortMonitors(state.monitors);
-          const nextDrafts = createDraftsFromMonitors(sortedMonitors);
-          const activeIds = new Set(sortedMonitors.map((monitor) => monitor.id));
-
-          for (const profileMonitor of profile.monitors) {
-            if (!activeIds.has(profileMonitor.monitorId)) {
-              continue;
-            }
-
-            nextDrafts[profileMonitor.monitorId] = snapshotDraft({
-              imagePath: profileMonitor.imagePath,
-              fitMode: profileMonitor.fitMode,
-            });
-          }
+          const nextDrafts = createDraftsFromProfile(profile, sortedMonitors);
 
           setState((previous) => ({
             ...previous,
-            drafts: nextDrafts,
+            draftState: replaceWallpaperSessionDrafts(previous.draftState, nextDrafts),
           }));
           warmVisiblePreviews();
         });
 
       case 'save-profile':
         return queue(async () => {
-          const name = command.name.trim();
-          if (!name) {
-            throw createSessionError('profile_name_required', 'Profile name is required');
-          }
+          const profileSave = composeProfileSave(command.name, state.draftState.drafts);
 
-          await runtime.saveProfile(name, toProfileMonitors(state.drafts));
+          await runtime.saveProfile(profileSave.name, profileSave.monitors);
           const nextProfiles = await runtime.listProfiles();
           setState((previous) => ({
             ...previous,
@@ -720,10 +625,7 @@ export function createWallpaperSessionStore({
             );
           }
 
-          const draft = state.drafts[command.monitorId] ?? snapshotDraft({
-            imagePath: monitor.currentWallpaper,
-            fitMode: normalizeFitMode(monitor.currentFit),
-          });
+          const draft = readWallpaperDraft(state.draftState, monitor);
           const source = parseWallpaperSource(draft.imagePath);
           let sourceImagePath = source.type === 'image' ? source.imagePath : '';
 
@@ -767,6 +669,7 @@ export function createWallpaperSessionStore({
               error: null,
             },
           }));
+          previewRegistry.clear(nextPath);
           warmPreview(nextPath);
           return nextPath;
         });
@@ -778,7 +681,8 @@ export function createWallpaperSessionStore({
           }
 
           const monitorId = state.editor.monitorId;
-          const fitMode = normalizeFitMode(state.drafts[monitorId]?.fitMode);
+          const monitor = ensureMonitor(monitorId);
+          const fitMode = normalizeFitMode(readWallpaperDraft(state.draftState, monitor).fitMode);
           setState((previous) => ({
             ...previous,
             editor: {
@@ -796,19 +700,14 @@ export function createWallpaperSessionStore({
             const nextDraft = snapshotDraft({ imagePath: savedPath, fitMode });
             setState((previous) => ({
               ...previous,
-              drafts: {
-                ...previous.drafts,
-                [monitorId]: nextDraft,
-              },
-              baseline: updateBaselineAfterSingleApply(previous.baseline, monitorId, nextDraft),
-              previewCache: {
-                ...previous.previewCache,
-                [savedPath]: command.dataUrl,
-              },
-              previewPending: removeKey(previous.previewPending, savedPath),
-              previewErrors: removeKey(previous.previewErrors, savedPath),
+              draftState: markWallpaperSessionMonitorApplied(
+                updateWallpaperSessionDraft(previous.draftState, monitorId, nextDraft),
+                monitorId,
+                nextDraft,
+              ),
               editor: createClosedEditorState(),
             }));
+            previewRegistry.remember(savedPath, command.dataUrl);
             log('editor', `save success for ${monitorId}`, 'info');
           } catch (error) {
             const normalized = normalizeErrorPayload(error);
@@ -899,7 +798,7 @@ export function createWallpaperSessionStore({
     dispose() {
       disposed = true;
       listeners.clear();
-      inFlightPreviews.clear();
+      previewRegistry.dispose();
     },
   };
 }

@@ -1,63 +1,116 @@
 # Testing & Operations
 
-## Current Automated Tests
+## Automated coverage today
 
-Backend Rust (`cargo test --lib`):
+### Frontend tests (`bun run test:frontend`)
 
-- `profiles::tests::sanitize_profile_name_replaces_invalid_characters`
-- `wallpaper::tests::parses_hex_color`
-- `wallpaper::tests::resolves_none_and_passthrough_markers`
-- `wallpaper::tests::fit_mapping_is_stable`
-- `wallpaper::tests::writes_valid_solid_bmp_file`
+Current Vitest coverage is centered on the wallpaper domain and session seams:
 
-Frontend Vitest:
+- `src/lib/wallpaper.test.ts`
+  - marker parsing/encoding
+  - fit-mode normalization
+  - layout helpers
+- `src/lib/profileComposition.test.ts`
+  - profile save payload composition
+  - active-monitor projection
+  - validation failures
+- `src/lib/previewRegistry.test.ts`
+  - preview cache state transitions and deduplication
+- `src/lib/wallpaperSession.test.ts`
+  - session snapshot behavior, grouped flows, editor behavior, profile save through the seam
+- `src/lib/wallpaperSession.integration.test.ts`
+  - refresh -> load profile -> preview -> edit -> apply -> save profile
 
-- Pure utility tests for `src/lib/wallpaper.ts`
-- Wallpaper source normalization
-- Snapshots/base state and layout helpers
-- Coverage generated with Istanbul
+Coverage is generated with Istanbul through Vitest.
 
-## Recommended Commands
+### Backend tests (`bun run test:rust`)
 
-From root:
+Rust tests cover the value/validation and persistence core:
 
-- `bun run dev`
-- `bun run typecheck`
-- `bun run lint:frontend`
-- `bun run test:frontend`
-- `bun run test:rust`
-- `bun run lint:backend`
-- `bun run check:rust`
-- `bun run verify`
-- `bunx tauri build`
+- `src-tauri/src/profiles.rs`
+  - profile-name sanitization
+  - profile validation
+  - roundtrip save/load/list/delete behavior
+- `src-tauri/src/wallpaper.rs`
+  - fit mapping
+  - marker resolution helpers
+- `src-tauri/src/wallpaper_value.rs`
+  - solid-colour BMP generation and fit validation
+- `src-tauri/src/lib.rs`
+  - MIME inference
+  - PNG data URL parsing
+  - command error serialization
 
-Per-layer equivalents:
+## Core commands
 
-- `cargo test --lib` in `src-tauri`
-- `cargo clippy -- -D warnings` in `src-tauri`
-- `cargo check` in `src-tauri`
-- `vite build` to verify frontend only
+Run everything from the repository root unless you are diagnosing a lower layer directly.
 
-## Diagnostic Flow
+| Command | Purpose |
+|---|---|
+| `bun run dev` | Full Tauri + Vite development |
+| `bun run web:dev` | Frontend-only development |
+| `bun run typecheck` | TypeScript verification |
+| `bun run lint:frontend` | Frontend linting |
+| `bun run test:frontend` | Frontend tests + coverage |
+| `bun run test:rust` | Rust library tests |
+| `bun run lint:backend` | `cargo clippy -- -D warnings` |
+| `bun run check:rust` | `cargo check` |
+| `bun run deps:tauri:check` | Tauri JS/Rust version alignment check |
+| `bun run verify` | Full project verification |
+| `bun run build` | Tauri production build |
+
+### Dependency maintenance helpers
+
+- `bun run deps:web:check`
+- `bun run deps:web:update`
+- `bun run deps:rust:update`
+- `bun run deps:update`
+
+## Recommended verification flow
+
+### For normal code changes
+
+1. Run `bun run verify`.
+
+### For dependency changes
+
+1. Run `bun run deps:tauri:check`.
+2. Run `bun run verify`.
+3. If packaging is affected, also run `bun run build`.
+4. If the NSIS bundle is enabled, keep `src-tauri/tauri.conf.json` on NSIS language names such as `English` (not locale-style names like `EnglishUS`) so the installer can resolve its bundled `.nlf` files.
+
+### For backend-only diagnosis
+
+- `cd src-tauri && cargo test --lib`
+- `cd src-tauri && cargo clippy -- -D warnings`
+- `cd src-tauri && cargo check`
+
+## Diagnostic flow
 
 1. Reproduce the issue in the UI.
-2. Open **View Logs**.
-3. Look for `client:*`, `command:*`, and `backend/wallpaper` events.
-4. Correlate with the failed operation (`browse`, `preview`, `apply`).
+2. Open **View Logs** from the profile/action bar.
+3. Look for scopes such as:
+   - `client:*`
+   - `backend`
+   - `runtime`
+   - `ui:*`
+4. Correlate the log sequence with the operation (`browse`, `preview`, `apply`, `editor`, `profiles`).
+5. If the issue smells platform-specific, inspect `%APPDATA%/WallpaperManager/logs/app.log` directly.
 
-## Suggested Manual Verifications
+## Suggested manual verification checklist
 
-- Change source per monitor:
-  - Image → apply
-  - Solid color → apply
-  - No background → apply
-- Save/load profile preserving markers (`__SOLID__`, `__NONE__`).
-- App restart and current configuration re-read.
-- Open/close editor maintaining per-monitor state.
-- Identification overlay with multiple monitors.
-- Save/load of partial and complete profiles.
+- Detect monitors and verify the layout matches the physical setup.
+- Change the Wallpaper Source per monitor:
+  - image -> apply
+  - solid colour -> apply
+  - none -> apply
+- Save and load Profiles preserving `__SOLID__` and `__NONE__` markers.
+- Open the editor, adjust an image, save it, and confirm the edited PNG is applied.
+- Trigger the Identify Overlay on a multi-monitor setup.
+- Re-open the logs modal and confirm recent actions are present.
+- When relevant, confirm a packaged build launches correctly.
 
-## VS Code Tasks
+## VS Code tasks
 
 Defined in `.vscode/tasks.json`:
 
@@ -65,12 +118,25 @@ Defined in `.vscode/tasks.json`:
 - `wallpaper: tauri build`
 - `wallpaper: cargo check`
 - `wallpaper: cargo test (lib)`
+- `wallpaper: smoke tests`
 - `wallpaper: test + check`
 - `wallpaper: kill running app`
+- `wallpaper: bun verify`
 - `wallpaper: full verify`
 
-## Expected CI/Manual Result
+## CI and release workflows
 
-- `bun run verify` must finish without warnings promoted to errors.
-- `bunx tauri build` must generate `src-tauri/target/release/wallpaper-manager.exe`.
-- The packaged frontend must land in `dist/`.
+- `.github/workflows/ci.yml`
+  - installs dependencies on `windows-latest`
+  - runs `bun run verify`
+- `.github/workflows/release.yml`
+  - runs the same verification
+  - builds the Tauri app
+  - packages a portable ZIP and NSIS installer
+
+## Expected outcome
+
+- `bun run verify` must pass cleanly.
+- `bun run build` must produce the Windows release artifacts under `src-tauri/target/release/`.
+- The NSIS installer step must resolve a valid bundled language file (currently `English`).
+- The frontend production bundle must be emitted to `dist/`.

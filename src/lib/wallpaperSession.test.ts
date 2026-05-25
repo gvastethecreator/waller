@@ -185,4 +185,23 @@ describe('wallpaperSession store', () => {
     expect(snapshot.monitors[0]?.draft.imagePath).toBe('profile.png');
     expect(snapshot.monitors[0]?.draft.fitMode).toBe('Span');
   });
+
+  it('trims profile name before saving through the wallpaper session seam', async () => {
+    const runtime = createRuntime();
+    const store = createWallpaperSessionStore({ runtime });
+
+    await store.send({ type: 'refresh' });
+    await store.send({ type: 'save-profile', name: '  Desk Copy  ' });
+
+    expect(runtime.saveProfile).toHaveBeenCalledWith(
+      'Desk Copy',
+      expect.arrayContaining([
+        expect.objectContaining({
+          monitorId: 'DISPLAY1',
+          imagePath: 'first.png',
+          fitMode: 'Fill',
+        }),
+      ]),
+    );
+  });
 });

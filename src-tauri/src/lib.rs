@@ -2,6 +2,7 @@ mod error;
 pub mod logger;
 pub mod profiles;
 pub mod wallpaper;
+mod wallpaper_value;
 
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use error::{AppError, AppResult, CommandError, CommandResult};

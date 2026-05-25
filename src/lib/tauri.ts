@@ -7,6 +7,7 @@ import {
   info as logInfo,
   warn as logWarn,
 } from '@tauri-apps/plugin-log';
+import { draftsToProfileMonitors as composeProfileMonitors } from './profileComposition';
 import type {
   FitMode,
   LogLevel,
@@ -194,11 +195,7 @@ export async function confirmDialog(
 export function draftsToProfileMonitors(
   drafts: Record<string, WallpaperDraft>,
 ): ProfileMonitor[] {
-  return Object.entries(drafts).map(([monitorId, draft]) => ({
-    monitorId,
-    imagePath: draft.imagePath,
-    fitMode: draft.fitMode,
-  }));
+  return composeProfileMonitors(drafts);
 }
 
 export const tauriWallpaperSessionRuntime: WallpaperSessionRuntime = {

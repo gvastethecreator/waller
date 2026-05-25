@@ -1,43 +1,86 @@
 # Technical Audit & Improvements Applied
 
-## Key Findings
+## Focus of the latest audit
 
-1. **Invalid VS Code task matchers**
-   - `"$rustc"` was not recognized in the current VS Code environment.
-   - Impact: configuration warnings.
-2. **Inconsistent state when canceling image picker**
-   - Switching to image mode and canceling the dialog could lose previous state.
-   - Impact: confusing UX.
-3. **Clear button logic**
-   - Was disabled based on image-only criteria, not the active mode.
-   - Impact: non-intuitive behavior in solid/none modes.
-4. **Limited test coverage**
-   - Missing tests in `profiles.rs` for sanitization.
+The most recent review concentrated on repository maintenance rather than on a single feature bug:
 
-## Improvements Implemented
+1. dependency drift across web and Rust manifests
+2. stale documentation after the Wallpaper Session refactor
+3. missing shared project rules/skills for future contributors and coding agents
+4. a seam-level testing gap around the full profile/edit/apply flow
 
-- Fixed VS Code tasks (`problemMatcher: []` for Rust tasks).
-- Adjusted file dialog cancellation flow to restore previous state.
-- Hardened solid color marker with `#RRGGBB` validation.
-- Adjusted `Clear Image` enable criteria.
-- Added unit test for profile sanitization.
+## Findings
 
-## Remaining Risks (Non-Blocking)
+### 1. Tauri dependency drift was easy to reintroduce
 
-- `app.js` was monolithic and could be modularized (state, render, IPC, logging). *(Addressed in the React migration.)*
-- The GDI fallback allows displaying monitors but cannot apply per-monitor if COM doesn't provide valid IDs.
-- The log file can grow indefinitely (size-based rotation is recommended).
+- The repo already relied on aligned Tauri JS and Rust packages.
+- That alignment was documented socially, but not enforced mechanically.
+- Risk: a future dependency refresh could leave `@tauri-apps/*` and Cargo `tauri*` crates on incompatible lines.
 
-## Recommended Next Steps
+### 2. Documentation lagged the actual architecture
 
-1. Modularize `app.js` into: *(Completed — now React components.)*
-   - `state.js`
-   - `ipc.js`
-   - `render.js`
-   - `actions.js`
-2. Implement log rotation (e.g., 5 MB with `app.log.1`).
-3. Add minimal E2E test for the critical flow:
-   - Detect monitors
-   - Select source
-   - Apply
-   - Verify command return
+- The docs did not reflect the current seams:
+  - `useWallpaperSession`
+  - `wallpaperSession`
+  - `profileComposition`
+  - `previewRegistry`
+  - `wallpaperSessionState`
+  - `wallpaper_value.rs`
+- `docs/INDEX.md` referenced a missing `10-*` document.
+- The PRDs still under-described the current editor/diagnostic feature set.
+
+### 3. Maintenance workflow knowledge was implicit
+
+- The project had good architectural conventions, but no shared project-level instruction files or project skills inside the repo.
+- Risk: inconsistent future edits, especially around the TypeScript/Rust seam and doc sync expectations.
+
+### 4. Integration coverage was thinner than unit coverage
+
+- The repo already had focused unit tests around wallpaper helpers, preview registry, profile composition, and the session store.
+- What was missing was a lightweight test spanning `refresh -> load profile -> preview -> edit -> apply -> save profile`.
+
+## Improvements implemented
+
+### Dependency and maintenance guardrails
+
+- Updated web dependencies to current versions.
+- Updated Rust/Tauri dependencies to current versions.
+- Added `scripts/check-tauri-version-sync.mjs`.
+- Added `bun run deps:tauri:check`.
+- Wired the Tauri alignment check into `bun run verify`.
+
+### Code compatibility fix
+
+- Adjusted `src-tauri/src/wallpaper.rs` for the `windows 0.62` API line by importing the current `BOOL` type explicitly.
+
+### Test coverage improvement
+
+- Added `src/lib/wallpaperSession.integration.test.ts` covering the real Wallpaper Session seam across profile load, preview resolve, editor save, apply, and save-profile flows.
+
+### Repo customization layer
+
+Added shared project files under `.github/`:
+
+- `copilot-instructions.md`
+- `instructions/frontend-wallpaper-session.instructions.md`
+- `instructions/rust-tauri.instructions.md`
+- `instructions/documentation-sync.instructions.md`
+- `skills/waller-maintenance/SKILL.md`
+- `skills/waller-wallpaper-session/SKILL.md`
+
+### Documentation refresh
+
+- Rewrote the stale docs across architecture, implementation, testing, structure, UI, roadmap, and technical debt.
+- Added a new maintenance snapshot document: `docs/10-MAINTENANCE-AND-STACK-UPDATE-2026-05-25.md`.
+
+## Remaining risks (non-blocking)
+
+- GDI monitor fallback is still diagnostic/visual in nature; if COM cannot supply a stable monitor identity, per-monitor apply remains limited.
+- UI-level interaction coverage is still lighter than the domain/store coverage.
+- `health_check` exists in the backend but is not yet surfaced directly in the UI.
+
+## Recommended next steps
+
+1. Add component interaction tests around `App`, `MonitorCard`, and `EditorDialog`.
+2. Add a real Tauri/WebView smoke test path for critical end-to-end flows.
+3. Surface `health_check` in the UI for support workflows.
