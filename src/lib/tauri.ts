@@ -15,7 +15,8 @@ import type {
   ProfileMonitor,
   WallpaperDraft,
 } from './types';
-import { normalizeErrorPayload } from './wallpaper';
+import { normalizeErrorPayload } from './appErrors';
+import type { WallpaperSessionRuntime } from './wallpaperSession';
 
 let loggingReady = false;
 
@@ -199,3 +200,18 @@ export function draftsToProfileMonitors(
     fitMode: draft.fitMode,
   }));
 }
+
+export const tauriWallpaperSessionRuntime: WallpaperSessionRuntime = {
+  fetchMonitors,
+  listProfiles,
+  loadProfile,
+  saveProfile,
+  deleteProfile,
+  pickImagePath,
+  getImageDataUrl,
+  applyWallpaper,
+  applyConfiguration,
+  identifyMonitors,
+  saveEditedWallpaper,
+  log: logClient,
+};

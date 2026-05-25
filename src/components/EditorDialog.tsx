@@ -8,8 +8,9 @@ import {
     type WheelEvent as ReactWheelEvent,
 } from 'react';
 import { useI18n } from '../i18n';
+import { formatError } from '../lib/appErrors';
 import type { FitMode, MonitorInfo } from '../lib/types';
-import { formatError, normalizeColorHex } from '../lib/wallpaper';
+import { normalizeColorHex } from '../lib/wallpaperSource';
 
 interface EditorDialogProps {
     open: boolean;

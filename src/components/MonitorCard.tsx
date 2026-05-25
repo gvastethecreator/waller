@@ -5,7 +5,7 @@ import {
     FIT_OPTIONS,
     normalizeFitMode,
     parseWallpaperSource,
-} from '../lib/wallpaper';
+} from '../lib/wallpaperSource';
 
 interface MonitorCardProps {
     monitor: MonitorInfo;

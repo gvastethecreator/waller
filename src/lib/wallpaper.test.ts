@@ -1,22 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import type { MonitorInfo } from './types';
+import { formatError } from './appErrors';
+import { computeLayoutMonitors } from './wallpaperLayout';
 import {
   DEFAULT_FIT_MODE,
   FIT_OPTIONS,
   NONE_MARKER,
   SOLID_PREFIX,
-  buildApplyConfiguration,
-  computeLayoutMonitors,
-  countDirtyMonitors,
-  createDraftsFromMonitors,
-  formatError,
   makeSolidMarker,
   normalizeColorHex,
   normalizeFitMode,
   parseWallpaperSource,
   snapshotDraft,
-  updateBaselineAfterSingleApply,
-} from './wallpaper';
+} from './wallpaperSource';
 
 const monitorFixture: MonitorInfo[] = [
   {
@@ -71,36 +67,14 @@ describe('wallpaper helpers', () => {
     expect(makeSolidMarker('#112233')).toBe(`${SOLID_PREFIX}#112233`);
   });
 
-  it('creates drafts and detects dirtiness', () => {
-    const drafts = createDraftsFromMonitors(monitorFixture);
-    const baseline = createDraftsFromMonitors(monitorFixture);
-
-    expect(countDirtyMonitors(monitorFixture, drafts, baseline)).toBe(0);
-
-    const changed = {
-      ...drafts,
-      DISPLAY2: snapshotDraft({ imagePath: 'second.png', fitMode: 'Span' }),
-    };
-
-    expect(countDirtyMonitors(monitorFixture, changed, baseline)).toBe(1);
-  });
-
-  it('builds apply payloads and updates global-fit baseline', () => {
-    const drafts = {
-      DISPLAY1: snapshotDraft({ imagePath: 'one.png', fitMode: 'Fill' }),
-      DISPLAY2: snapshotDraft({ imagePath: NONE_MARKER, fitMode: 'Fit' }),
-    };
-
-    expect(buildApplyConfiguration(monitorFixture, drafts)).toEqual([
-      { monitorId: 'DISPLAY1', imagePath: 'one.png', fitMode: 'Fill' },
-      { monitorId: 'DISPLAY2', imagePath: NONE_MARKER, fitMode: 'Fit' },
-    ]);
-
-    expect(
-      updateBaselineAfterSingleApply(drafts, 'DISPLAY2', snapshotDraft({ imagePath: NONE_MARKER, fitMode: 'Span' })),
-    ).toEqual({
-      DISPLAY1: snapshotDraft({ imagePath: 'one.png', fitMode: 'Span' }),
-      DISPLAY2: snapshotDraft({ imagePath: NONE_MARKER, fitMode: 'Span' }),
+  it('snapshots drafts into persistible normalized values', () => {
+    expect(snapshotDraft({ imagePath: '', fitMode: 'wat' as never })).toEqual({
+      imagePath: NONE_MARKER,
+      fitMode: DEFAULT_FIT_MODE,
+    });
+    expect(snapshotDraft({ imagePath: makeSolidMarker('#abcdef'), fitMode: 'Span' })).toEqual({
+      imagePath: makeSolidMarker('#abcdef'),
+      fitMode: 'Span',
     });
   });
 

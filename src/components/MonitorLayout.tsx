@@ -1,7 +1,7 @@
 import { memo, useMemo, useRef } from 'react';
 import type { MonitorInfo } from '../lib/types';
-import { computeLayoutMonitors } from '../lib/wallpaper';
 import { useElementSize } from '../hooks/useElementSize';
+import { computeLayoutMonitors } from '../lib/wallpaperLayout';
 
 interface MonitorLayoutProps {
     monitors: MonitorInfo[];

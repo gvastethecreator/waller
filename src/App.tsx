@@ -1,7 +1,6 @@
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import {
-    useCallback,
     useEffect,
     useMemo,
     useRef,
@@ -10,132 +9,82 @@ import {
 import { EditorDialog } from './components/EditorDialog';
 import { MonitorCard } from './components/MonitorCard';
 import { MonitorLayout } from './components/MonitorLayout';
+import { useWallpaperSession } from './hooks/useWallpaperSession';
 import { useI18n } from './i18n';
+import { formatError } from './lib/appErrors';
 import {
-    applyConfiguration,
-    applyWallpaper,
     clearLogs,
     confirmDialog,
-    deleteProfile,
-    draftsToProfileMonitors,
-    fetchMonitors,
-    getImageDataUrl,
     getLogs,
-    identifyMonitors,
     initializeLogging,
-    listProfiles,
-    loadProfile,
     logClient,
-    pickImagePath,
-    saveEditedWallpaper,
-    saveProfile,
+    tauriWallpaperSessionRuntime,
 } from './lib/tauri';
 import type {
     FitMode,
-    MonitorInfo,
-    Profile,
     ToastState,
-    WallpaperDraft,
     WallpaperSourceType,
 } from './lib/types';
-import {
-    DEFAULT_FIT_MODE,
-    NONE_MARKER,
-    buildApplyConfiguration,
-    countDirtyMonitors,
-    createDraftsFromMonitors,
-    formatError,
-    isMonitorDirty,
-    makeSolidMarker,
-    normalizeFitMode,
-    parseWallpaperSource,
-    removeKey,
-    snapshotDraft,
-    sortMonitors,
-    updateBaselineAfterSingleApply,
-} from './lib/wallpaper';
 
 const IDENTIFY_FALLBACK_DELAY_MS = 700;
-
-function createSnapshotRecord(
-    record: Record<string, WallpaperDraft>,
-): Record<string, WallpaperDraft> {
-    return Object.fromEntries(
-        Object.entries(record).map(([id, draft]) => [id, snapshotDraft(draft)]),
-    ) as Record<string, WallpaperDraft>;
-}
-
-function hasFallbackMonitorIds(monitors: readonly MonitorInfo[]): boolean {
-    return monitors.some((monitor) => monitor.id.startsWith('GDI_MONITOR_'));
-}
-
-function wait(milliseconds: number): Promise<void> {
-    return new Promise((resolve) => {
-        window.setTimeout(resolve, milliseconds);
-    });
-}
 
 export default function App() {
     const gridRef = useRef<HTMLDivElement>(null);
     const toastTimerRef = useRef<number | null>(null);
     const { t, locale, setLocale } = useI18n();
+    const {
+        snapshot,
+        refresh,
+        chooseMonitorImage,
+        setSourceType,
+        setSolidColor,
+        setFitMode,
+        clearMonitor,
+        applyMonitor,
+        applyAll,
+        loadProfile,
+        saveProfile,
+        deleteProfile: deleteSessionProfile,
+        openEditor,
+        pickEditorImage,
+        saveEditor,
+        closeEditor,
+        identify,
+        resolvePreviewDataUrl,
+    } = useWallpaperSession({
+        runtime: tauriWallpaperSessionRuntime,
+        identifyFallbackDelayMs: IDENTIFY_FALLBACK_DELAY_MS,
+    });
 
-    const [monitors, setMonitors] = useState<MonitorInfo[]>([]);
-    const [drafts, setDrafts] = useState<Record<string, WallpaperDraft>>({});
-    const [baseline, setBaseline] = useState<Record<string, WallpaperDraft>>({});
-    const [profiles, setProfiles] = useState<string[]>([]);
     const [selectedProfileName, setSelectedProfileName] = useState('');
     const [profileNameInput, setProfileNameInput] = useState('');
-    const [previewCache, setPreviewCache] = useState<Record<string, string>>({});
-    const [previewPending, setPreviewPending] = useState<Record<string, boolean>>({});
-    const [previewFailed, setPreviewFailed] = useState<Record<string, boolean>>({});
     const [toast, setToast] = useState<ToastState | null>(null);
-    const [highlightedMonitorId, setHighlightedMonitorId] = useState<string | null>(null);
-    const [isLoadingMonitors, setIsLoadingMonitors] = useState(false);
     const [saveModalOpen, setSaveModalOpen] = useState(false);
     const [logsModalOpen, setLogsModalOpen] = useState(false);
     const [logsContent, setLogsContent] = useState('No logs yet.');
-    const [editorState, setEditorState] = useState<{
-        open: boolean;
-        monitor: MonitorInfo | null;
-        sourceImagePath: string;
-    }>({
-        open: false,
-        monitor: null,
-        sourceImagePath: '',
-    });
 
-    const sortedMonitors = useMemo(() => sortMonitors(monitors), [monitors]);
-    const fallbackIdsDetected = useMemo(
-        () => hasFallbackMonitorIds(sortedMonitors),
-        [sortedMonitors],
+    const monitorItems = snapshot.monitors;
+    const layoutMonitors = useMemo(
+        () => monitorItems.map((item) => item.monitor),
+        [monitorItems],
     );
-    const dirtyCount = useMemo(
-        () => countDirtyMonitors(sortedMonitors, drafts, baseline),
-        [baseline, drafts, sortedMonitors],
-    );
+    const dirtyCount = snapshot.dirtyCount;
     const statusSummary = useMemo(() => {
-        if (!sortedMonitors.length) {
+        if (!monitorItems.length) {
             return t('status.loading');
         }
         if (dirtyCount > 0) {
             const key = dirtyCount > 1 ? 'status.pendingChanges' : 'status.pendingChange';
-            return `${t('status.displays', { count: sortedMonitors.length })} · ${t(key, { count: dirtyCount })}`;
+            return `${t('status.displays', { count: monitorItems.length })} · ${t(key, { count: dirtyCount })}`;
         }
-        return `${t('status.displays', { count: sortedMonitors.length })} · ${t('status.allApplied')}`;
-    }, [dirtyCount, sortedMonitors.length, t]);
+        return `${t('status.displays', { count: monitorItems.length })} · ${t('status.allApplied')}`;
+    }, [dirtyCount, monitorItems.length, t]);
     const animationKey = useMemo(
-        () => `${sortedMonitors.map((monitor) => monitor.id).join('|')}::${dirtyCount}`,
-        [dirtyCount, sortedMonitors],
+        () => `${monitorItems.map((item) => item.monitor.id).join('|')}::${dirtyCount}`,
+        [dirtyCount, monitorItems],
     );
-    const activeEditorFitMode = useMemo(() => {
-        if (!editorState.monitor) {
-            return DEFAULT_FIT_MODE;
-        }
-        return normalizeFitMode(drafts[editorState.monitor.id]?.fitMode);
-    }, [drafts, editorState.monitor]);
 
-    const pushToast = useCallback((message: string, tone: ToastState['tone']) => {
+    const pushToast = (message: string, tone: ToastState['tone']) => {
         setToast({ message, tone });
         if (toastTimerRef.current !== null) {
             window.clearTimeout(toastTimerRef.current);
@@ -144,7 +93,7 @@ export default function App() {
             setToast(null);
             toastTimerRef.current = null;
         }, 3000);
-    }, []);
+    };
 
     useEffect(() => {
         return () => {
@@ -188,111 +137,12 @@ export default function App() {
         { scope: gridRef, dependencies: [animationKey], revertOnUpdate: true },
     );
 
-    const syncDraftsFromMonitors = useCallback(
-        (nextMonitors: MonitorInfo[], preserveLocal: boolean) => {
-            setDrafts((previous) => {
-                const next: Record<string, WallpaperDraft> = {};
-                for (const monitor of nextMonitors) {
-                    next[monitor.id] = preserveLocal && previous[monitor.id]
-                        ? snapshotDraft(previous[monitor.id])
-                        : snapshotDraft({
-                            imagePath: monitor.currentWallpaper,
-                            fitMode: normalizeFitMode(monitor.currentFit),
-                        });
-                }
-                return next;
-            });
-
-            setBaseline((previous) => {
-                if (preserveLocal && Object.keys(previous).length > 0) {
-                    return previous;
-                }
-                return createDraftsFromMonitors(nextMonitors);
-            });
-        },
-        [],
-    );
-
-    const resolvePreviewDataUrl = useCallback(
-        async (imagePath: string): Promise<string> => {
-            if (!imagePath) {
-                throw new Error('Image path cannot be empty');
-            }
-            if (previewCache[imagePath]) {
-                return previewCache[imagePath];
-            }
-            if (previewPending[imagePath]) {
-                throw new Error('Preview request already in flight');
-            }
-
-            setPreviewPending((previous) => ({ ...previous, [imagePath]: true }));
-            try {
-                const dataUrl = await getImageDataUrl(imagePath);
-                setPreviewCache((previous) => ({ ...previous, [imagePath]: dataUrl }));
-                setPreviewFailed((previous) => removeKey(previous, imagePath));
-                return dataUrl;
-            } catch (error) {
-                setPreviewFailed((previous) => ({ ...previous, [imagePath]: true }));
-                throw error;
-            } finally {
-                setPreviewPending((previous) => removeKey(previous, imagePath));
-            }
-        },
-        [previewCache, previewPending],
-    );
-
-    const refreshProfiles = useCallback(async () => {
-        try {
-            const nextProfiles = await listProfiles();
-            setProfiles(nextProfiles);
-            if (selectedProfileName && !nextProfiles.includes(selectedProfileName)) {
-                setSelectedProfileName('');
-            }
-        } catch (error) {
-            await logClient('profiles', `list error: ${formatError(error)}`, 'warn');
-        }
-    }, [selectedProfileName]);
-
-    const loadMonitors = useCallback(
-        async (preserveLocal = false) => {
-            setIsLoadingMonitors(true);
-            try {
-                await logClient('monitors', 'get_monitors invoke start', 'debug');
-                const nextMonitors = sortMonitors(await fetchMonitors());
-                setMonitors(nextMonitors);
-                syncDraftsFromMonitors(nextMonitors, preserveLocal);
-                await logClient('monitors', `get_monitors ok: ${nextMonitors.length} monitor(s)`, 'info');
-            } catch (error) {
-                await logClient('monitors', `get_monitors error: ${formatError(error)}`, 'error');
-                pushToast(t('error.detectMonitors', { error: formatError(error) }), 'error');
-            } finally {
-                setIsLoadingMonitors(false);
-            }
-        },
-        [pushToast, syncDraftsFromMonitors, t],
-    );
-
     useEffect(() => {
         void initializeLogging();
-        void loadMonitors(false);
-        void refreshProfiles();
-    }, [loadMonitors, refreshProfiles]);
-
-    useEffect(() => {
-        const targets = sortedMonitors
-            .map((monitor) => parseWallpaperSource(drafts[monitor.id]?.imagePath).imagePath)
-            .filter(Boolean);
-
-        for (const imagePath of targets) {
-            if (previewCache[imagePath] || previewPending[imagePath] || previewFailed[imagePath]) {
-                continue;
-            }
-
-            void resolvePreviewDataUrl(imagePath).catch(async (error) => {
-                await logClient('preview', `preview error for ${imagePath}: ${formatError(error)}`, 'warn');
-            });
-        }
-    }, [drafts, previewCache, previewFailed, previewPending, resolvePreviewDataUrl, sortedMonitors]);
+        void refresh(false).catch((error) => {
+            pushToast(t('error.detectMonitors', { error: formatError(error) }), 'error');
+        });
+    }, [refresh, t]);
 
     useEffect(() => {
         const handleWindowError = (event: ErrorEvent) => {
@@ -318,254 +168,118 @@ export default function App() {
         };
     }, []);
 
-    const updateDraft = useCallback(
-        (monitorId: string, nextDraft: Partial<WallpaperDraft>) => {
-            setDrafts((previous) => ({
-                ...previous,
-                [monitorId]: snapshotDraft({
-                    ...previous[monitorId],
-                    ...nextDraft,
-                }),
-            }));
-        },
-        [],
-    );
+    const handleRefresh = async () => {
+        try {
+            await refresh(true);
+        } catch (error) {
+            pushToast(t('error.detectMonitors', { error: formatError(error) }), 'error');
+        }
+    };
 
-    const browseMonitorImage = useCallback(
-        async (monitorId: string) => {
-            try {
-                const path = await pickImagePath();
-                if (!path) {
-                    return null;
-                }
+    const handleBrowseMonitorImage = async (monitorId: string) => {
+        try {
+            await chooseMonitorImage(monitorId);
+        } catch (error) {
+            pushToast(t('error.fileDialog', { error: formatError(error) }), 'error');
+        }
+    };
 
-                await logClient('browse', `selected image for monitor ${monitorId}: ${path}`, 'info');
-                updateDraft(monitorId, { imagePath: path });
-                setPreviewFailed((previous) => removeKey(previous, path));
-                void resolvePreviewDataUrl(path).catch(() => undefined);
-                return path;
-            } catch (error) {
-                pushToast(t('error.fileDialog', { error: formatError(error) }), 'error');
-                await logClient('browse', `dialog error: ${formatError(error)}`, 'error');
-                return null;
-            }
-        },
-        [pushToast, resolvePreviewDataUrl, updateDraft],
-    );
+    const handleSourceChange = async (monitorId: string, nextType: WallpaperSourceType) => {
+        try {
+            await setSourceType(monitorId, nextType);
+        } catch (error) {
+            const message = nextType === 'image'
+                ? t('error.fileDialog', { error: formatError(error) })
+                : formatError(error);
+            pushToast(message, 'error');
+        }
+    };
 
-    const pickImageForEditor = useCallback(async () => pickImagePath(), []);
+    const handleFitChange = async (fitMode: FitMode) => {
+        try {
+            await setFitMode(fitMode);
+        } catch (error) {
+            pushToast(formatError(error), 'error');
+        }
+    };
 
-    const handleSourceChange = useCallback(
-        async (monitorId: string, nextType: WallpaperSourceType) => {
-            const currentDraft = drafts[monitorId] ?? snapshotDraft();
-            const currentSource = parseWallpaperSource(currentDraft.imagePath);
+    const handleSolidColorChange = (monitorId: string, color: string) => {
+        void setSolidColor(monitorId, color).catch((error) => {
+            pushToast(formatError(error), 'error');
+        });
+    };
 
-            if (nextType === 'image') {
-                if (currentSource.type === 'image' && currentSource.imagePath) {
-                    return;
-                }
-                await browseMonitorImage(monitorId);
-                return;
-            }
+    const handleClearMonitor = (monitorId: string) => {
+        void clearMonitor(monitorId).catch((error) => {
+            pushToast(formatError(error), 'error');
+        });
+    };
 
-            if (nextType === 'solid') {
-                updateDraft(monitorId, {
-                    imagePath: makeSolidMarker(
-                        currentSource.type === 'solid' ? currentSource.color : '#000000',
-                    ),
-                });
-                return;
-            }
+    const handleApplyMonitor = async (monitorId: string) => {
+        try {
+            await applyMonitor(monitorId);
+            pushToast(t('monitor.applied'), 'success');
+        } catch (error) {
+            pushToast(t('monitor.applyFailed', { error: formatError(error) }), 'error');
+        }
+    };
 
-            updateDraft(monitorId, { imagePath: NONE_MARKER });
-        },
-        [browseMonitorImage, drafts, updateDraft],
-    );
+    const handleApplyConfiguration = async () => {
+        try {
+            await applyAll();
+            pushToast(t('apply.success'), 'success');
+        } catch (error) {
+            pushToast(t('apply.failed', { error: formatError(error) }), 'error');
+        }
+    };
 
-    const handleFitChange = useCallback((_: string, fitMode: FitMode) => {
-        const normalized = normalizeFitMode(fitMode);
-        setDrafts((previous) =>
-            Object.fromEntries(
-                Object.entries(previous).map(([id, draft]) => [
-                    id,
-                    snapshotDraft({ ...draft, fitMode: normalized }),
-                ]),
-            ) as Record<string, WallpaperDraft>,
-        );
-    }, []);
-
-    const handleSolidColorChange = useCallback(
-        (monitorId: string, color: string) => {
-            updateDraft(monitorId, { imagePath: makeSolidMarker(color) });
-        },
-        [updateDraft],
-    );
-
-    const handleClearMonitor = useCallback(
-        (monitorId: string) => {
-            updateDraft(monitorId, { imagePath: NONE_MARKER });
-        },
-        [updateDraft],
-    );
-
-    const handleApplyMonitor = useCallback(
-        async (monitorId: string) => {
-            const draft = drafts[monitorId];
-            if (!draft?.imagePath) {
-                pushToast(t('monitor.noWallpaperConfigured'), 'error');
-                return;
-            }
-
-            try {
-                await logClient('apply', `apply_wallpaper start: ${monitorId}`, 'info');
-                const nextDraft = snapshotDraft(draft);
-                await applyWallpaper(monitorId, nextDraft.imagePath, nextDraft.fitMode);
-                setBaseline((previous) =>
-                    updateBaselineAfterSingleApply(previous, monitorId, nextDraft),
-                );
-                pushToast(t('monitor.applied'), 'success');
-            } catch (error) {
-                await logClient('apply', `apply_wallpaper error: ${formatError(error)}`, 'error');
-                pushToast(t('monitor.applyFailed', { error: formatError(error) }), 'error');
-            }
-        },
-        [drafts, pushToast, t],
-    );
-
-    const handleApplyConfiguration = useCallback(async () => {
-        if (fallbackIdsDetected) {
-            pushToast(t('apply.fallbackDisabled'), 'error');
+    const handleOpenEditor = async (monitorId: string) => {
+        const monitorItem = monitorItems.find((item) => item.monitor.id === monitorId);
+        if (!monitorItem) {
+            pushToast(t('error.monitorNotFound'), 'error');
             return;
         }
-
-        const configs = buildApplyConfiguration(sortedMonitors, drafts);
-        if (!configs.length) {
-            pushToast(t('apply.noWallpapers'), 'error');
+        if (!monitorItem.canEdit) {
+            pushToast(t('error.editorDiagnostic'), 'error');
             return;
         }
 
         try {
-            await logClient('apply', `apply_configuration start: ${configs.length} config(s)`, 'info');
-            await applyConfiguration(configs);
-            setBaseline(createSnapshotRecord(drafts));
-            pushToast(t('apply.success'), 'success');
+            await openEditor(monitorId);
         } catch (error) {
-            await logClient('apply', `apply_configuration error: ${formatError(error)}`, 'error');
-            pushToast(t('apply.failed', { error: formatError(error) }), 'error');
+            pushToast(formatError(error), 'error');
         }
-    }, [drafts, fallbackIdsDetected, pushToast, sortedMonitors, t]);
+    };
 
-    const handleOpenEditor = useCallback(
-        async (monitorId: string) => {
-            const monitor = sortedMonitors.find((candidate) => candidate.id === monitorId);
-            if (!monitor) {
-                pushToast(t('error.monitorNotFound'), 'error');
-                return;
-            }
-            if (monitor.id.startsWith('GDI_MONITOR_')) {
-                pushToast(t('error.editorDiagnostic'), 'error');
-                return;
-            }
-
-            const draft = drafts[monitorId] ?? snapshotDraft();
-            const source = parseWallpaperSource(draft.imagePath);
-            let nextPath = source.type === 'image' ? source.imagePath : '';
-
-            if (!nextPath) {
-                nextPath = (await pickImageForEditor()) ?? '';
-            }
-            if (!nextPath) {
-                return;
-            }
-
-            setEditorState({
-                open: true,
-                monitor,
-                sourceImagePath: nextPath,
-            });
-        },
-        [drafts, pickImageForEditor, pushToast, sortedMonitors],
-    );
-
-    const handleSaveEditedWallpaper = useCallback(
-        async ({
-            monitorId,
-            fitMode,
-            dataUrl,
-        }: {
-            monitorId: string;
-            fitMode: FitMode;
-            dataUrl: string;
-        }) => {
-            await logClient('editor', `save start for ${monitorId}`, 'info');
-            const savedPath = await saveEditedWallpaper(monitorId, dataUrl);
-            await applyWallpaper(monitorId, savedPath, fitMode);
-
-            const nextDraft = snapshotDraft({ imagePath: savedPath, fitMode });
-            setDrafts((previous) => ({
-                ...previous,
-                [monitorId]: nextDraft,
-            }));
-            setBaseline((previous) =>
-                updateBaselineAfterSingleApply(previous, monitorId, nextDraft),
-            );
-            setPreviewCache((previous) => ({ ...previous, [savedPath]: dataUrl }));
-            setPreviewPending((previous) => removeKey(previous, savedPath));
-            setPreviewFailed((previous) => removeKey(previous, savedPath));
-            pushToast(t('editor.saved'), 'success');
-            await logClient('editor', `save success for ${monitorId}`, 'info');
-        },
-        [pushToast, t],
-    );
-
-    const handleIdentifyMonitors = useCallback(async () => {
-        if (!sortedMonitors.length) {
+    const handleIdentifyMonitors = async () => {
+        if (!monitorItems.length) {
             pushToast(t('layout.noMonitors'), 'error');
             return;
         }
 
         try {
-            await identifyMonitors();
+            await identify();
             pushToast(t('identify.showing'), 'success');
-        } catch {
-            pushToast(t('identify.fallback'), 'info');
-            for (const monitor of sortedMonitors) {
-                setHighlightedMonitorId(monitor.id);
-                await wait(IDENTIFY_FALLBACK_DELAY_MS);
-            }
-            setHighlightedMonitorId(null);
+        } catch (error) {
+            pushToast(formatError(error), 'error');
         }
-    }, [pushToast, sortedMonitors, t]);
+    };
 
-    const handleLoadSelectedProfile = useCallback(async () => {
+    const handleLoadSelectedProfile = async () => {
         if (!selectedProfileName) {
             pushToast(t('profile.selectFirst'), 'error');
             return;
         }
 
         try {
-            const profile: Profile = await loadProfile(selectedProfileName);
-            const nextDrafts = createDraftsFromMonitors(sortedMonitors);
-            const activeIds = new Set(sortedMonitors.map((monitor) => monitor.id));
-
-            for (const monitor of profile.monitors) {
-                if (!activeIds.has(monitor.monitorId)) {
-                    continue;
-                }
-                nextDrafts[monitor.monitorId] = snapshotDraft({
-                    imagePath: monitor.imagePath,
-                    fitMode: monitor.fitMode,
-                });
-            }
-
-            setDrafts(nextDrafts);
+            await loadProfile(selectedProfileName);
             pushToast(t('profile.loaded', { name: selectedProfileName }), 'success');
         } catch (error) {
             pushToast(t('profile.loadFailed', { error: formatError(error) }), 'error');
         }
-    }, [pushToast, selectedProfileName, sortedMonitors, t]);
+    };
 
-    const handleSaveCurrentProfile = useCallback(async () => {
+    const handleSaveCurrentProfile = async () => {
         const name = profileNameInput.trim();
         if (!name) {
             pushToast(t('profile.enterName'), 'error');
@@ -573,18 +287,17 @@ export default function App() {
         }
 
         try {
-            await saveProfile(name, draftsToProfileMonitors(drafts));
+            await saveProfile(name);
             setSaveModalOpen(false);
             setProfileNameInput('');
             setSelectedProfileName(name);
-            await refreshProfiles();
             pushToast(t('profile.saved', { name }), 'success');
         } catch (error) {
             pushToast(t('profile.saveFailed', { error: formatError(error) }), 'error');
         }
-    }, [drafts, profileNameInput, pushToast, refreshProfiles, t]);
+    };
 
-    const handleDeleteSelectedProfile = useCallback(async () => {
+    const handleDeleteSelectedProfile = async () => {
         if (!selectedProfileName) {
             pushToast(t('profile.selectToDelete'), 'error');
             return;
@@ -598,30 +311,29 @@ export default function App() {
         }
 
         try {
-            await deleteProfile(selectedProfileName);
-            await refreshProfiles();
+            await deleteSessionProfile(selectedProfileName);
             setSelectedProfileName('');
             pushToast(t('profile.deleted', { name: selectedProfileName }), 'success');
         } catch (error) {
             pushToast(t('profile.deleteFailed', { error: formatError(error) }), 'error');
         }
-    }, [pushToast, refreshProfiles, selectedProfileName, t]);
+    };
 
-    const refreshLogsModal = useCallback(async () => {
+    const refreshLogsModal = async () => {
         try {
             const content = await getLogs();
             setLogsContent(content || t('logsModal.noLogs'));
         } catch (error) {
             setLogsContent(t('logsModal.loadFailed', { error: formatError(error) }));
         }
-    }, [t]);
+    };
 
-    const handleOpenLogsModal = useCallback(async () => {
+    const handleOpenLogsModal = async () => {
         setLogsModalOpen(true);
         await refreshLogsModal();
-    }, [refreshLogsModal]);
+    };
 
-    const handleClearLogs = useCallback(async () => {
+    const handleClearLogs = async () => {
         try {
             await clearLogs();
             await logClient('logs', 'logs cleared by user', 'warn');
@@ -632,7 +344,7 @@ export default function App() {
         } catch (error) {
             pushToast(t('logsModal.clearFailed', { error: formatError(error) }), 'error');
         }
-    }, [logsModalOpen, pushToast, refreshLogsModal, t]);
+    };
 
     return (
         <div
@@ -670,7 +382,7 @@ export default function App() {
                         <option value="en">EN</option>
                         <option value="es">ES</option>
                     </select>
-                    <button className="btn btn-ghost" type="button" onClick={() => void loadMonitors(true)}>
+                    <button className="btn btn-ghost" type="button" onClick={() => void handleRefresh()}>
                         {t('app.refresh')}
                     </button>
                 </div>
@@ -684,7 +396,7 @@ export default function App() {
                         onChange={(event) => setSelectedProfileName(event.target.value)}
                     >
                         <option value="">{t('profile.select')}</option>
-                        {profiles.map((profile) => (
+                        {snapshot.profiles.map((profile) => (
                             <option key={profile} value={profile}>
                                 {profile}
                             </option>
@@ -722,19 +434,19 @@ export default function App() {
                         </button>
                     </div>
 
-                    {fallbackIdsDetected ? (
+                    {snapshot.diagnosticMode ? (
                         <p className="mb-3 rounded-md border border-[#d4c6a2]/20 bg-[#1d1a13] px-3 py-2 text-xs text-[#d4c6a2]">
                             {t('layout.diagnosticMode')}
                         </p>
                     ) : null}
 
                     <MonitorLayout
-                        highlightedMonitorId={highlightedMonitorId}
-                        monitors={sortedMonitors}
+                        highlightedMonitorId={snapshot.identifyOverlay.highlightedMonitorId}
+                        monitors={layoutMonitors}
                     />
 
                     <div ref={gridRef} className="mt-5 grid gap-4 xl:grid-cols-3 md:grid-cols-2">
-                        {isLoadingMonitors && !sortedMonitors.length ? (
+                        {(snapshot.status === 'loading' || snapshot.status === 'refreshing') && !monitorItems.length ? (
                             <div
                                 className="col-span-full flex flex-col items-center gap-3 rounded-2xl border border-white/5 px-6 py-14"
                                 style={{ background: 'var(--bg-card)', color: 'var(--text-secondary)' }}
@@ -744,7 +456,7 @@ export default function App() {
                             </div>
                         ) : null}
 
-                        {!isLoadingMonitors && !sortedMonitors.length ? (
+                        {snapshot.status !== 'loading' && snapshot.status !== 'refreshing' && !monitorItems.length ? (
                             <div
                                 className="col-span-full flex flex-col items-center gap-3 rounded-2xl border border-white/5 px-6 py-14"
                                 style={{ background: 'var(--bg-card)', color: 'var(--text-secondary)' }}
@@ -753,28 +465,23 @@ export default function App() {
                             </div>
                         ) : null}
 
-                        {sortedMonitors.map((monitor) => {
-                            const draft = drafts[monitor.id] ?? snapshotDraft({
-                                imagePath: monitor.currentWallpaper,
-                                fitMode: normalizeFitMode(monitor.currentFit),
-                            });
-                            const source = parseWallpaperSource(draft.imagePath);
-                            const previewUrl = source.type === 'image' ? previewCache[source.imagePath] ?? '' : '';
+                        {monitorItems.map((item) => {
+                            const previewUrl = item.preview.kind === 'ready' ? item.preview.dataUrl : '';
                             return (
                                 <MonitorCard
-                                    key={monitor.id}
-                                    dirty={isMonitorDirty(monitor.id, drafts, baseline)}
-                                    draft={draft}
-                                    hasPreviewError={Boolean(source.imagePath && previewFailed[source.imagePath])}
-                                    highlighted={highlightedMonitorId === monitor.id}
-                                    isPreviewLoading={Boolean(source.imagePath && previewPending[source.imagePath])}
-                                    monitor={monitor}
+                                    key={item.monitor.id}
+                                    dirty={item.dirty}
+                                    draft={item.draft}
+                                    hasPreviewError={item.preview.kind === 'error'}
+                                    highlighted={snapshot.identifyOverlay.highlightedMonitorId === item.monitor.id}
+                                    isPreviewLoading={item.preview.kind === 'loading'}
+                                    monitor={item.monitor}
                                     previewUrl={previewUrl}
                                     onApply={(monitorId) => void handleApplyMonitor(monitorId)}
-                                    onBrowse={(monitorId) => void browseMonitorImage(monitorId)}
+                                    onBrowse={(monitorId) => void handleBrowseMonitorImage(monitorId)}
                                     onClear={handleClearMonitor}
                                     onEdit={(monitorId) => void handleOpenEditor(monitorId)}
-                                    onFitChange={handleFitChange}
+                                    onFitChange={(_, fitMode) => void handleFitChange(fitMode)}
                                     onSolidColorChange={handleSolidColorChange}
                                     onSourceChange={(monitorId, nextType) => void handleSourceChange(monitorId, nextType)}
                                 />
@@ -848,20 +555,17 @@ export default function App() {
             ) : null}
 
             <EditorDialog
-                fitMode={activeEditorFitMode}
-                monitor={editorState.monitor}
-                open={editorState.open}
+                fitMode={snapshot.editor.fitMode}
+                monitor={snapshot.editor.monitor}
+                open={snapshot.editor.open}
                 resolvePreviewDataUrl={resolvePreviewDataUrl}
-                sourceImagePath={editorState.sourceImagePath}
-                onClose={() =>
-                    setEditorState({
-                        open: false,
-                        monitor: null,
-                        sourceImagePath: '',
-                    })
-                }
-                onPickImage={pickImageForEditor}
-                onSave={handleSaveEditedWallpaper}
+                sourceImagePath={snapshot.editor.sourceImagePath}
+                onClose={() => void closeEditor()}
+                onPickImage={pickEditorImage}
+                onSave={async ({ dataUrl }) => {
+                    await saveEditor(dataUrl);
+                    pushToast(t('editor.saved'), 'success');
+                }}
             />
 
             {toast ? (
