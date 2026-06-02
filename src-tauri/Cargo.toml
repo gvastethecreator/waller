@@ -1,11 +1,11 @@
 [package]
-name = "wallpaper-manager"
+name = "waller"
 version = "0.1.0"
 edition = "2021"
 description = "Multi-Monitor Wallpaper Manager"
 
 [lib]
-name = "wallpaper_manager_lib"
+name = "waller_lib"
 crate-type = ["lib", "cdylib", "staticlib"]
 
 [build-dependencies]

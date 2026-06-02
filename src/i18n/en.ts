@@ -2,7 +2,7 @@ import type { Translations } from './types';
 
 export const en: Translations = {
   // Header
-  'app.title': 'Wallpaper Manager',
+  'app.title': 'Waller',
   'app.refresh': 'Refresh',
 
   // Status

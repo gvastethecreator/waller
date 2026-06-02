@@ -53,8 +53,8 @@ jobs:
         shell: pwsh
         run: |
           $ver  = "${{ steps.version.outputs.VERSION }}"
-          $exe  = "src-tauri/target/release/wallpaper-manager.exe"
-          $zip  = "wallpaper-manager-$ver-windows-x64-portable.zip"
+          $exe  = "src-tauri/target/release/waller.exe"
+          $zip  = "waller-$ver-windows-x64-portable.zip"
           Compress-Archive -Path $exe -DestinationPath $zip
           echo "PATH=$zip" >> $env:GITHUB_OUTPUT
 
@@ -70,7 +70,7 @@ jobs:
       - name: Create GitHub Release (draft)
         uses: softprops/action-gh-release@v2
         with:
-          name: "Wallpaper Manager v${{ steps.version.outputs.VERSION }}"
+          name: "Waller v${{ steps.version.outputs.VERSION }}"
           draft: true
           generate_release_notes: true
           files: |

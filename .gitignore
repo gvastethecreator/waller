@@ -8,24 +8,29 @@ coverage/
 
 # Rust/Tauri build artifacts
 src-tauri/target/
+src-tauri/gen/schemas/*.tmp
 
-# VS Code workspace local history
+# VS Code: keep project-level tasks.json, ignore personal settings.json
 .vscode/*.code-workspace
+.vscode/settings.json
+src/.vscode/settings.json
 
 # OS / editor files
 .DS_Store
 Thumbs.db
 *.log
+*.swp
+*~
 
 # Optional local env files
 .env
 .env.local
-
-# Tauri generated bundles (if produced in project tree)
-src-tauri/gen/schemas/*.tmp
 
 # Temporary working files
 tmp/
 
 # Generated coverage reports
 src/coverage/
+
+# Local agent skill libraries (not part of the project)
+.agents/

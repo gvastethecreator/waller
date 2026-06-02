@@ -16,7 +16,11 @@
 
 ## Supporting references
 
+- [`../README.md`](../README.md) — Project entry point
+- [`../CONTRIBUTING.md`](../CONTRIBUTING.md) — Contribution workflow and PR checklist
+- [`../SECURITY.md`](../SECURITY.md) — Vulnerability reporting and security posture
 - [`../src/CONTEXT.md`](../src/CONTEXT.md) — Domain vocabulary for Monitor / Wallpaper Session / Profile / Preview terminology
 - [`../.github/copilot-instructions.md`](../.github/copilot-instructions.md) — Shared project-wide coding and maintenance guidance
 - [`../.github/skills/waller-maintenance/SKILL.md`](../.github/skills/waller-maintenance/SKILL.md) — Shared maintenance skill
 - [`../.github/skills/waller-wallpaper-session/SKILL.md`](../.github/skills/waller-wallpaper-session/SKILL.md) — Shared Wallpaper Session skill
+- [`../PUBLIC_READINESS_REPORT.md`](../PUBLIC_READINESS_REPORT.md) — Latest public-release readiness review

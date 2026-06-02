@@ -19,7 +19,6 @@ waller/
 │     ├─ ci.yml
 │     └─ release.yml
 ├─ .vscode/
-│  ├─ settings.json
 │  └─ tasks.json
 ├─ docs/
 │  ├─ 01-PRD.md
@@ -107,7 +106,7 @@ waller/
 
 ### `.vscode/`
 
-- local development ergonomics such as runnable tasks
+- project-level VS Code tasks for the most common developer flows
 
 ### `docs/`
 
