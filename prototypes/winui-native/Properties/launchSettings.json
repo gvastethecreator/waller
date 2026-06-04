@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "WallerWinUIPrototype (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "WallerWinUIPrototype (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}

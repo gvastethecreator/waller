@@ -16,6 +16,8 @@
 
 ## Supporting references
 
+- [`prototypes/winui/MIGRATION_REPORT.md`](./prototypes/winui/MIGRATION_REPORT.md) - WinUI migration effort, risks, and phased plan
+
 - [`../README.md`](../README.md) — Project entry point
 - [`../CONTRIBUTING.md`](../CONTRIBUTING.md) — Contribution workflow and PR checklist
 - [`../SECURITY.md`](../SECURITY.md) — Vulnerability reporting and security posture
