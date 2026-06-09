@@ -17,7 +17,7 @@ import type {
   WallpaperDraft,
 } from './types';
 import { normalizeErrorPayload } from './appErrors';
-import type { WallpaperSessionRuntime } from './wallpaperSession';
+import type { WallpaperApplyConfiguration, WallpaperSessionRuntime } from './wallpaperRuntime';
 
 let loggingReady = false;
 
@@ -117,7 +117,7 @@ export async function applyWallpaper(
 }
 
 export async function applyConfiguration(
-  configs: Array<{ monitorId: string; imagePath: string; fitMode: FitMode }>,
+  configs: WallpaperApplyConfiguration[],
 ): Promise<void> {
   await invokeCommand<void>('apply_configuration', {
     configs: configs.map((config) => ({

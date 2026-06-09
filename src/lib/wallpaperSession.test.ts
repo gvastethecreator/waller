@@ -1,9 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { MonitorInfo, Profile } from './types';
-import {
-  createWallpaperSessionStore,
-  type WallpaperSessionRuntime,
-} from './wallpaperSession';
+import { createWallpaperSessionStore } from './wallpaperSession';
+import type { WallpaperSessionRuntime } from './wallpaperRuntime';
 
 const multiMonitorFixture: MonitorInfo[] = [
   {

@@ -1,0 +1,10 @@
+{
+  "profiles": {
+    "Waller.Native.App (Package)": {
+      "commandName": "MsixPackage"
+    },
+    "Waller.Native.App (Unpackaged)": {
+      "commandName": "Project"
+    }
+  }
+}
