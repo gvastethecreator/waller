@@ -12,12 +12,11 @@ import type {
   FitMode,
   LogLevel,
   MonitorInfo,
-  Profile,
-  ProfileMonitor,
   WallpaperDraft,
   WallpaperSource,
   WallpaperSourceType,
 } from './types';
+import type { WallpaperSessionRuntime } from './wallpaperRuntime';
 import {
   DEFAULT_FIT_MODE,
   DEFAULT_SOLID_COLOR,
@@ -44,23 +43,6 @@ import {
 } from './wallpaperSessionState';
 
 const IDENTIFY_FALLBACK_DELAY_MS = 700;
-
-export interface WallpaperSessionRuntime {
-  fetchMonitors(): Promise<MonitorInfo[]>;
-  listProfiles(): Promise<string[]>;
-  loadProfile(name: string): Promise<Profile>;
-  saveProfile(name: string, monitors: ProfileMonitor[]): Promise<void>;
-  deleteProfile(name: string): Promise<void>;
-  pickImagePath(): Promise<string | null>;
-  getImageDataUrl(imagePath: string): Promise<string>;
-  applyWallpaper(monitorId: string, imagePath: string, fitMode: FitMode): Promise<void>;
-  applyConfiguration(
-    configs: Array<{ monitorId: string; imagePath: string; fitMode: FitMode }>,
-  ): Promise<void>;
-  identifyMonitors(): Promise<void>;
-  saveEditedWallpaper(monitorId: string, dataUrl: string): Promise<string>;
-  log?(scope: string, message: string, level?: LogLevel): Promise<void>;
-}
 
 export type WallpaperSessionStatus = 'idle' | 'loading' | 'refreshing' | 'ready';
 

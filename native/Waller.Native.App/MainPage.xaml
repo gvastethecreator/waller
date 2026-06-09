@@ -1,0 +1,807 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="Waller.Native.App.MainPage"
+    x:Name="PageRoot"
+    RequestedTheme="{x:Bind ViewModel.RequestedTheme, Mode=OneWay}"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:local="using:Waller.Native.App"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="using:Waller.Native.App.ViewModels"
+    mc:Ignorable="d">
+
+    <Grid Padding="24" RowSpacing="16">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <Grid ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="260" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <StackPanel VerticalAlignment="Center">
+                <TextBlock Text="Waller" Style="{StaticResource TitleTextBlockStyle}" />
+                <TextBlock
+                    MaxWidth="220"
+                    Text="{x:Bind ViewModel.SessionSummary, Mode=OneWay}"
+                    TextTrimming="CharacterEllipsis"
+                    ToolTipService.ToolTip="{x:Bind ViewModel.SessionSummary, Mode=OneWay}"
+                    Style="{StaticResource CaptionTextBlockStyle}" />
+            </StackPanel>
+
+            <ComboBox
+                Grid.Column="1"
+                AutomationProperties.AutomationId="PresetComboBox"
+                Header="{x:Bind ViewModel.Text.Preset, Mode=OneWay}"
+                DisplayMemberPath="Name"
+                IsEnabled="{x:Bind ViewModel.CanUseShellCommands, Mode=OneWay}"
+                ItemsSource="{x:Bind ViewModel.Presets, Mode=OneWay}"
+                SelectedItem="{x:Bind ViewModel.SelectedPreset, Mode=TwoWay}" />
+
+            <StackPanel Grid.Column="3" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
+                <Button
+                    Command="{x:Bind ViewModel.SaveCommand}"
+                    AutomationProperties.AutomationId="SaveButton"
+                    AutomationProperties.Name="{x:Bind ViewModel.Text.Save, Mode=OneWay}"
+                    IsEnabled="{x:Bind ViewModel.CanUseShellCommands, Mode=OneWay}"
+                    ToolTipService.ToolTip="{x:Bind ViewModel.Text.Save, Mode=OneWay}">
+                    <Button.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="S" Modifiers="Control" />
+                    </Button.KeyboardAccelerators>
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xE74E;" FontSize="14" />
+                        <TextBlock Text="{x:Bind ViewModel.Text.Save, Mode=OneWay}" />
+                    </StackPanel>
+                </Button>
+                <Button
+                    Command="{x:Bind ViewModel.SaveAsCommand}"
+                    AutomationProperties.AutomationId="SaveAsButton"
+                    AutomationProperties.Name="{x:Bind ViewModel.Text.SaveAs, Mode=OneWay}"
+                    Content="{x:Bind ViewModel.Text.SaveAs, Mode=OneWay}"
+                    IsEnabled="{x:Bind ViewModel.CanUseShellCommands, Mode=OneWay}"
+                    ToolTipService.ToolTip="{x:Bind ViewModel.Text.SaveAs, Mode=OneWay}">
+                    <Button.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="S" Modifiers="Control,Shift" />
+                    </Button.KeyboardAccelerators>
+                </Button>
+                <Button
+                    Command="{x:Bind ViewModel.ManagePresetsCommand}"
+                    AutomationProperties.AutomationId="ManagePresetsButton"
+                    AutomationProperties.Name="{x:Bind ViewModel.Text.Manage, Mode=OneWay}"
+                    Content="{x:Bind ViewModel.Text.Manage, Mode=OneWay}"
+                    IsEnabled="{x:Bind ViewModel.CanUseShellCommands, Mode=OneWay}"
+                    ToolTipService.ToolTip="{x:Bind ViewModel.Text.Manage, Mode=OneWay}">
+                    <Button.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="M" Modifiers="Control" />
+                    </Button.KeyboardAccelerators>
+                </Button>
+                <Button
+                    Command="{x:Bind ViewModel.RefreshCommand}"
+                    AutomationProperties.AutomationId="RefreshButton"
+                    AutomationProperties.Name="{x:Bind ViewModel.Text.Refresh, Mode=OneWay}"
+                    IsEnabled="{x:Bind ViewModel.CanStartApply, Mode=OneWay}"
+                    ToolTipService.ToolTip="{x:Bind ViewModel.Text.Refresh, Mode=OneWay}">
+                    <Button.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="R" Modifiers="Control" />
+                    </Button.KeyboardAccelerators>
+                    <FontIcon Glyph="&#xE72C;" FontSize="14" />
+                </Button>
+                <Button
+                    Command="{x:Bind ViewModel.OpenSettingsCommand}"
+                    AutomationProperties.AutomationId="SettingsButton"
+                    AutomationProperties.Name="{x:Bind ViewModel.Text.Settings, Mode=OneWay}"
+                    IsEnabled="{x:Bind ViewModel.CanUseShellCommands, Mode=OneWay}"
+                    ToolTipService.ToolTip="{x:Bind ViewModel.Text.Settings, Mode=OneWay}">
+                    <Button.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="I" Modifiers="Control" />
+                    </Button.KeyboardAccelerators>
+                    <FontIcon Glyph="&#xE713;" FontSize="14" />
+                </Button>
+                <Button
+                    Command="{x:Bind ViewModel.ApplyAllCommand}"
+                    AutomationProperties.AutomationId="ApplyAllButton"
+                    AutomationProperties.Name="{x:Bind ViewModel.Text.ApplyAll, Mode=OneWay}"
+                    IsEnabled="{x:Bind ViewModel.CanStartApply, Mode=OneWay}"
+                    ToolTipService.ToolTip="{x:Bind ViewModel.Text.ApplyAll, Mode=OneWay}">
+                    <Button.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="Enter" Modifiers="Control" />
+                    </Button.KeyboardAccelerators>
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xE73E;" FontSize="14" />
+                        <TextBlock Text="{x:Bind ViewModel.Text.ApplyAll, Mode=OneWay}" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
+
+        <Border
+            Grid.Row="1"
+            Padding="12"
+            CornerRadius="{ThemeResource OverlayCornerRadius}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+            Visibility="{x:Bind ViewModel.TopologyVisibility, Mode=OneWay}">
+            <ScrollViewer
+                HorizontalScrollBarVisibility="Auto"
+                HorizontalScrollMode="Auto"
+                VerticalScrollBarVisibility="Disabled"
+                VerticalScrollMode="Disabled">
+                <ItemsControl ItemsSource="{x:Bind ViewModel.Monitors, Mode=OneWay}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <Canvas
+                                Width="{Binding ViewModel.TopologyWidth, ElementName=PageRoot}"
+                                Height="{Binding ViewModel.TopologyHeight, ElementName=PageRoot}" />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemContainerStyle>
+                        <Style TargetType="ContentPresenter">
+                            <Setter Property="Canvas.Left" Value="{Binding TopologyLeft}" />
+                            <Setter Property="Canvas.Top" Value="{Binding TopologyTop}" />
+                        </Style>
+                    </ItemsControl.ItemContainerStyle>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:MonitorRowViewModel">
+                            <Border
+                                Canvas.Left="{x:Bind TopologyLeft}"
+                                Canvas.Top="{x:Bind TopologyTop}"
+                                Width="{x:Bind TopologyWidth}"
+                                Height="{x:Bind TopologyHeight}"
+                                CornerRadius="{ThemeResource ControlCornerRadius}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="{x:Bind TopologyBorderThickness, Mode=OneWay}"
+                                Background="{ThemeResource SystemControlBackgroundAccentBrush}"
+                                Opacity="{x:Bind TopologyOpacity, Mode=OneWay}">
+                                <Grid Padding="6" RowSpacing="2">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="*" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <TextBlock
+                                        HorizontalAlignment="Center"
+                                        VerticalAlignment="Center"
+                                        Text="{x:Bind Session.Monitor.Identity.DisplayIndex, Mode=OneWay}"
+                                        Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                    <TextBlock
+                                        Grid.Row="1"
+                                        HorizontalAlignment="Center"
+                                        Text="{x:Bind Resolution}"
+                                        Style="{StaticResource CaptionTextBlockStyle}" />
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+        </Border>
+
+        <Grid Grid.Row="2" ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="360" />
+            </Grid.ColumnDefinitions>
+
+            <ScrollViewer
+                VerticalScrollBarVisibility="Auto"
+                VerticalScrollMode="Auto">
+                <StackPanel Spacing="10">
+                <ListView
+                    AutomationProperties.AutomationId="MonitorList"
+                    ItemsSource="{x:Bind ViewModel.Monitors, Mode=OneWay}"
+                    SelectedItem="{x:Bind ViewModel.SelectedMonitor, Mode=TwoWay}"
+                    SelectionMode="Single">
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="vm:MonitorRowViewModel">
+                            <Grid
+                                Padding="12"
+                                ColumnSpacing="12"
+                                AutomationProperties.Name="{x:Bind DisplayName}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="112" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <Border
+                                    Width="112"
+                                    Height="64"
+                                    CornerRadius="{ThemeResource ControlCornerRadius}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1"
+                                    Background="{x:Bind SourcePreviewBrush}">
+                                    <Grid>
+                                        <Border
+                                            Background="{x:Bind SourcePreviewImageBrush, Mode=OneWay}"
+                                            Visibility="{x:Bind SourcePreviewImageVisibility, Mode=OneWay}" />
+                                        <TextBlock
+                                            HorizontalAlignment="Center"
+                                            VerticalAlignment="Center"
+                                            Text="{x:Bind SourceSummary}"
+                                            TextAlignment="Center"
+                                            TextWrapping="Wrap"
+                                            Visibility="{x:Bind SourcePreviewTextVisibility, Mode=OneWay}" />
+                                    </Grid>
+                                </Border>
+
+                                <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+                                    <TextBlock Text="{x:Bind DisplayName}" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind DisplayName}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                    <TextBlock Text="{x:Bind Resolution}" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind Resolution}" Style="{StaticResource CaptionTextBlockStyle}" />
+                                    <TextBlock Text="{x:Bind PlacementSummary}" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind PlacementSummary}" Style="{StaticResource CaptionTextBlockStyle}" />
+                                    <TextBlock Text="{x:Bind StatusSummary}" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind StatusSummary}" Style="{StaticResource CaptionTextBlockStyle}" />
+                                </StackPanel>
+
+                                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                    <Button
+                                        Command="{Binding ViewModel.SelectMonitorCommand, ElementName=PageRoot}"
+                                        CommandParameter="{Binding}"
+                                        AutomationProperties.AutomationId="MonitorEditButton"
+                                        AutomationProperties.Name="{Binding ViewModel.Text.Edit, ElementName=PageRoot}"
+                                        Content="{Binding ViewModel.Text.Edit, ElementName=PageRoot}"
+                                        ToolTipService.ToolTip="{Binding ViewModel.Text.Edit, ElementName=PageRoot}" />
+                                    <Button
+                                        Command="{Binding ViewModel.ApplyMonitorCommand, ElementName=PageRoot}"
+                                        CommandParameter="{Binding}"
+                                        AutomationProperties.AutomationId="MonitorApplyButton"
+                                        AutomationProperties.Name="{Binding ViewModel.Text.Apply, ElementName=PageRoot}"
+                                        Content="{Binding ViewModel.Text.Apply, ElementName=PageRoot}"
+                                        IsEnabled="{Binding ViewModel.CanStartApply, ElementName=PageRoot}"
+                                        ToolTipService.ToolTip="{Binding ViewModel.Text.Apply, ElementName=PageRoot}" />
+                                </StackPanel>
+                            </Grid>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+
+                <Border
+                    Padding="12"
+                    CornerRadius="{ThemeResource OverlayCornerRadius}"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1"
+                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                    Visibility="{x:Bind ViewModel.MissingMonitorsVisibility, Mode=OneWay}">
+                    <StackPanel Spacing="8">
+                        <StackPanel>
+                            <TextBlock Text="{x:Bind ViewModel.Text.MissingMonitors, Mode=OneWay}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                            <TextBlock Text="{x:Bind ViewModel.Text.MissingMonitorsSubtitle, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" />
+                        </StackPanel>
+                        <ItemsControl ItemsSource="{x:Bind ViewModel.MissingMonitors, Mode=OneWay}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:MissingMonitorRowViewModel">
+                                    <Grid
+                                        Padding="0,6"
+                                        ColumnSpacing="12"
+                                        AutomationProperties.Name="{x:Bind DisplayName}">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="48" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border
+                                            Width="48"
+                                            Height="30"
+                                            CornerRadius="{ThemeResource ControlCornerRadius}"
+                                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                            BorderThickness="1"
+                                            Background="{x:Bind SourcePreviewBrush}">
+                                            <Grid>
+                                                <Border
+                                                    Background="{x:Bind SourcePreviewImageBrush, Mode=OneWay}"
+                                                    Visibility="{x:Bind SourcePreviewImageVisibility, Mode=OneWay}" />
+                                                <TextBlock
+                                                    HorizontalAlignment="Center"
+                                                    VerticalAlignment="Center"
+                                                    FontSize="10"
+                                                    Text="{x:Bind SourceSummary}"
+                                                    TextAlignment="Center"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    Visibility="{x:Bind SourcePreviewTextVisibility, Mode=OneWay}" />
+                                            </Grid>
+                                        </Border>
+                                        <StackPanel Grid.Column="1" Spacing="2">
+                                            <TextBlock Text="{x:Bind DisplayName}" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind DisplayName}" Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                            <TextBlock Text="{x:Bind Resolution}" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind Resolution}" Style="{StaticResource CaptionTextBlockStyle}" />
+                                            <TextBlock Text="{x:Bind Bounds}" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind Bounds}" Style="{StaticResource CaptionTextBlockStyle}" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" Spacing="2" HorizontalAlignment="Right">
+                                            <TextBlock MaxWidth="220" Text="{x:Bind SourceSummary}" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind SourceSummary}" Style="{StaticResource CaptionTextBlockStyle}" />
+                                            <TextBlock MaxWidth="220" Text="{x:Bind PlacementSummary}" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind PlacementSummary}" Style="{StaticResource CaptionTextBlockStyle}" />
+                                        </StackPanel>
+                                        <Button
+                                            Grid.Column="3"
+                                            Command="{Binding ViewModel.ReassignMissingMonitorCommand, ElementName=PageRoot}"
+                                            CommandParameter="{Binding}"
+                                            AutomationProperties.AutomationId="MissingMonitorReassignButton"
+                                            AutomationProperties.Name="{Binding ViewModel.Text.Reassign, ElementName=PageRoot}"
+                                            Content="{Binding ViewModel.Text.Reassign, ElementName=PageRoot}"
+                                            IsEnabled="{Binding ViewModel.CanEditMonitorAssignment, ElementName=PageRoot}"
+                                            ToolTipService.ToolTip="{Binding ViewModel.Text.Reassign, ElementName=PageRoot}" />
+                                        <Button
+                                            Grid.Column="4"
+                                            Command="{Binding ViewModel.ForgetMissingMonitorCommand, ElementName=PageRoot}"
+                                            CommandParameter="{Binding}"
+                                            AutomationProperties.AutomationId="MissingMonitorForgetButton"
+                                            AutomationProperties.Name="{Binding ViewModel.Text.Forget, ElementName=PageRoot}"
+                                            Content="{Binding ViewModel.Text.Forget, ElementName=PageRoot}"
+                                            IsEnabled="{Binding ViewModel.CanEditMonitorAssignment, ElementName=PageRoot}"
+                                            ToolTipService.ToolTip="{Binding ViewModel.Text.Forget, ElementName=PageRoot}" />
+                                    </Grid>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </Border>
+                </StackPanel>
+            </ScrollViewer>
+
+            <TextBlock
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Text="{x:Bind ViewModel.Text.NoMonitorsDetected, Mode=OneWay}"
+                Style="{StaticResource BodyTextBlockStyle}"
+                Visibility="{x:Bind ViewModel.NoMonitorsVisibility, Mode=OneWay}" />
+
+            <Border
+                Grid.Column="1"
+                Padding="16"
+                CornerRadius="{ThemeResource OverlayCornerRadius}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                Visibility="{x:Bind ViewModel.EditPanelVisibility, Mode=OneWay}">
+                <ScrollViewer VerticalScrollBarVisibility="Auto" VerticalScrollMode="Auto">
+                    <StackPanel Spacing="12">
+                    <TextBlock Text="{x:Bind ViewModel.Text.EditMonitor, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" />
+                    <TextBlock
+                        Text="{x:Bind ViewModel.SelectedMonitorDisplayName, Mode=OneWay}"
+                        TextTrimming="CharacterEllipsis"
+                        ToolTipService.ToolTip="{x:Bind ViewModel.SelectedMonitorDisplayName, Mode=OneWay}"
+                        Style="{StaticResource BodyStrongTextBlockStyle}" />
+
+                    <ComboBox
+                        AutomationProperties.AutomationId="SourceComboBox"
+                        Header="{x:Bind ViewModel.Text.Source, Mode=OneWay}"
+                        DisplayMemberPath="DisplayName"
+                        IsEnabled="{x:Bind ViewModel.CanEditMonitorAssignment, Mode=OneWay}"
+                        ItemsSource="{x:Bind ViewModel.SourceOptions, Mode=OneWay}"
+                        SelectedItem="{x:Bind ViewModel.SelectedSourceOption, Mode=TwoWay}"
+                        TabIndex="0" />
+
+                    <TextBox
+                        AutomationProperties.AutomationId="ImagePathTextBox"
+                        Header="{x:Bind ViewModel.Text.ImagePath, Mode=OneWay}"
+                        IsEnabled="{x:Bind ViewModel.CanEditMonitorAssignment, Mode=OneWay}"
+                        Text="{x:Bind ViewModel.EditImagePath, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        Visibility="{x:Bind ViewModel.ImageSourceEditorVisibility, Mode=OneWay}"
+                        TabIndex="1" />
+
+                    <InfoBar
+                        IsOpen="True"
+                        Severity="Warning"
+                        Message="{x:Bind ViewModel.SelectedSourceWarning, Mode=OneWay}"
+                        Visibility="{x:Bind ViewModel.SelectedSourceWarningVisibility, Mode=OneWay}" />
+
+                    <Button
+                        Command="{x:Bind ViewModel.ChooseImageCommand}"
+                        AutomationProperties.AutomationId="ChooseImageButton"
+                        AutomationProperties.Name="{x:Bind ViewModel.Text.ChooseImage, Mode=OneWay}"
+                        Content="{x:Bind ViewModel.Text.ChooseImage, Mode=OneWay}"
+                        IsEnabled="{x:Bind ViewModel.CanUseShellCommands, Mode=OneWay}"
+                        ToolTipService.ToolTip="{x:Bind ViewModel.Text.ChooseImage, Mode=OneWay}"
+                        Visibility="{x:Bind ViewModel.ImageSourceEditorVisibility, Mode=OneWay}"
+                        TabIndex="2" />
+
+                    <TextBox
+                        AutomationProperties.AutomationId="ColorHexTextBox"
+                        Header="{x:Bind ViewModel.Text.Color, Mode=OneWay}"
+                        IsEnabled="{x:Bind ViewModel.CanEditMonitorAssignment, Mode=OneWay}"
+                        Text="{x:Bind ViewModel.EditColorHex, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        Visibility="{x:Bind ViewModel.ColorSourceEditorVisibility, Mode=OneWay}"
+                        TabIndex="3" />
+
+                    <ColorPicker
+                        AutomationProperties.AutomationId="ColorPicker"
+                        Color="{x:Bind ViewModel.EditColor, Mode=TwoWay}"
+                        IsEnabled="{x:Bind ViewModel.CanEditMonitorAssignment, Mode=OneWay}"
+                        Visibility="{x:Bind ViewModel.ColorSourceEditorVisibility, Mode=OneWay}"
+                        TabIndex="4" />
+
+                    <ItemsControl
+                        ItemsSource="{x:Bind ViewModel.ColorSwatches, Mode=OneWay}"
+                        Visibility="{x:Bind ViewModel.ColorSourceEditorVisibility, Mode=OneWay}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <ItemsWrapGrid Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="vm:ColorSwatchOption">
+                                <Button
+                                    Width="28"
+                                    Height="28"
+                                    Margin="0,0,6,6"
+                                    Padding="0"
+                                    AutomationProperties.AutomationId="ColorSwatchButton"
+                                    Background="{x:Bind Brush, Mode=OneTime}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    Command="{Binding ViewModel.SelectColorSwatchCommand, ElementName=PageRoot}"
+                                    CommandParameter="{Binding}"
+                                    IsEnabled="{Binding ViewModel.CanEditMonitorAssignment, ElementName=PageRoot}"
+                                    AutomationProperties.Name="{x:Bind Hex, Mode=OneTime}"
+                                    ToolTipService.ToolTip="{x:Bind Hex, Mode=OneTime}" />
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <ComboBox
+                        AutomationProperties.AutomationId="FitComboBox"
+                        Header="{x:Bind ViewModel.Text.Fit, Mode=OneWay}"
+                        DisplayMemberPath="DisplayName"
+                        IsEnabled="{x:Bind ViewModel.CanEditPlacement, Mode=OneWay}"
+                        ItemsSource="{x:Bind ViewModel.FitOptions, Mode=OneWay}"
+                        SelectedItem="{x:Bind ViewModel.SelectedFitOption, Mode=TwoWay}"
+                        TabIndex="5" />
+
+                    <ComboBox
+                        AutomationProperties.AutomationId="AnchorComboBox"
+                        Header="{x:Bind ViewModel.Text.Anchor, Mode=OneWay}"
+                        DisplayMemberPath="DisplayName"
+                        IsEnabled="{x:Bind ViewModel.CanEditPlacement, Mode=OneWay}"
+                        ItemsSource="{x:Bind ViewModel.AnchorOptions, Mode=OneWay}"
+                        SelectedItem="{x:Bind ViewModel.SelectedAnchorOption, Mode=TwoWay}"
+                        TabIndex="6" />
+
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+
+                        <NumberBox
+                            AutomationProperties.AutomationId="OffsetXNumberBox"
+                            Header="{x:Bind ViewModel.Text.PositionX, Mode=OneWay}"
+                            IsEnabled="{x:Bind ViewModel.CanEditPlacement, Mode=OneWay}"
+                            LargeChange="25"
+                            Maximum="100"
+                            Minimum="-100"
+                            SmallChange="5"
+                            SpinButtonPlacementMode="Inline"
+                            TabIndex="7"
+                            ValidationMode="InvalidInputOverwritten"
+                            Value="{x:Bind ViewModel.EditOffsetXPercent, Mode=TwoWay}" />
+
+                        <NumberBox
+                            Grid.Column="1"
+                            AutomationProperties.AutomationId="OffsetYNumberBox"
+                            Header="{x:Bind ViewModel.Text.PositionY, Mode=OneWay}"
+                            IsEnabled="{x:Bind ViewModel.CanEditPlacement, Mode=OneWay}"
+                            LargeChange="25"
+                            Maximum="100"
+                            Minimum="-100"
+                            SmallChange="5"
+                            SpinButtonPlacementMode="Inline"
+                            TabIndex="8"
+                            ValidationMode="InvalidInputOverwritten"
+                            Value="{x:Bind ViewModel.EditOffsetYPercent, Mode=TwoWay}" />
+
+                        <Button
+                            Grid.Column="2"
+                            VerticalAlignment="Bottom"
+                            Command="{x:Bind ViewModel.ResetPositionCommand}"
+                            AutomationProperties.AutomationId="ResetPositionButton"
+                            AutomationProperties.Name="{x:Bind ViewModel.Text.ResetPosition, Mode=OneWay}"
+                            IsEnabled="{x:Bind ViewModel.CanEditPlacement, Mode=OneWay}"
+                            ToolTipService.ToolTip="{x:Bind ViewModel.Text.ResetPosition, Mode=OneWay}"
+                            TabIndex="9">
+                            <FontIcon Glyph="&#xE777;" FontSize="14" />
+                        </Button>
+                    </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </Border>
+        </Grid>
+
+        <Grid Grid.Row="3" ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <InfoBar
+                IsOpen="True"
+                Severity="Informational"
+                Message="{x:Bind ViewModel.StatusText, Mode=OneWay}" />
+
+            <StackPanel
+                Grid.Column="1"
+                HorizontalAlignment="Right"
+                Orientation="Horizontal"
+                Spacing="8"
+                Visibility="{x:Bind ViewModel.ApplyProgressVisibility, Mode=OneWay}">
+                <ProgressRing Width="20" Height="20" IsActive="{x:Bind ViewModel.IsApplying, Mode=OneWay}" />
+                <TextBlock
+                    MaxWidth="360"
+                    VerticalAlignment="Center"
+                    Text="{x:Bind ViewModel.ApplyProgressText, Mode=OneWay}"
+                    TextTrimming="CharacterEllipsis"
+                    ToolTipService.ToolTip="{x:Bind ViewModel.ApplyProgressText, Mode=OneWay}" />
+                <Button
+                    Command="{x:Bind ViewModel.CancelApplyCommand}"
+                    AutomationProperties.AutomationId="CancelApplyButton"
+                    AutomationProperties.Name="{x:Bind ViewModel.Text.CancelApply, Mode=OneWay}"
+                    Content="{x:Bind ViewModel.Text.CancelApply, Mode=OneWay}"
+                    IsEnabled="{x:Bind ViewModel.IsApplying, Mode=OneWay}"
+                    ToolTipService.ToolTip="{x:Bind ViewModel.Text.CancelApply, Mode=OneWay}" />
+            </StackPanel>
+        </Grid>
+
+        <Grid
+            Grid.RowSpan="4"
+            Background="{ThemeResource WallerModalOverlayBrush}"
+            Visibility="{x:Bind ViewModel.SaveAsVisibility, Mode=OneWay}">
+            <Border
+                Width="420"
+                Padding="20"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                CornerRadius="{ThemeResource OverlayCornerRadius}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                Background="{ThemeResource SolidBackgroundFillColorBaseBrush}">
+                <Grid RowSpacing="16">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="{x:Bind ViewModel.Text.SaveAs, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" />
+                            <TextBlock Text="{x:Bind ViewModel.Text.SaveAsPresetSubtitle, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" />
+                        </StackPanel>
+                        <Button
+                            Grid.Column="1"
+                            Command="{x:Bind ViewModel.CloseSaveAsCommand}"
+                            AutomationProperties.AutomationId="CloseSaveAsButton"
+                            AutomationProperties.Name="{x:Bind ViewModel.Text.Close, Mode=OneWay}"
+                            Content="{x:Bind ViewModel.Text.Close, Mode=OneWay}"
+                            ToolTipService.ToolTip="{x:Bind ViewModel.Text.Close, Mode=OneWay}"
+                            TabIndex="2" />
+                    </Grid>
+
+                    <TextBox
+                        x:Name="SaveAsPresetNameTextBox"
+                        Grid.Row="1"
+                        AutomationProperties.AutomationId="SaveAsPresetNameTextBox"
+                        Header="{x:Bind ViewModel.Text.PresetName, Mode=OneWay}"
+                        IsEnabled="{x:Bind ViewModel.CanUseModalActions, Mode=OneWay}"
+                        Text="{x:Bind ViewModel.SaveAsPresetNameDraft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        TabIndex="0" />
+
+                    <Button
+                        Grid.Row="2"
+                        HorizontalAlignment="Right"
+                        Command="{x:Bind ViewModel.ConfirmSaveAsCommand}"
+                        AutomationProperties.AutomationId="ConfirmSaveAsButton"
+                        AutomationProperties.Name="{x:Bind ViewModel.Text.SaveAs, Mode=OneWay}"
+                        Content="{x:Bind ViewModel.Text.SaveAs, Mode=OneWay}"
+                        IsEnabled="{x:Bind ViewModel.CanUseModalActions, Mode=OneWay}"
+                        ToolTipService.ToolTip="{x:Bind ViewModel.Text.SaveAs, Mode=OneWay}"
+                        TabIndex="1" />
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid
+            Grid.RowSpan="4"
+            Background="{ThemeResource WallerModalOverlayBrush}"
+            Visibility="{x:Bind ViewModel.ManagePresetsVisibility, Mode=OneWay}">
+            <Border
+                Width="520"
+                Padding="20"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                CornerRadius="{ThemeResource OverlayCornerRadius}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                Background="{ThemeResource SolidBackgroundFillColorBaseBrush}">
+                <Grid RowSpacing="14">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="220" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="{x:Bind ViewModel.Text.ManagePresets, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" />
+                            <TextBlock Text="{x:Bind ViewModel.Text.ManagePresetsSubtitle, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" />
+                        </StackPanel>
+                        <Button
+                            Grid.Column="1"
+                            Command="{x:Bind ViewModel.CloseManagePresetsCommand}"
+                            AutomationProperties.AutomationId="CloseManagePresetsButton"
+                            AutomationProperties.Name="{x:Bind ViewModel.Text.Close, Mode=OneWay}"
+                            Content="{x:Bind ViewModel.Text.Close, Mode=OneWay}"
+                            ToolTipService.ToolTip="{x:Bind ViewModel.Text.Close, Mode=OneWay}"
+                            TabIndex="5" />
+                    </Grid>
+
+                    <Grid Grid.Row="1">
+                        <ListView
+                            x:Name="ManagePresetList"
+                            AutomationProperties.AutomationId="ManagePresetList"
+                            DisplayMemberPath="Name"
+                            IsEnabled="{x:Bind ViewModel.CanMutateManagedPresets, Mode=OneWay}"
+                            ItemsSource="{x:Bind ViewModel.ManagePresetItems, Mode=OneWay}"
+                            SelectedItem="{x:Bind ViewModel.SelectedManagePreset, Mode=TwoWay}"
+                            SelectionMode="Single"
+                            TabIndex="0" />
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Text="{x:Bind ViewModel.Text.NoPresetsSaved, Mode=OneWay}"
+                            Style="{StaticResource BodyTextBlockStyle}"
+                            Visibility="{x:Bind ViewModel.ManagePresetEmptyVisibility, Mode=OneWay}" />
+                    </Grid>
+
+                    <TextBox
+                        Grid.Row="2"
+                        AutomationProperties.AutomationId="ManagePresetNameTextBox"
+                        Header="{x:Bind ViewModel.Text.PresetName, Mode=OneWay}"
+                        IsEnabled="{x:Bind ViewModel.CanMutateManagedPresets, Mode=OneWay}"
+                        Text="{x:Bind ViewModel.ManagePresetNameDraft, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        TabIndex="1" />
+
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                        <Button
+                            Command="{x:Bind ViewModel.RenameManagedPresetCommand}"
+                            AutomationProperties.AutomationId="RenameManagedPresetButton"
+                            AutomationProperties.Name="{x:Bind ViewModel.Text.Rename, Mode=OneWay}"
+                            Content="{x:Bind ViewModel.Text.Rename, Mode=OneWay}"
+                            IsEnabled="{x:Bind ViewModel.CanMutateManagedPresets, Mode=OneWay}"
+                            ToolTipService.ToolTip="{x:Bind ViewModel.Text.Rename, Mode=OneWay}"
+                            TabIndex="2" />
+                        <Button
+                            Command="{x:Bind ViewModel.DuplicateManagedPresetCommand}"
+                            AutomationProperties.AutomationId="DuplicateManagedPresetButton"
+                            AutomationProperties.Name="{x:Bind ViewModel.Text.Duplicate, Mode=OneWay}"
+                            Content="{x:Bind ViewModel.Text.Duplicate, Mode=OneWay}"
+                            IsEnabled="{x:Bind ViewModel.CanMutateManagedPresets, Mode=OneWay}"
+                            ToolTipService.ToolTip="{x:Bind ViewModel.Text.Duplicate, Mode=OneWay}"
+                            TabIndex="3" />
+                        <Button
+                            Command="{x:Bind ViewModel.RequestDeleteManagedPresetCommand}"
+                            AutomationProperties.AutomationId="RequestDeleteManagedPresetButton"
+                            AutomationProperties.Name="{x:Bind ViewModel.Text.Delete, Mode=OneWay}"
+                            Content="{x:Bind ViewModel.Text.Delete, Mode=OneWay}"
+                            IsEnabled="{x:Bind ViewModel.CanMutateManagedPresets, Mode=OneWay}"
+                            ToolTipService.ToolTip="{x:Bind ViewModel.Text.Delete, Mode=OneWay}"
+                            TabIndex="4" />
+                    </StackPanel>
+
+                    <InfoBar
+                        Grid.Row="4"
+                        IsOpen="True"
+                        Severity="Warning"
+                        Message="{x:Bind ViewModel.DeleteConfirmationMessage, Mode=OneWay}"
+                        Visibility="{x:Bind ViewModel.DeleteConfirmationVisibility, Mode=OneWay}">
+                        <InfoBar.ActionButton>
+                            <Button
+                                x:Name="ConfirmDeletePresetButton"
+                                Command="{x:Bind ViewModel.ConfirmDeleteManagedPresetCommand}"
+                                AutomationProperties.AutomationId="ConfirmDeleteManagedPresetButton"
+                                AutomationProperties.Name="{x:Bind ViewModel.Text.ConfirmDelete, Mode=OneWay}"
+                                Content="{x:Bind ViewModel.Text.ConfirmDelete, Mode=OneWay}"
+                                IsEnabled="{x:Bind ViewModel.CanUseModalActions, Mode=OneWay}"
+                                ToolTipService.ToolTip="{x:Bind ViewModel.Text.ConfirmDelete, Mode=OneWay}" />
+                        </InfoBar.ActionButton>
+                    </InfoBar>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <Grid
+            Grid.RowSpan="4"
+            Background="{ThemeResource WallerModalOverlayBrush}"
+            Visibility="{x:Bind ViewModel.SettingsVisibility, Mode=OneWay}">
+            <Border
+                Width="440"
+                Padding="20"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                CornerRadius="{ThemeResource OverlayCornerRadius}"
+                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                BorderThickness="1"
+                Background="{ThemeResource SolidBackgroundFillColorBaseBrush}">
+                <Grid RowSpacing="14">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                        <RowDefinition Height="Auto" />
+                    </Grid.RowDefinitions>
+
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel>
+                            <TextBlock Text="{x:Bind ViewModel.Text.Settings, Mode=OneWay}" Style="{StaticResource SubtitleTextBlockStyle}" />
+                            <TextBlock Text="{x:Bind ViewModel.Text.SettingsSubtitle, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" />
+                        </StackPanel>
+                        <Button
+                            Grid.Column="1"
+                            Command="{x:Bind ViewModel.CloseSettingsCommand}"
+                            AutomationProperties.AutomationId="CloseSettingsButton"
+                            AutomationProperties.Name="{x:Bind ViewModel.Text.Close, Mode=OneWay}"
+                            Content="{x:Bind ViewModel.Text.Close, Mode=OneWay}"
+                            ToolTipService.ToolTip="{x:Bind ViewModel.Text.Close, Mode=OneWay}"
+                            TabIndex="4" />
+                    </Grid>
+
+                    <ComboBox
+                        x:Name="SettingsThemeComboBox"
+                        Grid.Row="1"
+                        AutomationProperties.AutomationId="SettingsThemeComboBox"
+                        Header="{x:Bind ViewModel.Text.Theme, Mode=OneWay}"
+                        DisplayMemberPath="DisplayName"
+                        ItemsSource="{x:Bind ViewModel.ThemeOptions, Mode=OneWay}"
+                        SelectedItem="{x:Bind ViewModel.SelectedThemeOption, Mode=TwoWay}"
+                        TabIndex="0" />
+
+                    <ComboBox
+                        Grid.Row="2"
+                        AutomationProperties.AutomationId="SettingsLanguageComboBox"
+                        Header="{x:Bind ViewModel.Text.Language, Mode=OneWay}"
+                        DisplayMemberPath="DisplayName"
+                        ItemsSource="{x:Bind ViewModel.LanguageOptions, Mode=OneWay}"
+                        SelectedItem="{x:Bind ViewModel.SelectedLanguageOption, Mode=TwoWay}"
+                        TabIndex="1" />
+
+                    <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                        <Button
+                            Command="{x:Bind ViewModel.ClearRenderedCacheCommand}"
+                            AutomationProperties.AutomationId="ClearRenderedCacheButton"
+                            AutomationProperties.Name="{x:Bind ViewModel.Text.ClearCache, Mode=OneWay}"
+                            Content="{x:Bind ViewModel.Text.ClearCache, Mode=OneWay}"
+                            IsEnabled="{x:Bind ViewModel.CanUseModalActions, Mode=OneWay}"
+                            ToolTipService.ToolTip="{x:Bind ViewModel.Text.ClearCache, Mode=OneWay}"
+                            TabIndex="2" />
+                        <Button
+                            Command="{x:Bind ViewModel.SaveSettingsCommand}"
+                            AutomationProperties.AutomationId="SaveSettingsButton"
+                            AutomationProperties.Name="{x:Bind ViewModel.Text.SaveSettings, Mode=OneWay}"
+                            Content="{x:Bind ViewModel.Text.SaveSettings, Mode=OneWay}"
+                            IsEnabled="{x:Bind ViewModel.CanUseModalActions, Mode=OneWay}"
+                            ToolTipService.ToolTip="{x:Bind ViewModel.Text.SaveSettings, Mode=OneWay}"
+                            TabIndex="3" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Page>

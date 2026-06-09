@@ -17,6 +17,11 @@
 ## Supporting references
 
 - [`prototypes/winui/MIGRATION_REPORT.md`](./prototypes/winui/MIGRATION_REPORT.md) - WinUI migration effort, risks, and phased plan
+- [`prototypes/winui/PRODUCT_DECISIONS.md`](./prototypes/winui/PRODUCT_DECISIONS.md) - Waller Native product language, MVP scope, and UX decisions
+- [`prototypes/winui/NATIVE_ARCHITECTURE.md`](./prototypes/winui/NATIVE_ARCHITECTURE.md) - Waller Native target solution, modules, flows, and implementation slices
+- [`architecture/winui-prefactor-review-2026-06-04.md`](./architecture/winui-prefactor-review-2026-06-04.md) - WinUI prefactor findings and execution order
+- [`../native/README.md`](../native/README.md) - Waller Native solution, build/run commands, and current status
+- [`../native/docs/README.md`](../native/docs/README.md) - Native architecture docs, implementation plan, interop notes, testing, and ADRs
 
 - [`../README.md`](../README.md) — Project entry point
 - [`../CONTRIBUTING.md`](../CONTRIBUTING.md) — Contribution workflow and PR checklist

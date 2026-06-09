@@ -2,8 +2,8 @@ import { useCallback, useEffect, useMemo, useSyncExternalStore } from 'react';
 import {
   createWallpaperSessionStore,
   type WallpaperSessionSnapshot,
-  type WallpaperSessionRuntime,
 } from '../lib/wallpaperSession';
+import type { WallpaperSessionRuntime } from '../lib/wallpaperRuntime';
 import type { FitMode, WallpaperSourceType } from '../lib/types';
 
 interface UseWallpaperSessionOptions {
