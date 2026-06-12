@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
+using System.ComponentModel;
 using Waller.Native.App.ViewModels;
 using Windows.System;
 
@@ -19,32 +20,7 @@ public sealed partial class MainPage : Page
     public MainPage()
     {
         InitializeComponent();
-        ViewModel.PropertyChanged += (_, args) =>
-        {
-            if (args.PropertyName == nameof(ViewModel.ManagePresetsVisibility)
-                && ViewModel.IsManagePresetsOpen)
-            {
-                FocusWhenReady(ManagePresetList);
-            }
-
-            if (args.PropertyName == nameof(ViewModel.SaveAsVisibility)
-                && ViewModel.IsSaveAsOpen)
-            {
-                FocusWhenReady(SaveAsPresetNameTextBox);
-            }
-
-            if (args.PropertyName == nameof(ViewModel.SettingsVisibility)
-                && ViewModel.IsSettingsOpen)
-            {
-                FocusWhenReady(SettingsThemeComboBox);
-            }
-
-            if (args.PropertyName == nameof(ViewModel.DeleteConfirmationVisibility)
-                && ViewModel.IsDeleteConfirmationOpen)
-            {
-                FocusWhenReady(ConfirmDeletePresetButton);
-            }
-        };
+        ViewModel.PropertyChanged += OnViewModelPropertyChanged;
         KeyDown += OnKeyDown;
         Loaded += OnLoaded;
     }
@@ -72,11 +48,27 @@ public sealed partial class MainPage : Page
         args.Handled = true;
     }
 
-    private void FocusWhenReady(Control control)
+    private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs args)
     {
-        DispatcherQueue.TryEnqueue(() =>
+        switch (args.PropertyName)
         {
-            control.Focus(global::Microsoft.UI.Xaml.FocusState.Programmatic);
-        });
+            case nameof(ViewModel.ManagePresetsVisibility) when ViewModel.IsManagePresetsOpen:
+                FocusWhenReady(ManagePresetsModal.FocusPresetList);
+                break;
+            case nameof(ViewModel.SaveAsVisibility) when ViewModel.IsSaveAsOpen:
+                FocusWhenReady(SaveAsModal.FocusPresetName);
+                break;
+            case nameof(ViewModel.SettingsVisibility) when ViewModel.IsSettingsOpen:
+                FocusWhenReady(SettingsModal.FocusTheme);
+                break;
+            case nameof(ViewModel.DeleteConfirmationVisibility) when ViewModel.IsDeleteConfirmationOpen:
+                FocusWhenReady(ManagePresetsModal.FocusConfirmDelete);
+                break;
+        }
+    }
+
+    private void FocusWhenReady(Action focusAction)
+    {
+        DispatcherQueue.TryEnqueue(() => focusAction());
     }
 }

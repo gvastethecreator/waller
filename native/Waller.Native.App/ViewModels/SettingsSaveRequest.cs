@@ -2,8 +2,15 @@ using Waller.Native.Core.Settings;
 
 namespace Waller.Native.App.ViewModels;
 
-internal sealed class SettingsSaveRequest(SettingsPreferenceDraft draft)
+internal sealed class SettingsSaveRequest
 {
+    private readonly SettingsPreferenceDraft draft;
+
+    private SettingsSaveRequest(SettingsPreferenceDraft draft)
+    {
+        this.draft = draft ?? throw new ArgumentNullException(nameof(draft));
+    }
+
     public static SettingsSaveRequest FromSelection(
         AppThemePreference selectedTheme,
         string selectedLanguage,

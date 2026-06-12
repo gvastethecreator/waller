@@ -1,10 +1,23 @@
 using System.Security.Cryptography;
 using System.Text;
+using Waller.Native.Core.Storage;
 
 namespace Waller.Native.Core.Rendering;
 
-public sealed record RenderedCacheClearResult(int Deleted, int Failed)
+public sealed record RenderedCacheClearResult
 {
+    public RenderedCacheClearResult(int Deleted, int Failed)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(Deleted);
+        ArgumentOutOfRangeException.ThrowIfNegative(Failed);
+        this.Deleted = Deleted;
+        this.Failed = Failed;
+    }
+
+    public int Deleted { get; }
+
+    public int Failed { get; }
+
     public static RenderedCacheClearResult Empty { get; } = new(0, 0);
 
     public static RenderedCacheClearResult Failure() => new(0, 1);
@@ -14,7 +27,9 @@ public sealed record RenderedCacheClearResult(int Deleted, int Failed)
 
 public sealed class RenderedWallpaperStore(string rootDirectory)
 {
-    public string RenderedDirectory { get; } = Path.Combine(rootDirectory, "rendered");
+    public string RenderedDirectory { get; } = Path.Combine(
+        LocalDataRootDirectory.RequireFullyQualified(rootDirectory),
+        "rendered");
 
     public string CreatePath(string monitorKey)
     {
@@ -73,6 +88,7 @@ public sealed class RenderedWallpaperStore(string rootDirectory)
     }
 
     private void EnsureRenderedDirectory() => Directory.CreateDirectory(RenderedDirectory);
+
 }
 
 internal static class RenderedWallpaperFileNames

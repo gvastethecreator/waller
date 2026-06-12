@@ -55,8 +55,9 @@ Implemented now:
 - Preset dropdown backed by local JSON.
 - Save / Save as for local Presets.
 - Manage Presets modal with rename, duplicate, and delete confirmation.
-- Preset save/load/manage command flow lives in
-  `MainPageViewModel.Presets.cs`, keeping Preset orchestration grouped.
+- Preset save/load/selection command flow lives in focused
+  `MainPageViewModel.Presets.*.cs` partials, while Manage Presets modal flow
+  lives in focused `MainPageViewModel.PresetManagement.*.cs` partials.
 - Delete confirmation freezes Manage Presets mutation controls so the selected
   target cannot change behind Confirm delete.
 - Delete confirmation captures the target Preset and names it in the warning.
@@ -79,8 +80,9 @@ Implemented now:
   view-model helper.
 - Editor/disconnected-monitor status text projection is isolated in a small
   view-model helper.
-- Editor/source/placement/disconnected-monitor command flow lives in
-  `MainPageViewModel.Editor.cs`, keeping editor-only orchestration grouped.
+- Editor source, placement, selection, assignment, option refresh, and
+  disconnected-monitor command flow lives in focused
+  `MainPageViewModel.Editor.*.cs` partials.
 - Shell/session/settings/cache status text projection is isolated in a small
   view-model helper.
 - Apply Core preflight skips missing image sources for monitor/all commands,
@@ -88,6 +90,18 @@ Implemented now:
   ready monitors through explicit ready/skipped monitor-key sets.
 - Apply target selection is centralized in Core so all/monitor/ready/filtered
   apply paths share monitor-key handling.
+- Apply all with no current monitors is covered in Core and returns an empty
+  result without rendering or touching Windows.
+- Apply ready-source paths short-circuit when preflight finds no ready monitors,
+  returning skipped/no-op results without progress events, rendering, or Windows
+  apply calls.
+- Apply no-op/skipped-only result construction lives on `ApplySessionResult`,
+  so Core callers share the same zero-count outcome contract.
+- Apply result counts are validated as non-negative in Core, preventing invalid
+  succeeded/failed/skipped totals from reaching UI copy, skipped-count cloning,
+  or cancellation state.
+- Apply progress counts are validated in Core: completed/total cannot be
+  negative, and completed cannot exceed total.
 - Apply service keeps per-monitor render/apply failure mapping in a focused
   internal step, leaving the main apply loop to coordinate progress and cancel.
 - Apply result/progress contracts live in focused Core files instead of inside
@@ -97,6 +111,11 @@ Implemented now:
 - Lightweight English/Spanish UI text binding.
 - English/Spanish copy is isolated in `LocalizedText.Catalog.cs`, while
   formatting/domain projection stays in `LocalizedText.cs`.
+- Apply-specific localized result/progress/error text lives in
+  `LocalizedText.Apply.cs`.
+- Editor, monitor-row, and shell localized projections live in
+  `LocalizedText.Editor.cs`, `LocalizedText.Monitor.cs`, and
+  `LocalizedText.Shell.cs`.
 - Localized saved/unsaved and missing-source row labels.
 - Localized status/progress text for main Preset, Settings, and Apply flows.
 - Localized formatted status text uses the selected app language culture, not
@@ -106,11 +125,23 @@ Implemented now:
 - Shell initialization, current-session refresh, row/session refresh, modal
   close dispatch, and notification helpers live in
   `MainPageViewModel.Shell.cs`.
-- Source-generated property-change hooks live in
-  `MainPageViewModel.Changes.cs`, keeping the main partial focused on state and
-  derived properties.
-- Manage Presets modal commands live in
-  `MainPageViewModel.PresetManagement.cs`, separate from save/load Preset flow.
+- Main-page derived UI projections live in focused
+  `MainPageViewModel.Surface.*.cs` partials for editor, modals, monitor
+  workspace, Presets, Settings, and shell.
+- Main-page observable collections and `[ObservableProperty]` state live in
+  focused `MainPageViewModel.State.*.cs` partials for Apply, editor, modals,
+  monitor workspace, Presets, and Settings.
+- Source-generated property-change hooks live in focused
+  `MainPageViewModel.Changes.*.cs` partials for Apply, editor, modals, Presets,
+  and Settings.
+- Editor source picking/color commands live in
+  `MainPageViewModel.Editor.Source.cs`; placement reset/offset helpers,
+  monitor selection/hydration, assignment writes, option selection, and
+  disconnected-monitor edits live in focused `MainPageViewModel.Editor.*.cs`
+  partials.
+- Manage Presets modal commands live in focused
+  `MainPageViewModel.PresetManagement.*.cs` partials, separate from save/load
+  Preset flow.
 - First empty-monitor state and icon-only Settings tooltip/accessibility label.
 - Disconnected monitors section for Preset assignments that do not match
   current hardware.
@@ -121,6 +152,30 @@ Implemented now:
   monitor, with normalized placement and case-insensitive monitor-key handling.
 - Scrollable monitor/work editor columns so growing content stays reachable.
 - Accessible names and tooltips on primary shell commands.
+- Explicit localized accessibility names on interactive inputs, pickers, lists,
+  and command controls.
+- Shared `Controls/IconText.xaml` button content plus XAML resources for action
+  icon sizing and icon/text spacing, so native button treatment stays
+  consistent.
+- Shared `Controls/SourcePreview.xaml` thumbnail rendering for current and
+  disconnected monitor rows.
+- Shared `Controls/MonitorRow.xaml` visual/action row for current monitors.
+- Shared `Controls/MissingMonitorRow.xaml` visual/action row for disconnected
+  monitors.
+- Shared `Controls/TopologyStrip.xaml` monitor topology strip surface.
+- Shared `Controls/MonitorWorkspace.xaml` monitor list, disconnected list,
+  empty state, and edit-panel composition.
+- Shared `Controls/ShellHeader.xaml` top header/toolbar surface.
+- Shared `Controls/SaveAsModal.xaml` Save As modal surface.
+- Shared `Controls/ManagePresetsModal.xaml` Manage Presets modal surface.
+- Shared `Controls/SettingsModal.xaml` Settings modal surface.
+- Shared `Controls/EditPanel.xaml` selected-monitor source/placement editor.
+- Shared `Controls/StatusFooter.xaml` status/progress/cancel footer surface.
+- Topology tiles and footer status/progress surfaces expose screen-reader
+  names/live text, with XAML lint coverage against unnamed topology/status
+  surfaces.
+- InfoBar status and warning surfaces expose screen-reader names and live
+  settings, with XAML lint coverage against silent InfoBar regressions.
 - Initial tab order for edit panel, Manage Presets modal, and Settings modal.
 - Initial focus moves into Manage Presets and Settings when those modals open.
 - Topology strip scales monitors from real bounds instead of showing equal
@@ -130,18 +185,31 @@ Implemented now:
 - Current and disconnected monitor rows share source-summary projection.
 - Disconnected monitor rows also show compact source previews, using the same
   preview helpers as current monitor rows.
+- Source previews expose accessible names from their source summaries, with
+  XAML lint coverage so thumbnail meaning is not visual-only.
 - Current and disconnected monitor row refresh notifications share grouped
   property lists, keeping future row preview/status updates consistent.
 - User-facing validation/fallback errors avoid raw exception text for common
   edit and monitor-detection paths.
 - Apply failures flow through stable Core error codes before localization, so
   row status does not depend on raw exception text.
+- Core/App guard blocks new raw `Exception.Message` usage and interpolated
+  `ApplyResult.Failure` messages in production code; failures must map to
+  stable codes or localized presenters.
+- MVP scope guard blocks image editing, Identify, logs, import/export, plugin
+  wallpapers, tray behavior, and scheduled wallpaper feature hooks from App/Core
+  until the core MVP is proven.
 - Settings dropdowns show localized labels for theme and language while
   preserving stored values.
 - Settings preference writes preserve window placement while updating theme,
   language, and last selected Preset.
 - Edit panel dropdowns show localized source, fit, and anchor labels while
   preserving Core enum values.
+- Placement summary copy for monitor rows and disconnected rows uses the same
+  localized fit/anchor/offset catalog strings as the edit panel.
+- Localized text catalogs are split by language so English/Spanish copy can
+  evolve without bloating the selector file. Catalog values use named arguments
+  so constructor-order changes stay reviewable.
 - Edit panel shows source-specific controls only when relevant.
 - Window size and position persistence.
 - Window placement restore/save tolerates local Settings failures.
@@ -190,6 +258,8 @@ Implemented now:
   labels, stable AutomationIds, modal focus entry, Escape modal close, and
   keyboard accelerators for Save, Save as, Manage Presets, Refresh, Settings,
   and Apply all.
+- Screen-reader names for monitor rows, disconnected rows, topology tiles,
+  footer status/progress, and all interactive controls with automation ids.
 
 Not implemented yet:
 
@@ -294,17 +364,32 @@ Full local verification:
 powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1
 ```
 
-Runs XAML accessibility lint, XAML localization lint, WinUI code guards,
-solution build, tests, and packaged launch smoke. The smoke step includes the
-packaged build. Any non-zero child command exit code fails verification.
-The XAML accessibility lint checks AutomationIds on interactive controls and
-immediate TextBox TwoWay updates, plus basic theme-resource hygiene for
-main-page corner radii and background colors. The XAML localization lint blocks
-new hard-coded visible copy in `MainPage.xaml`, except the `Waller` brand title.
+Runs XAML accessibility lint, XAML localization lint, WinUI code guards, JSON
+code guards, error-text code guards, MVP scope guards, package asset/script
+guards, package diagnostic behavior checks, solution build, tests, and packaged
+launch smoke. The smoke step includes the packaged build. Any non-zero child
+command exit code fails verification.
+The XAML accessibility lint checks AutomationIds and accessibility names on
+interactive controls and immediate TextBox TwoWay updates across the app XAML
+tree, requires button tooltips, requires deterministic `TabIndex` values in
+flow modals, blocks duplicate modal `TabIndex` values, requires InfoBar
+screen-reader names/live settings, requires accessible source-preview names,
+plus basic theme-resource hygiene for corner radii and background colors. The
+XAML localization lint blocks new hard-coded visible copy across app XAML,
+except the `Waller` brand title.
 The WinUI code guard blocks inline async `Loaded` handlers so startup failures
 stay mapped through named page handlers with localized status text. It also
-blocks hard-coded status/progress strings and raw enum fallback text in C#
-view models.
+blocks inline MainPage `PropertyChanged` handlers so modal focus routing stays
+reviewable. It also blocks hard-coded status/progress strings and raw enum
+fallback text in C# view models. It also keeps `MainPageViewModel.cs` and
+`LocalizedText.cs` from
+regaining state/surface/projection responsibilities that now live in focused
+partials, keeps placement fit/anchor/offset copy in the localized catalog
+instead of `PlacementText.cs`, and keeps concrete English/Spanish catalog
+values out of the base selector file. It also blocks unnamed language-catalog
+arguments so new localized strings are tied to explicit record fields.
+Local app-data root construction stays centralized in `WallerAppDataPaths`; the
+WinUI code guard blocks direct `LocalApplicationData` lookups elsewhere.
 
 Without launch smoke:
 
@@ -312,8 +397,9 @@ Without launch smoke:
 powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke
 ```
 
-Runs XAML accessibility lint, XAML localization lint, WinUI code guards,
-solution build, packaged build without launch, and tests.
+Runs XAML accessibility lint, XAML localization lint, WinUI code guards, JSON
+code guards, error-text code guards, MVP scope guards, solution build, packaged
+build without launch, and tests.
 
 Restricted-network/offline version without NuGet audit warnings:
 
@@ -376,6 +462,19 @@ Repeatable packaged launch smoke:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\SmokeLaunch.ps1
 ```
+
+If `winapp` reports package registration conflict `0x80073D19`, the smoke
+script runs current-user and all-users read-only registration diagnostics before
+failing.
+Package registration lookup stays centralized in `scripts\PackageRegistration.ps1`;
+package script guards block raw `Get-AppxPackage` calls elsewhere.
+When `-AllUsers` is requested without elevation, registration diagnostics skip
+current-user lookup to avoid false current-user package reports; run the
+current-user preflight separately without `-AllUsers`.
+All-user cleanup is available through
+`scripts\UninstallDevPackage.ps1 -AllUsers`, and still requires explicit
+`-Uninstall`. If Windows denies all-user inspection, re-run that preflight from
+an elevated terminal.
 
 Release build without signing or launch:
 

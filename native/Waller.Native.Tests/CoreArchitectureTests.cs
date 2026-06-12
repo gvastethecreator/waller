@@ -70,6 +70,104 @@ public sealed class CoreArchitectureTests
     }
 
     [Fact]
+    public void ActiveSessionFactory_RejectsNullMonitorDetector()
+    {
+        IMonitorDetector? monitorDetector = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => new ActiveSessionFactory(monitorDetector!));
+
+        Assert.Equal("monitorDetector", error.ParamName);
+    }
+
+    [Fact]
+    public async Task CurrentSessionLoader_UsesPrimarySessionWhenDetected()
+    {
+        var fallbackMonitor = CreateMonitor("DISPLAY-FALLBACK", 16, 16, WallpaperSource.Empty);
+
+        var result = await CurrentSessionLoader.LoadAsync(
+            new SampleMonitorDetector(),
+            new FixedMonitorDetector([fallbackMonitor]));
+
+        Assert.False(result.UsedFallback);
+        Assert.Equal(3, result.Session.Monitors.Count);
+        Assert.DoesNotContain(result.Session.Monitors, monitor => monitor.Monitor.Identity.MonitorKey == fallbackMonitor.Identity.MonitorKey);
+    }
+
+    [Fact]
+    public async Task CurrentSessionLoader_UsesFallbackWhenPrimaryIsEmpty()
+    {
+        var fallbackMonitor = CreateMonitor("DISPLAY-FALLBACK", 16, 16, WallpaperSource.Empty);
+
+        var result = await CurrentSessionLoader.LoadAsync(
+            new EmptyMonitorDetector(),
+            new FixedMonitorDetector([fallbackMonitor]));
+
+        Assert.True(result.UsedFallback);
+        var monitor = Assert.Single(result.Session.Monitors);
+        Assert.Equal(fallbackMonitor.Identity.MonitorKey, monitor.Monitor.Identity.MonitorKey);
+    }
+
+    [Fact]
+    public async Task CurrentSessionLoader_UsesFallbackWhenPrimaryFails()
+    {
+        var fallbackMonitor = CreateMonitor("DISPLAY-FALLBACK", 16, 16, WallpaperSource.Empty);
+
+        var result = await CurrentSessionLoader.LoadAsync(
+            new ThrowingMonitorDetector(new InvalidOperationException("desktop unavailable")),
+            new FixedMonitorDetector([fallbackMonitor]));
+
+        Assert.True(result.UsedFallback);
+        var monitor = Assert.Single(result.Session.Monitors);
+        Assert.Equal(fallbackMonitor.Identity.MonitorKey, monitor.Monitor.Identity.MonitorKey);
+    }
+
+    [Fact]
+    public async Task CurrentSessionLoader_PropagatesCancellationInsteadOfFallback()
+    {
+        var fallbackMonitor = CreateMonitor("DISPLAY-FALLBACK", 16, 16, WallpaperSource.Empty);
+
+        await Assert.ThrowsAsync<OperationCanceledException>(() => CurrentSessionLoader.LoadAsync(
+            new ThrowingMonitorDetector(new OperationCanceledException()),
+            new FixedMonitorDetector([fallbackMonitor])));
+    }
+
+    [Fact]
+    public async Task CurrentSessionLoader_RejectsNullPrimaryDetector()
+    {
+        IMonitorDetector? primaryMonitorDetector = null;
+
+        var error = await Assert.ThrowsAsync<ArgumentNullException>(() => CurrentSessionLoader.LoadAsync(
+            primaryMonitorDetector!,
+            new EmptyMonitorDetector()));
+
+        Assert.Equal("primaryMonitorDetector", error.ParamName);
+    }
+
+    [Fact]
+    public async Task CurrentSessionLoader_RejectsNullFallbackDetector()
+    {
+        IMonitorDetector? fallbackMonitorDetector = null;
+
+        var error = await Assert.ThrowsAsync<ArgumentNullException>(() => CurrentSessionLoader.LoadAsync(
+            new EmptyMonitorDetector(),
+            fallbackMonitorDetector!));
+
+        Assert.Equal("fallbackMonitorDetector", error.ParamName);
+    }
+
+    [Fact]
+    public void CurrentSessionLoadResult_RejectsNullSession()
+    {
+        ActiveSession? session = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => new CurrentSessionLoadResult(
+            session!,
+            UsedFallback: false));
+
+        Assert.Equal("Session", error.ParamName);
+    }
+
+    [Fact]
     public async Task ActiveSessionEditor_UpdatesDesiredAssignmentWithoutApplying()
     {
         var factory = new ActiveSessionFactory(new SampleMonitorDetector());
@@ -131,11 +229,364 @@ public sealed class CoreArchitectureTests
     }
 
     [Fact]
+    public void ActiveSession_FromMonitorsRejectsNullMonitorList()
+    {
+        IReadOnlyList<MonitorSnapshot>? monitors = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => ActiveSession.FromMonitors(monitors!));
+
+        Assert.Equal("monitors", error.ParamName);
+    }
+
+    [Fact]
+    public void ActiveSession_FromMonitorsRejectsNullMonitorItems()
+    {
+        var error = Assert.Throws<ArgumentException>(() =>
+            ActiveSession.FromMonitors([null!]));
+
+        Assert.Equal("monitors", error.ParamName);
+        Assert.Contains("Active Session monitor snapshot list cannot include null items.", error.Message);
+    }
+
+    [Fact]
+    public void ActiveSession_RejectsNullSessionMonitors()
+    {
+        IReadOnlyList<MonitorSession>? monitors = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => new ActiveSession(
+            monitors!,
+            null,
+            HasUnsavedPresetChanges: false,
+            []));
+
+        Assert.Equal("Monitors", error.ParamName);
+    }
+
+    [Fact]
+    public void ActiveSession_RejectsNullSessionMonitorItems()
+    {
+        var error = Assert.Throws<ArgumentException>(() => new ActiveSession(
+            [null!],
+            null,
+            HasUnsavedPresetChanges: false,
+            []));
+
+        Assert.Equal("Monitors", error.ParamName);
+        Assert.Contains("Active Session monitor list cannot include null items.", error.Message);
+    }
+
+    [Fact]
+    public void ActiveSession_RejectsNullMissingAssignments()
+    {
+        IReadOnlyList<PresetAssignment>? missingAssignments = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => new ActiveSession(
+            [],
+            null,
+            HasUnsavedPresetChanges: false,
+            missingAssignments!));
+
+        Assert.Equal("MissingAssignments", error.ParamName);
+    }
+
+    [Fact]
+    public void ActiveSession_RejectsNullMissingAssignmentItems()
+    {
+        var error = Assert.Throws<ArgumentException>(() => new ActiveSession(
+            [],
+            null,
+            HasUnsavedPresetChanges: false,
+            [null!]));
+
+        Assert.Equal("MissingAssignments", error.ParamName);
+        Assert.Contains("Active Session missing assignment list cannot include null items.", error.Message);
+    }
+
+    [Fact]
+    public void ActiveSession_CopiesSessionCollections()
+    {
+        var monitor = MonitorSession.FromMonitor(CreateMonitor("DISPLAY-1", 16, 16, WallpaperSource.Empty));
+        var missing = new PresetAssignment(
+            new MonitorIdentity("MISSING", "Disconnected", 4, 3840, 2160, 0, 0),
+            WallpaperSource.Empty,
+            WallpaperPlacement.Default);
+        var monitors = new List<MonitorSession> { monitor };
+        var missingAssignments = new List<PresetAssignment> { missing };
+
+        var session = new ActiveSession(
+            monitors,
+            null,
+            HasUnsavedPresetChanges: false,
+            missingAssignments);
+        monitors.Clear();
+        missingAssignments.Clear();
+
+        Assert.Single(session.Monitors);
+        Assert.Single(session.MissingAssignments);
+    }
+
+    [Fact]
+    public async Task ActiveSession_WithExpressionRejectsNullSessionMonitors()
+    {
+        var session = await new ActiveSessionFactory(new SampleMonitorDetector())
+            .CreateFromCurrentWindowsStateAsync();
+        IReadOnlyList<MonitorSession>? monitors = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => session with { Monitors = monitors! });
+
+        Assert.Equal("value", error.ParamName);
+    }
+
+    [Fact]
+    public async Task ActiveSession_WithExpressionRejectsNullSessionMonitorItems()
+    {
+        var session = await new ActiveSessionFactory(new SampleMonitorDetector())
+            .CreateFromCurrentWindowsStateAsync();
+
+        var error = Assert.Throws<ArgumentException>(() => session with { Monitors = [null!] });
+
+        Assert.Equal("value", error.ParamName);
+        Assert.Contains("Active Session monitor list cannot include null items.", error.Message);
+    }
+
+    [Fact]
+    public async Task ActiveSession_WithExpressionRejectsNullMissingAssignments()
+    {
+        var session = await new ActiveSessionFactory(new SampleMonitorDetector())
+            .CreateFromCurrentWindowsStateAsync();
+        IReadOnlyList<PresetAssignment>? missingAssignments = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => session with
+        {
+            MissingAssignments = missingAssignments!,
+        });
+
+        Assert.Equal("value", error.ParamName);
+    }
+
+    [Fact]
+    public async Task ActiveSession_WithExpressionRejectsNullMissingAssignmentItems()
+    {
+        var session = await new ActiveSessionFactory(new SampleMonitorDetector())
+            .CreateFromCurrentWindowsStateAsync();
+
+        var error = Assert.Throws<ArgumentException>(() => session with
+        {
+            MissingAssignments = [null!],
+        });
+
+        Assert.Equal("value", error.ParamName);
+        Assert.Contains("Active Session missing assignment list cannot include null items.", error.Message);
+    }
+
+    [Fact]
+    public async Task ActiveSession_WithSavedPresetRejectsNullPreset()
+    {
+        var session = await new ActiveSessionFactory(new SampleMonitorDetector())
+            .CreateFromCurrentWindowsStateAsync();
+        PresetIdentity? preset = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => session.WithSavedPreset(preset!));
+
+        Assert.Equal("preset", error.ParamName);
+    }
+
+    [Fact]
     public void MonitorKeys_CreateSetUsesCaseInsensitiveComparer()
     {
         var set = MonitorKeys.CreateSet(["DISPLAY-1"]);
 
         Assert.Contains("display-1", set);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void MonitorKeys_CreateSetRejectsBlankSingleMonitorKey(string monitorKey)
+    {
+        var error = Assert.Throws<ArgumentException>(() => MonitorKeys.CreateSet(monitorKey));
+
+        Assert.Equal("monitorKey", error.ParamName);
+    }
+
+    [Fact]
+    public void MonitorKeys_CreateSetRejectsNullMonitorKeyEnumerable()
+    {
+        IEnumerable<string>? monitorKeys = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => MonitorKeys.CreateSet(monitorKeys!));
+
+        Assert.Equal("monitorKeys", error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void MonitorKeys_CreateSetRejectsBlankEnumerableMonitorKey(string monitorKey)
+    {
+        var error = Assert.Throws<ArgumentException>(() => MonitorKeys.CreateSet(["DISPLAY-1", monitorKey]));
+
+        Assert.Equal("monitorKeys", error.ParamName);
+    }
+
+    [Fact]
+    public void MonitorSession_FromMonitorRejectsNullMonitor()
+    {
+        MonitorSnapshot? monitor = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => MonitorSession.FromMonitor(monitor!));
+
+        Assert.Equal("monitor", error.ParamName);
+    }
+
+    [Fact]
+    public void MonitorSession_RejectsNullMonitor()
+    {
+        MonitorSnapshot? monitor = null;
+        var assignment = new PresetAssignment(
+            new MonitorIdentity("DISPLAY-1", "Monitor 1", 1, 16, 16, 0, 0),
+            WallpaperSource.Empty,
+            WallpaperPlacement.Default);
+
+        var error = Assert.Throws<ArgumentNullException>(() => new MonitorSession(
+            monitor!,
+            assignment,
+            assignment,
+            MonitorApplyStatus.Clean,
+            null,
+            HasUnsavedPresetChanges: false));
+
+        Assert.Equal("Monitor", error.ParamName);
+    }
+
+    [Fact]
+    public void MonitorSession_RejectsNullDesiredAssignment()
+    {
+        var monitor = CreateMonitor("DISPLAY-1", 16, 16, WallpaperSource.Empty);
+        PresetAssignment? assignment = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => new MonitorSession(
+            monitor,
+            assignment!,
+            null,
+            MonitorApplyStatus.Clean,
+            null,
+            HasUnsavedPresetChanges: false));
+
+        Assert.Equal("DesiredAssignment", error.ParamName);
+    }
+
+    [Fact]
+    public void MonitorSession_WithExpressionRejectsNullMonitor()
+    {
+        var session = MonitorSession.FromMonitor(CreateMonitor("DISPLAY-1", 16, 16, WallpaperSource.Empty));
+        MonitorSnapshot? monitor = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => session with { Monitor = monitor! });
+
+        Assert.Equal("value", error.ParamName);
+    }
+
+    [Fact]
+    public void MonitorSession_WithExpressionRejectsNullDesiredAssignment()
+    {
+        var session = MonitorSession.FromMonitor(CreateMonitor("DISPLAY-1", 16, 16, WallpaperSource.Empty));
+        PresetAssignment? assignment = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => session with { DesiredAssignment = assignment! });
+
+        Assert.Equal("value", error.ParamName);
+    }
+
+    [Fact]
+    public void MonitorSession_RejectsInvalidApplyStatus()
+    {
+        var monitor = CreateMonitor("DISPLAY-1", 16, 16, WallpaperSource.Empty);
+        var assignment = new PresetAssignment(
+            monitor.Identity,
+            WallpaperSource.Empty,
+            WallpaperPlacement.Default);
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() => new MonitorSession(
+            monitor,
+            assignment,
+            assignment,
+            (MonitorApplyStatus)999,
+            null,
+            HasUnsavedPresetChanges: false));
+
+        Assert.Equal("value", error.ParamName);
+    }
+
+    [Fact]
+    public void MonitorSession_WithExpressionRejectsInvalidApplyStatus()
+    {
+        var session = MonitorSession.FromMonitor(CreateMonitor("DISPLAY-1", 16, 16, WallpaperSource.Empty));
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            session with { ApplyStatus = (MonitorApplyStatus)999 });
+
+        Assert.Equal("value", error.ParamName);
+    }
+
+    [Fact]
+    public void MonitorSession_WithPendingAssignmentRejectsNullAssignment()
+    {
+        var monitor = MonitorSession.FromMonitor(CreateMonitor("DISPLAY-1", 16, 16, WallpaperSource.Empty));
+        PresetAssignment? assignment = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() =>
+            monitor.WithPendingAssignment(assignment!, hasUnsavedPresetChanges: true));
+
+        Assert.Equal("assignment", error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void MonitorSession_WithApplyErrorRejectsBlankError(string errorCode)
+    {
+        var monitor = MonitorSession.FromMonitor(CreateMonitor("DISPLAY-1", 16, 16, WallpaperSource.Empty));
+
+        var error = Assert.Throws<ArgumentException>(() => monitor.WithApplyError(errorCode));
+
+        Assert.Equal("error", error.ParamName);
+    }
+
+    [Fact]
+    public void MonitorSnapshot_RejectsNullIdentity()
+    {
+        MonitorIdentity? identity = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() =>
+            new MonitorSnapshot(identity!, "Monitor 1", WallpaperSource.Empty));
+
+        Assert.Equal("identity", error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void MonitorSnapshot_RejectsBlankDisplayName(string displayName)
+    {
+        var identity = new MonitorIdentity("DISPLAY-1", "Monitor 1", 1, 1920, 1080, 0, 0);
+
+        var error = Assert.Throws<ArgumentException>(() =>
+            new MonitorSnapshot(identity, displayName, WallpaperSource.Empty));
+
+        Assert.Equal("displayName", error.ParamName);
+    }
+
+    [Fact]
+    public void MonitorSnapshot_RejectsNullCurrentSource()
+    {
+        var identity = new MonitorIdentity("DISPLAY-1", "Monitor 1", 1, 1920, 1080, 0, 0);
+        WallpaperSource? source = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() =>
+            new MonitorSnapshot(identity, "Monitor 1", source!));
+
+        Assert.Equal("currentSource", error.ParamName);
     }
 
     [Fact]
@@ -154,6 +605,63 @@ public sealed class CoreArchitectureTests
         Assert.Same(session, next);
         Assert.False(next.HasUnsavedPresetChanges);
         Assert.All(next.Monitors, monitor => Assert.False(monitor.HasUnsavedPresetChanges));
+    }
+
+    [Theory]
+    [InlineData("session")]
+    [InlineData("monitorKey")]
+    [InlineData("source")]
+    [InlineData("placement")]
+    public async Task ActiveSessionEditor_UpdateAssignmentRejectsInvalidInputs(string parameterName)
+    {
+        var editor = new ActiveSessionEditor();
+        var session = await new ActiveSessionFactory(new SampleMonitorDetector())
+            .CreateFromCurrentWindowsStateAsync();
+        ActiveSession? maybeSession = parameterName == "session" ? null : session;
+        var monitorKey = parameterName == "monitorKey" ? " " : session.Monitors[0].Monitor.Identity.MonitorKey;
+        WallpaperSource? source = parameterName == "source" ? null : WallpaperSource.Empty;
+        WallpaperPlacement? placement = parameterName == "placement" ? null : WallpaperPlacement.Default;
+
+        var error = Assert.ThrowsAny<ArgumentException>(() =>
+            editor.UpdateAssignment(maybeSession!, monitorKey, source!, placement!));
+
+        Assert.Equal(parameterName, error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("session")]
+    [InlineData("monitorKey")]
+    public async Task ActiveSessionEditor_RemoveMissingAssignmentRejectsInvalidInputs(string parameterName)
+    {
+        var editor = new ActiveSessionEditor();
+        var session = await new ActiveSessionFactory(new SampleMonitorDetector())
+            .CreateFromCurrentWindowsStateAsync();
+        ActiveSession? maybeSession = parameterName == "session" ? null : session;
+        var monitorKey = parameterName == "monitorKey" ? " " : "MISSING";
+
+        var error = Assert.ThrowsAny<ArgumentException>(() =>
+            editor.RemoveMissingAssignment(maybeSession!, monitorKey));
+
+        Assert.Equal(parameterName, error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("session")]
+    [InlineData("missingMonitorKey")]
+    [InlineData("targetMonitorKey")]
+    public async Task ActiveSessionEditor_ReassignMissingAssignmentRejectsInvalidInputs(string parameterName)
+    {
+        var editor = new ActiveSessionEditor();
+        var session = await new ActiveSessionFactory(new SampleMonitorDetector())
+            .CreateFromCurrentWindowsStateAsync();
+        ActiveSession? maybeSession = parameterName == "session" ? null : session;
+        var missingMonitorKey = parameterName == "missingMonitorKey" ? " " : "MISSING";
+        var targetMonitorKey = parameterName == "targetMonitorKey" ? " " : "DISPLAY-1";
+
+        var error = Assert.ThrowsAny<ArgumentException>(() =>
+            editor.ReassignMissingAssignment(maybeSession!, missingMonitorKey, targetMonitorKey));
+
+        Assert.Equal(parameterName, error.ParamName);
     }
 
     [Fact]
@@ -320,6 +828,43 @@ public sealed class CoreArchitectureTests
     }
 
     [Fact]
+    public void ApplyPreflight_SkipMissingImageSourcesRejectsNullSession()
+    {
+        ActiveSession? session = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() =>
+            ApplyPreflight.SkipMissingImageSources(session!));
+
+        Assert.Equal("session", error.ParamName);
+    }
+
+    [Fact]
+    public void ApplyPreflight_SkipMissingImageSourceRejectsNullSession()
+    {
+        ActiveSession? session = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() =>
+            ApplyPreflight.SkipMissingImageSource(session!, "DISPLAY-1"));
+
+        Assert.Equal("session", error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void ApplyPreflight_SkipMissingImageSourceRejectsBlankMonitorKey(string monitorKey)
+    {
+        var session = ActiveSession.FromMonitors([
+            CreateMonitor("DISPLAY-1", 16, 16, WallpaperSource.FromSolidColor("#112233")),
+        ]);
+
+        var error = Assert.Throws<ArgumentException>(() =>
+            ApplyPreflight.SkipMissingImageSource(session, monitorKey));
+
+        Assert.Equal("monitorKey", error.ParamName);
+    }
+
+    [Fact]
     public void ApplyPreflightResult_FactoriesNormalizeMonitorKeySets()
     {
         var session = ActiveSession.FromMonitors([
@@ -338,6 +883,24 @@ public sealed class CoreArchitectureTests
     }
 
     [Fact]
+    public void ApplyPreflightResult_ConstructorNormalizesAndCopiesMonitorKeySets()
+    {
+        var session = ActiveSession.FromMonitors([
+            CreateMonitor("DISPLAY-1", 16, 16, WallpaperSource.Empty),
+        ]);
+        var readyMonitorKeys = new HashSet<string> { "display-1" };
+        var skippedMonitorKeys = new HashSet<string> { "display-2" };
+
+        var result = new ApplyPreflightResult(session, readyMonitorKeys, skippedMonitorKeys);
+        readyMonitorKeys.Add("DISPLAY-3");
+        skippedMonitorKeys.Clear();
+
+        Assert.True(result.ReadyMonitorKeys.Contains("DISPLAY-1"));
+        Assert.False(result.ReadyMonitorKeys.Contains("DISPLAY-3"));
+        Assert.True(result.SkippedMonitorKeys.Contains("DISPLAY-2"));
+    }
+
+    [Fact]
     public void ApplyPreflightResult_NoTargetsUsesEmptyKeySets()
     {
         var session = ActiveSession.FromMonitors([
@@ -351,6 +914,66 @@ public sealed class CoreArchitectureTests
         Assert.Empty(result.ReadyMonitorKeys);
         Assert.Empty(result.SkippedMonitorKeys);
         Assert.Same(session, result.Session);
+    }
+
+    [Theory]
+    [InlineData("session")]
+    [InlineData("readyMonitorKeys")]
+    [InlineData("skippedMonitorKeys")]
+    public void ApplyPreflightResult_RejectsNullContractValues(string parameterName)
+    {
+        var session = ActiveSession.FromMonitors([
+            CreateMonitor("DISPLAY-1", 16, 16, WallpaperSource.Empty),
+        ]);
+        var readyMonitorKeys = MonitorKeys.CreateSet();
+        var skippedMonitorKeys = MonitorKeys.CreateSet();
+
+        ActiveSession? maybeSession = parameterName == "session" ? null : session;
+        IReadOnlySet<string>? maybeReadyKeys = parameterName == "readyMonitorKeys" ? null : readyMonitorKeys;
+        IReadOnlySet<string>? maybeSkippedKeys = parameterName == "skippedMonitorKeys" ? null : skippedMonitorKeys;
+
+        var error = Assert.Throws<ArgumentNullException>(() =>
+            new ApplyPreflightResult(maybeSession!, maybeReadyKeys!, maybeSkippedKeys!));
+
+        Assert.Equal(parameterName, error.ParamName);
+    }
+
+    [Fact]
+    public void ApplyPreflightResult_RejectsOverlappingReadyAndSkippedKeys()
+    {
+        var session = ActiveSession.FromMonitors([
+            CreateMonitor("DISPLAY-1", 16, 16, WallpaperSource.Empty),
+        ]);
+
+        var error = Assert.Throws<ArgumentException>(() =>
+            ApplyPreflightResult.FromSets(
+                session,
+                readyMonitorKeys: ["DISPLAY-1"],
+                skippedMonitorKeys: ["display-1"]));
+
+        Assert.Equal("skippedMonitorKeys", error.ParamName);
+        Assert.Contains("Apply preflight cannot mark a monitor as both ready and skipped.", error.Message);
+    }
+
+    [Fact]
+    public void ApplyPreflightResult_WithSessionPreservesKeySets()
+    {
+        var originalSession = ActiveSession.FromMonitors([
+            CreateMonitor("DISPLAY-1", 16, 16, WallpaperSource.Empty),
+        ]);
+        var nextSession = ActiveSession.FromMonitors([
+            CreateMonitor("DISPLAY-2", 16, 16, WallpaperSource.Empty),
+        ]);
+        var result = ApplyPreflightResult.FromSets(
+            originalSession,
+            readyMonitorKeys: ["DISPLAY-1"],
+            skippedMonitorKeys: ["DISPLAY-3"]);
+
+        var next = result.WithSession(nextSession);
+
+        Assert.Same(nextSession, next.Session);
+        Assert.Contains("DISPLAY-1", next.ReadyMonitorKeys);
+        Assert.Contains("DISPLAY-3", next.SkippedMonitorKeys);
     }
 
     [Fact]
@@ -395,6 +1018,48 @@ public sealed class CoreArchitectureTests
     public void ApplyTargetPlan_MatchingRequiresPredicate()
     {
         Assert.Throws<ArgumentNullException>(() => ApplyTargetPlan.Matching(null!));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void ApplyTargetPlan_MonitorRejectsBlankMonitorKey(string monitorKey)
+    {
+        var error = Assert.Throws<ArgumentException>(() => ApplyTargetPlan.Monitor(monitorKey));
+
+        Assert.Equal("monitorKey", error.ParamName);
+    }
+
+    [Fact]
+    public void ApplyTargetPlan_ReadyKeysRejectsNullKeySet()
+    {
+        IReadOnlySet<string>? monitorKeys = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => ApplyTargetPlan.ReadyKeys(monitorKeys!));
+
+        Assert.Equal("monitorKeys", error.ParamName);
+    }
+
+    [Fact]
+    public void ApplyTargetPlan_IncludesRejectsNullMonitor()
+    {
+        MonitorSession? monitor = null;
+        var plan = ApplyTargetPlan.All;
+
+        var error = Assert.Throws<ArgumentNullException>(() => plan.Includes(monitor!));
+
+        Assert.Equal("monitor", error.ParamName);
+    }
+
+    [Fact]
+    public void ApplyTargetPlan_CountRejectsNullMonitorList()
+    {
+        IReadOnlyList<MonitorSession>? monitors = null;
+        var plan = ApplyTargetPlan.All;
+
+        var error = Assert.Throws<ArgumentNullException>(() => plan.Count(monitors!));
+
+        Assert.Equal("monitors", error.ParamName);
     }
 
     [Fact]
@@ -518,6 +1183,34 @@ public sealed class CoreArchitectureTests
         Assert.True(primaryTile.Width > leftTile.Width);
     }
 
+    [Theory]
+    [InlineData("Width")]
+    [InlineData("Height")]
+    public void MonitorBounds_RejectsNonPositiveDimensions(string parameterName)
+    {
+        var width = parameterName == "Width" ? 0 : 1920;
+        var height = parameterName == "Height" ? 0 : 1080;
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new MonitorBounds(0, 0, width, height));
+
+        Assert.Equal(parameterName, error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("Width")]
+    [InlineData("Height")]
+    public void MonitorBounds_WithExpressionRejectsNonPositiveDimensions(string parameterName)
+    {
+        var bounds = new MonitorBounds(0, 0, 1920, 1080);
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() => parameterName == "Width"
+            ? bounds with { Width = 0 }
+            : bounds with { Height = 0 });
+
+        Assert.Equal("value", error.ParamName);
+    }
+
     [Fact]
     public void MonitorTopologyLayout_UsesStableEmptySurface()
     {
@@ -530,10 +1223,135 @@ public sealed class CoreArchitectureTests
         Assert.Equal(1, layout.Scale);
     }
 
+    [Theory]
+    [InlineData("SurfaceWidth")]
+    [InlineData("SurfaceHeight")]
+    [InlineData("Scale")]
+    public void MonitorTopologyLayout_RejectsInvalidDirectValues(string parameterName)
+    {
+        double surfaceWidth = parameterName == "SurfaceWidth" ? 0 : 720;
+        double surfaceHeight = parameterName == "SurfaceHeight" ? 0 : 96;
+        double scale = parameterName == "Scale" ? 0 : 1;
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new MonitorTopologyLayout(surfaceWidth, surfaceHeight, 0, 0, scale));
+
+        Assert.Equal(parameterName, error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("SurfaceWidth")]
+    [InlineData("SurfaceHeight")]
+    [InlineData("Scale")]
+    public void MonitorTopologyLayout_WithExpressionRejectsInvalidValues(string propertyName)
+    {
+        var layout = new MonitorTopologyLayout(720, 96, 0, 0, 1);
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() => propertyName switch
+        {
+            "SurfaceWidth" => layout with { SurfaceWidth = 0 },
+            "SurfaceHeight" => layout with { SurfaceHeight = 0 },
+            _ => layout with { Scale = 0 },
+        });
+
+        Assert.Equal("value", error.ParamName);
+    }
+
+    [Fact]
+    public void MonitorTopologyLayout_RejectsNullBoundsList()
+    {
+        IReadOnlyList<MonitorBounds>? bounds = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => MonitorTopologyLayout.Calculate(bounds!));
+
+        Assert.Equal("bounds", error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("maxWidth")]
+    [InlineData("maxHeight")]
+    [InlineData("minSurfaceWidth")]
+    [InlineData("minSurfaceHeight")]
+    public void MonitorTopologyLayout_RejectsInvalidSurfaceDimensions(string parameterName)
+    {
+        var bounds = new[] { new MonitorBounds(0, 0, 1920, 1080) };
+        double maxWidth = parameterName == "maxWidth" ? 0 : 720;
+        double maxHeight = parameterName == "maxHeight" ? 0 : 96;
+        double minSurfaceWidth = parameterName == "minSurfaceWidth" ? 0 : 96;
+        double minSurfaceHeight = parameterName == "minSurfaceHeight" ? 0 : 48;
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() => MonitorTopologyLayout.Calculate(
+            bounds,
+            maxWidth,
+            maxHeight,
+            minSurfaceWidth,
+            minSurfaceHeight));
+
+        Assert.Equal(parameterName, error.ParamName);
+    }
+
+    [Fact]
+    public void MonitorTopologyLayout_TileForRejectsNullBounds()
+    {
+        var layout = MonitorTopologyLayout.Calculate([]);
+        MonitorBounds? bounds = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => layout.TileFor(bounds!));
+
+        Assert.Equal("bounds", error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("minTileWidth")]
+    [InlineData("minTileHeight")]
+    public void MonitorTopologyLayout_TileForRejectsInvalidTileDimensions(string parameterName)
+    {
+        var layout = MonitorTopologyLayout.Calculate([]);
+        var bounds = new MonitorBounds(0, 0, 1920, 1080);
+        double minTileWidth = parameterName == "minTileWidth" ? 0 : 48;
+        double minTileHeight = parameterName == "minTileHeight" ? 0 : 28;
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() => layout.TileFor(
+            bounds,
+            minTileWidth,
+            minTileHeight));
+
+        Assert.Equal(parameterName, error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("Width")]
+    [InlineData("Height")]
+    public void MonitorTopologyTile_RejectsInvalidDirectDimensions(string parameterName)
+    {
+        double width = parameterName == "Width" ? 0 : 48;
+        double height = parameterName == "Height" ? 0 : 28;
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new MonitorTopologyTile(0, 0, width, height));
+
+        Assert.Equal(parameterName, error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("Width")]
+    [InlineData("Height")]
+    public void MonitorTopologyTile_WithExpressionRejectsInvalidDimensions(string propertyName)
+    {
+        var tile = new MonitorTopologyTile(0, 0, 48, 28);
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() => propertyName == "Width"
+            ? tile with { Width = 0 }
+            : tile with { Height = 0 });
+
+        Assert.Equal("value", error.ParamName);
+    }
+
     [Fact]
     public void PresetNames_ValidatesAndTrimsNames()
     {
         Assert.Equal("Desk", PresetNames.Validate("  Desk  "));
+        Assert.Throws<ArgumentNullException>(() => PresetNames.Validate(null!));
         Assert.Throws<ArgumentException>(() => PresetNames.Validate("   "));
     }
 
@@ -680,6 +1498,24 @@ public sealed class CoreArchitectureTests
         Assert.All(matched.Monitors, monitor => Assert.Equal(MonitorApplyStatus.Clean, monitor.ApplyStatus));
     }
 
+    [Theory]
+    [InlineData("session")]
+    [InlineData("preset")]
+    public async Task PresetMatcher_ApplyPresetRejectsNullInputs(string parameterName)
+    {
+        var matcher = new PresetMatcher();
+        var session = await new ActiveSessionFactory(new SampleMonitorDetector())
+            .CreateFromCurrentWindowsStateAsync();
+        var preset = CreatePreset([]);
+        ActiveSession? maybeSession = parameterName == "session" ? null : session;
+        Preset? maybePreset = parameterName == "preset" ? null : preset;
+
+        var error = Assert.Throws<ArgumentNullException>(() =>
+            matcher.ApplyPreset(maybeSession!, maybePreset!));
+
+        Assert.Equal(parameterName, error.ParamName);
+    }
+
     [Fact]
     public async Task PresetMatcher_IgnoresDuplicateAssignmentsForSameMonitorKey()
     {
@@ -729,6 +1565,177 @@ public sealed class CoreArchitectureTests
         Assert.Equal(WallpaperFitMode.Cover, matched.Monitors[0].DesiredAssignment.Placement.FitMode);
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void PresetIdentity_RejectsBlankName(string? name)
+    {
+        var error = Assert.ThrowsAny<ArgumentException>(() => new PresetIdentity(Guid.NewGuid(), name!));
+
+        Assert.Equal("Name", error.ParamName);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void Preset_RejectsBlankName(string? name)
+    {
+        var error = Assert.ThrowsAny<ArgumentException>(() => new Preset(
+            Preset.CurrentSchemaVersion,
+            Guid.NewGuid(),
+            name!,
+            [],
+            DateTimeOffset.UnixEpoch,
+            DateTimeOffset.UnixEpoch));
+
+        Assert.Equal("Name", error.ParamName);
+    }
+
+    [Fact]
+    public void Preset_RejectsNullAssignments()
+    {
+        IReadOnlyList<PresetAssignment>? assignments = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => new Preset(
+            Preset.CurrentSchemaVersion,
+            Guid.NewGuid(),
+            "Desk",
+            assignments!,
+            DateTimeOffset.UnixEpoch,
+            DateTimeOffset.UnixEpoch));
+
+        Assert.Equal("Assignments", error.ParamName);
+    }
+
+    [Fact]
+    public void Preset_RejectsNullAssignmentItems()
+    {
+        var error = Assert.Throws<ArgumentException>(() => new Preset(
+            Preset.CurrentSchemaVersion,
+            Guid.NewGuid(),
+            "Desk",
+            [null!],
+            DateTimeOffset.UnixEpoch,
+            DateTimeOffset.UnixEpoch));
+
+        Assert.Equal("Assignments", error.ParamName);
+        Assert.Contains("Preset assignment list cannot include null items.", error.Message);
+    }
+
+    [Fact]
+    public void Preset_CopiesAssignments()
+    {
+        var monitor = new MonitorIdentity("DISPLAY-1", "Monitor 1", 1, 1920, 1080, 0, 0);
+        var assignment = new PresetAssignment(monitor, WallpaperSource.Empty, WallpaperPlacement.Default);
+        var assignments = new List<PresetAssignment> { assignment };
+
+        var preset = CreatePreset(assignments);
+        assignments.Clear();
+
+        Assert.Single(preset.Assignments);
+    }
+
+    [Fact]
+    public void Preset_WithExpressionRejectsNullAssignments()
+    {
+        var preset = CreatePreset([]);
+        IReadOnlyList<PresetAssignment>? assignments = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => preset with { Assignments = assignments! });
+
+        Assert.Equal("value", error.ParamName);
+    }
+
+    [Fact]
+    public void Preset_WithExpressionRejectsNullAssignmentItems()
+    {
+        var preset = CreatePreset([]);
+
+        var error = Assert.Throws<ArgumentException>(() => preset with { Assignments = [null!] });
+
+        Assert.Equal("value", error.ParamName);
+        Assert.Contains("Preset assignment list cannot include null items.", error.Message);
+    }
+
+    [Fact]
+    public void PresetAssignment_RejectsNullSource()
+    {
+        var monitor = new MonitorIdentity("DISPLAY-1", "Monitor 1", 1, 1920, 1080, 0, 0);
+        WallpaperSource? source = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => new PresetAssignment(
+            monitor,
+            source!,
+            WallpaperPlacement.Default));
+
+        Assert.Equal("Source", error.ParamName);
+    }
+
+    [Fact]
+    public void PresetAssignment_RejectsNullSavedMonitor()
+    {
+        MonitorIdentity? monitor = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => new PresetAssignment(
+            monitor!,
+            WallpaperSource.Empty,
+            WallpaperPlacement.Default));
+
+        Assert.Equal("SavedMonitor", error.ParamName);
+    }
+
+    [Fact]
+    public void PresetAssignment_RejectsNullPlacement()
+    {
+        var monitor = new MonitorIdentity("DISPLAY-1", "Monitor 1", 1, 1920, 1080, 0, 0);
+        WallpaperPlacement? placement = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => new PresetAssignment(
+            monitor,
+            WallpaperSource.Empty,
+            placement!));
+
+        Assert.Equal("Placement", error.ParamName);
+    }
+
+    [Fact]
+    public void PresetAssignment_WithExpressionRejectsNullSource()
+    {
+        var monitor = new MonitorIdentity("DISPLAY-1", "Monitor 1", 1, 1920, 1080, 0, 0);
+        var assignment = new PresetAssignment(monitor, WallpaperSource.Empty, WallpaperPlacement.Default);
+        WallpaperSource? source = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => assignment with { Source = source! });
+
+        Assert.Equal("value", error.ParamName);
+    }
+
+    [Fact]
+    public void PresetAssignment_WithExpressionRejectsNullSavedMonitor()
+    {
+        var monitor = new MonitorIdentity("DISPLAY-1", "Monitor 1", 1, 1920, 1080, 0, 0);
+        var assignment = new PresetAssignment(monitor, WallpaperSource.Empty, WallpaperPlacement.Default);
+        MonitorIdentity? savedMonitor = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => assignment with { SavedMonitor = savedMonitor! });
+
+        Assert.Equal("value", error.ParamName);
+    }
+
+    [Fact]
+    public void PresetAssignment_WithExpressionRejectsNullPlacement()
+    {
+        var monitor = new MonitorIdentity("DISPLAY-1", "Monitor 1", 1, 1920, 1080, 0, 0);
+        var assignment = new PresetAssignment(monitor, WallpaperSource.Empty, WallpaperPlacement.Default);
+        WallpaperPlacement? placement = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => assignment with { Placement = placement! });
+
+        Assert.Equal("value", error.ParamName);
+    }
+
     [Fact]
     public async Task PresetStore_RoundTripsLocalJson()
     {
@@ -760,6 +1767,51 @@ public sealed class CoreArchitectureTests
                 Directory.Delete(root, recursive: true);
             }
         }
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("relative-root")]
+    public void PresetStore_RejectsInvalidRootDirectory(string? rootDirectory)
+    {
+        var error = Assert.ThrowsAny<ArgumentException>(() => new PresetStore(rootDirectory!));
+
+        Assert.Equal("rootDirectory", error.ParamName);
+    }
+
+    [Fact]
+    public async Task PresetStore_SaveRejectsNullPreset()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"waller-native-tests-{Guid.NewGuid():N}");
+        try
+        {
+            var store = new PresetStore(root);
+            Preset? preset = null;
+
+            var error = await Assert.ThrowsAsync<ArgumentNullException>(() => store.SaveAsync(preset!));
+
+            Assert.Equal("preset", error.ParamName);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void PresetFilePolicy_NormalizeForSaveRejectsNullPreset()
+    {
+        Preset? preset = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() =>
+            PresetFilePolicy.NormalizeForSave(preset!, DateTimeOffset.UnixEpoch));
+
+        Assert.Equal("preset", error.ParamName);
     }
 
     [Fact]
@@ -1325,6 +2377,79 @@ public sealed class CoreArchitectureTests
     }
 
     [Fact]
+    public void MonitorIdentity_NullKeyBecomesInvalidPresetAssignment()
+    {
+        var identity = new MonitorIdentity(null!, null, 1, 1920, 1080, 0, 0);
+
+        Assert.Equal(string.Empty, identity.MonitorKey);
+        Assert.False(identity.IsValidForPresetAssignment);
+    }
+
+    [Fact]
+    public void PresetAssignments_NormalizeRejectsNullAssignment()
+    {
+        PresetAssignment? assignment = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => PresetAssignments.Normalize(assignment!));
+
+        Assert.Equal("assignment", error.ParamName);
+    }
+
+    [Fact]
+    public void WallpaperPlacement_RejectsInvalidFitMode()
+    {
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new WallpaperPlacement((WallpaperFitMode)999, WallpaperAnchor.Center));
+
+        Assert.Equal("value", error.ParamName);
+    }
+
+    [Fact]
+    public void WallpaperPlacement_RejectsInvalidAnchor()
+    {
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new WallpaperPlacement(WallpaperFitMode.Cover, (WallpaperAnchor)999));
+
+        Assert.Equal("value", error.ParamName);
+    }
+
+    [Fact]
+    public void WallpaperPlacement_WithExpressionRejectsInvalidFitMode()
+    {
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            WallpaperPlacement.Default with { FitMode = (WallpaperFitMode)999 });
+
+        Assert.Equal("value", error.ParamName);
+    }
+
+    [Fact]
+    public void WallpaperPlacement_WithExpressionRejectsInvalidAnchor()
+    {
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            WallpaperPlacement.Default with { Anchor = (WallpaperAnchor)999 });
+
+        Assert.Equal("value", error.ParamName);
+    }
+
+    [Fact]
+    public void WallpaperSource_RejectsInvalidKind()
+    {
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new WallpaperSource((WallpaperSourceKind)999));
+
+        Assert.Equal("value", error.ParamName);
+    }
+
+    [Fact]
+    public void WallpaperSource_WithExpressionRejectsInvalidKind()
+    {
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            WallpaperSource.Empty with { Kind = (WallpaperSourceKind)999 });
+
+        Assert.Equal("value", error.ParamName);
+    }
+
+    [Fact]
     public void WallpaperSource_TryNormalizeValidatesPayload()
     {
         Assert.Equal(
@@ -1422,6 +2547,48 @@ public sealed class CoreArchitectureTests
         Assert.Equal(preset.UpdatedAt, renamed.UpdatedAt);
     }
 
+    [Theory]
+    [InlineData("session")]
+    [InlineData("identity")]
+    public async Task PresetFactory_UpdateFromSessionRejectsNullInputs(string parameterName)
+    {
+        var session = await new ActiveSessionFactory(new SampleMonitorDetector())
+            .CreateFromCurrentWindowsStateAsync();
+        var identity = new PresetIdentity(Guid.NewGuid(), "Desk");
+        ActiveSession? maybeSession = parameterName == "session" ? null : session;
+        PresetIdentity? maybeIdentity = parameterName == "identity" ? null : identity;
+
+        var error = Assert.Throws<ArgumentNullException>(() =>
+            PresetFactory.UpdateFromSession(maybeSession!, maybeIdentity!, DateTimeOffset.UnixEpoch));
+
+        Assert.Equal(parameterName, error.ParamName);
+    }
+
+    [Fact]
+    public void PresetFactory_CreateFromSessionRejectsNullSession()
+    {
+        ActiveSession? session = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() =>
+            PresetFactory.CreateFromSession(session!, "Desk"));
+
+        Assert.Equal("session", error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("duplicate")]
+    [InlineData("rename")]
+    public void PresetFactory_MutationHelpersRejectNullPreset(string action)
+    {
+        Preset? preset = null;
+
+        var error = action == "duplicate"
+            ? Assert.Throws<ArgumentNullException>(() => PresetFactory.Duplicate(preset!, "Copy"))
+            : Assert.Throws<ArgumentNullException>(() => PresetFactory.Rename(preset!, "Renamed"));
+
+        Assert.Equal("preset", error.ParamName);
+    }
+
     [Fact]
     public async Task PresetFactory_PreservesAndClampsPlacementOffsets()
     {
@@ -1499,6 +2666,40 @@ public sealed class CoreArchitectureTests
             Assert.Equal(AppThemePreference.Dark, loaded.Theme);
             Assert.Equal("es", loaded.Language);
             Assert.Equal(settings.LastSelectedPresetId, loaded.LastSelectedPresetId);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("relative-root")]
+    public void UserSettingsStore_RejectsInvalidRootDirectory(string? rootDirectory)
+    {
+        var error = Assert.ThrowsAny<ArgumentException>(() => new UserSettingsStore(rootDirectory!));
+
+        Assert.Equal("rootDirectory", error.ParamName);
+    }
+
+    [Fact]
+    public async Task UserSettingsStore_SaveRejectsNullSettings()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"waller-settings-tests-{Guid.NewGuid():N}");
+        try
+        {
+            var store = new UserSettingsStore(root);
+            UserSettings? settings = null;
+
+            var error = await Assert.ThrowsAsync<ArgumentNullException>(() => store.SaveAsync(settings!));
+
+            Assert.Equal("settings", error.ParamName);
         }
         finally
         {
@@ -1694,6 +2895,49 @@ public sealed class CoreArchitectureTests
     }
 
     [Fact]
+    public void UserSettingsPolicy_NormalizeRejectsNullSettings()
+    {
+        UserSettings? settings = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => UserSettingsPolicy.Normalize(settings!));
+
+        Assert.Equal("settings", error.ParamName);
+    }
+
+    [Fact]
+    public void UserSettings_ConvertsNullLanguageToEmptyDraftValue()
+    {
+        var settings = new UserSettings(
+            AppThemePreference.System,
+            null,
+            UserSettingsPolicy.DefaultWindowWidth,
+            UserSettingsPolicy.DefaultWindowHeight,
+            null,
+            null,
+            null);
+
+        Assert.Equal(string.Empty, settings.Language);
+    }
+
+    [Fact]
+    public void UserSettings_WithExpressionConvertsNullLanguageToEmptyDraftValue()
+    {
+        var settings = UserSettings.Default with { Language = null! };
+
+        Assert.Equal(string.Empty, settings.Language);
+    }
+
+    [Fact]
+    public void UserSettingsPolicy_NormalizesNullLanguageToDefault()
+    {
+        var settings = UserSettings.Default with { Language = null! };
+
+        var normalized = UserSettingsPolicy.Normalize(settings);
+
+        Assert.Equal(AppLanguages.English, normalized.Language);
+    }
+
+    [Fact]
     public void UserSettingsPolicy_NormalizesThemeLanguageAndWindowPlacement()
     {
         var normalized = UserSettingsPolicy.Normalize(UserSettings.Default with
@@ -1726,6 +2970,17 @@ public sealed class CoreArchitectureTests
     }
 
     [Fact]
+    public void UserSettings_WithWindowPlacementClampsMinimumSize()
+    {
+        var updated = UserSettings.Default.WithWindowPlacement(1, 2, -20, 40);
+
+        Assert.Equal(UserSettingsPolicy.MinWindowWidth, updated.WindowWidth);
+        Assert.Equal(UserSettingsPolicy.MinWindowHeight, updated.WindowHeight);
+        Assert.Equal(-20, updated.WindowX);
+        Assert.Equal(40, updated.WindowY);
+    }
+
+    [Fact]
     public void UserSettings_WithPreferencesPreservesWindowPlacement()
     {
         var presetId = Guid.NewGuid();
@@ -1743,6 +2998,44 @@ public sealed class CoreArchitectureTests
         Assert.Equal(720, updated.WindowHeight);
         Assert.Equal(-20, updated.WindowX);
         Assert.Equal(40, updated.WindowY);
+    }
+
+    [Fact]
+    public void UserSettings_WithPreferencesNormalizesLanguage()
+    {
+        var updated = UserSettings.Default.WithPreferences(
+            AppThemePreference.Dark,
+            "ES",
+            lastSelectedPresetId: null);
+
+        Assert.Equal(AppLanguages.Spanish, updated.Language);
+    }
+
+    [Fact]
+    public void UserSettings_WithPreferencesRejectsInvalidTheme()
+    {
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            UserSettings.Default.WithPreferences(
+                (AppThemePreference)999,
+                AppLanguages.Spanish,
+                lastSelectedPresetId: null));
+
+        Assert.Equal("theme", error.ParamName);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("fr")]
+    public void UserSettings_WithPreferencesRejectsUnsupportedLanguage(string? language)
+    {
+        var error = Assert.Throws<ArgumentException>(() =>
+            UserSettings.Default.WithPreferences(
+                AppThemePreference.Dark,
+                language!,
+                lastSelectedPresetId: null));
+
+        Assert.Equal("language", error.ParamName);
     }
 
     [Fact]
@@ -1788,6 +3081,18 @@ public sealed class CoreArchitectureTests
                 Directory.Delete(root, recursive: true);
             }
         }
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("relative-root")]
+    public void RenderedWallpaperStore_RejectsInvalidRootDirectory(string? rootDirectory)
+    {
+        var error = Assert.ThrowsAny<ArgumentException>(() => new RenderedWallpaperStore(rootDirectory!));
+
+        Assert.Equal("rootDirectory", error.ParamName);
     }
 
     [Fact]
@@ -1927,6 +3232,17 @@ public sealed class CoreArchitectureTests
         Assert.True(new RenderedCacheClearResult(Deleted: 2, Failed: 1).HasFailures);
     }
 
+    [Theory]
+    [InlineData(-1, 0, "Deleted")]
+    [InlineData(0, -1, "Failed")]
+    public void RenderedCacheClearResult_RejectsNegativeCounts(int deleted, int failed, string parameterName)
+    {
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new RenderedCacheClearResult(deleted, failed));
+
+        Assert.Equal(parameterName, error.ParamName);
+    }
+
     [Fact]
     public void RenderedWallpaperStore_SanitizesRenderedFileNames()
     {
@@ -1996,6 +3312,32 @@ public sealed class CoreArchitectureTests
                 Directory.Delete(root, recursive: true);
             }
         }
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public async Task AtomicFileWriter_RejectsInvalidPath(string? path)
+    {
+        var error = await Assert.ThrowsAnyAsync<ArgumentException>(() =>
+            AtomicFileWriter.WriteAsync(
+                path!,
+                (_, _) => Task.CompletedTask,
+                CancellationToken.None));
+
+        Assert.Equal("path", error.ParamName);
+    }
+
+    [Fact]
+    public async Task AtomicFileWriter_RejectsNullWriteCallback()
+    {
+        Func<Stream, CancellationToken, Task>? write = null;
+
+        var error = await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            AtomicFileWriter.WriteAsync("data.bin", write!, CancellationToken.None));
+
+        Assert.Equal("write", error.ParamName);
     }
 
     [Fact]
@@ -2080,10 +3422,31 @@ public sealed class CoreArchitectureTests
     }
 
     [Fact]
+    public async Task SolidColorPngWriter_RejectsNullPixels()
+    {
+        PixelBuffer? pixels = null;
+
+        var error = await Assert.ThrowsAsync<ArgumentNullException>(() =>
+            SolidColorPngWriter.WriteAsync("wallpaper.png", pixels!));
+
+        Assert.Equal("pixels", error.ParamName);
+    }
+
+    [Fact]
     public void PixelBuffer_RejectsInvalidDimensions()
     {
         Assert.Throws<ArgumentOutOfRangeException>(() => new PixelBuffer(0, 1, []));
         Assert.Throws<ArgumentOutOfRangeException>(() => new PixelBuffer(1, 0, []));
+    }
+
+    [Fact]
+    public void PixelBuffer_RejectsNullData()
+    {
+        byte[]? data = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => new PixelBuffer(1, 1, data!));
+
+        Assert.Equal("data", error.ParamName);
     }
 
     [Fact]
@@ -2092,6 +3455,46 @@ public sealed class CoreArchitectureTests
         var error = Assert.Throws<ArgumentException>(() => new PixelBuffer(2, 2, new byte[3]));
 
         Assert.Equal("data", error.ParamName);
+    }
+
+    [Fact]
+    public void PixelBuffer_CopiesInputData()
+    {
+        var data = new byte[] { 1, 2, 3 };
+        var buffer = new PixelBuffer(1, 1, data);
+
+        data[0] = 9;
+
+        Assert.Equal(new RgbColor(1, 2, 3), buffer.GetPixel(0, 0));
+    }
+
+    [Theory]
+    [InlineData(-1, 0, "x")]
+    [InlineData(1, 0, "x")]
+    [InlineData(0, -1, "y")]
+    [InlineData(0, 1, "y")]
+    public void PixelBuffer_GetPixelRejectsOutOfBoundsCoordinates(int x, int y, string parameterName)
+    {
+        var buffer = new PixelBuffer(1, 1, new byte[3]);
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() => buffer.GetPixel(x, y));
+
+        Assert.Equal(parameterName, error.ParamName);
+    }
+
+    [Theory]
+    [InlineData(-1, 0, "x")]
+    [InlineData(1, 0, "x")]
+    [InlineData(0, -1, "y")]
+    [InlineData(0, 1, "y")]
+    public void PixelBuffer_SetPixelRejectsOutOfBoundsCoordinates(int x, int y, string parameterName)
+    {
+        var buffer = new PixelBuffer(1, 1, new byte[3]);
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            buffer.SetPixel(x, y, RgbColor.Black));
+
+        Assert.Equal(parameterName, error.ParamName);
     }
 
     [Fact]
@@ -2257,6 +3660,78 @@ public sealed class CoreArchitectureTests
         Assert.Null(WallpaperSourceFiles.ImageFileName(source));
     }
 
+    [Theory]
+    [InlineData("missing")]
+    [InlineData("existing")]
+    [InlineData("file-name")]
+    public void WallpaperSourceFiles_RejectsNullSource(string operation)
+    {
+        WallpaperSource? source = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() =>
+        {
+            _ = operation switch
+            {
+                "missing" => WallpaperSourceFiles.IsMissingImageFile(source!),
+                "existing" => WallpaperSourceFiles.HasExistingImageFile(source!),
+                "file-name" => WallpaperSourceFiles.ImageFileName(source!) is not null,
+                _ => throw new InvalidOperationException($"Unknown operation: {operation}"),
+            };
+        });
+
+        Assert.Equal("source", error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("monitor")]
+    [InlineData("path")]
+    [InlineData("width")]
+    [InlineData("height")]
+    public void RenderedWallpaper_RejectsInvalidInputs(string parameterName)
+    {
+        var monitor = new MonitorIdentity("DISPLAY-1", "Monitor 1", 1, 1920, 1080, 0, 0);
+        var maybeMonitor = parameterName == "monitor" ? null : monitor;
+        var path = parameterName == "path" ? " " : @"C:\Wallpapers\rendered.png";
+        var width = parameterName == "width" ? 0 : 1920;
+        var height = parameterName == "height" ? 0 : 1080;
+
+        var error = Assert.ThrowsAny<ArgumentException>(() =>
+            new RenderedWallpaper(maybeMonitor!, path, width, height, DateTimeOffset.UtcNow));
+
+        Assert.Equal(parameterName, error.ParamName);
+    }
+
+    [Fact]
+    public void RenderedWallpaper_RejectsRelativePath()
+    {
+        var monitor = new MonitorIdentity("DISPLAY-1", "Monitor 1", 1, 1920, 1080, 0, 0);
+
+        var error = Assert.Throws<ArgumentException>(() =>
+            new RenderedWallpaper(monitor, "rendered.png", 1920, 1080, DateTimeOffset.UtcNow));
+
+        Assert.Equal("path", error.ParamName);
+        Assert.Contains("Rendered wallpaper path must be absolute.", error.Message);
+    }
+
+    [Theory]
+    [InlineData("monitor")]
+    [InlineData("assignment")]
+    public void RenderRequest_RejectsNullInputs(string parameterName)
+    {
+        var monitor = CreateMonitor("DISPLAY-1", 32, 18, WallpaperSource.Empty);
+        var assignment = new PresetAssignment(
+            monitor.Identity,
+            WallpaperSource.Empty,
+            WallpaperPlacement.Default);
+        MonitorSnapshot? maybeMonitor = parameterName == "monitor" ? null : monitor;
+        PresetAssignment? maybeAssignment = parameterName == "assignment" ? null : assignment;
+
+        var error = Assert.Throws<ArgumentNullException>(() =>
+            new RenderRequest(maybeMonitor!, maybeAssignment!));
+
+        Assert.Equal(parameterName, error.ParamName);
+    }
+
     [Fact]
     public async Task DesktopWallpaperApplier_FailsBeforeInteropWhenRenderedFileIsMissing()
     {
@@ -2273,7 +3748,28 @@ public sealed class CoreArchitectureTests
 
         Assert.False(result.Succeeded);
         Assert.Equal(ApplyErrorCodes.RenderedWallpaperMissing, result.ErrorCode);
-        Assert.Contains("does not exist", result.ErrorMessage);
+        Assert.Null(result.ErrorMessage);
+    }
+
+    [Fact]
+    public void DesktopWallpaperApplier_RejectsNullWriter()
+    {
+        IDesktopWallpaperWriter? writer = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => new DesktopWallpaperApplier(writer!));
+
+        Assert.Equal("writer", error.ParamName);
+    }
+
+    [Fact]
+    public async Task DesktopWallpaperApplier_RejectsNullWallpaper()
+    {
+        var applier = new DesktopWallpaperApplier(new RecordingDesktopWallpaperWriter());
+        RenderedWallpaper? wallpaper = null;
+
+        var error = await Assert.ThrowsAsync<ArgumentNullException>(() => applier.ApplyAsync(wallpaper!));
+
+        Assert.Equal("wallpaper", error.ParamName);
     }
 
     [Fact]
@@ -2320,7 +3816,7 @@ public sealed class CoreArchitectureTests
 
             Assert.False(result.Succeeded);
             Assert.Equal(ApplyErrorCodes.WallpaperApplyFailed, result.ErrorCode);
-            Assert.Equal("COM unavailable.", result.ErrorMessage);
+            Assert.Null(result.ErrorMessage);
         }
         finally
         {
@@ -2341,6 +3837,46 @@ public sealed class CoreArchitectureTests
         Assert.True(result.Succeeded);
         Assert.Null(result.ErrorCode);
         Assert.Null(result.ErrorMessage);
+    }
+
+    [Fact]
+    public void ApplyResult_SuccessPreservesMonitor()
+    {
+        var monitor = new MonitorIdentity("DISPLAY-1", "Monitor 1", 1, 1920, 1080, 0, 0);
+
+        var result = ApplyResult.Success(monitor);
+
+        Assert.Same(monitor, result.Monitor);
+    }
+
+    [Fact]
+    public void ApplyResult_RejectsNullSuccessMonitor()
+    {
+        MonitorIdentity? monitor = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => ApplyResult.Success(monitor!));
+
+        Assert.Equal("monitor", error.ParamName);
+    }
+
+    [Fact]
+    public void ApplyResult_RejectsNullFailureMonitor()
+    {
+        MonitorIdentity? monitor = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => ApplyResult.Failure(
+            monitor!,
+            ApplyErrorCodes.WallpaperApplyFailed));
+
+        Assert.Equal("monitor", error.ParamName);
+    }
+
+    [Fact]
+    public void ApplyResult_DoesNotExposePublicConstructors()
+    {
+        var constructors = typeof(ApplyResult).GetConstructors();
+
+        Assert.Empty(constructors);
     }
 
     [Fact]
@@ -2371,6 +3907,25 @@ public sealed class CoreArchitectureTests
         Assert.False(result.Succeeded);
         Assert.Equal(ApplyErrorCodes.WallpaperApplyFailed, result.ErrorCode);
         Assert.Equal("Interop failed.", result.ErrorMessage);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("driver exploded")]
+    public void ApplyErrorCodes_NormalizeFallsBackForUnknownErrorCode(string? errorCode)
+    {
+        Assert.Equal(
+            ApplyErrorCodes.WallpaperApplyFailed,
+            ApplyErrorCodes.Normalize(errorCode));
+    }
+
+    [Fact]
+    public void ApplyErrorCodes_NormalizePreservesKnownErrorCode()
+    {
+        Assert.Equal(
+            ApplyErrorCodes.RenderedWallpaperMissing,
+            ApplyErrorCodes.Normalize(ApplyErrorCodes.RenderedWallpaperMissing));
     }
 
     [Fact]
@@ -2422,6 +3977,61 @@ public sealed class CoreArchitectureTests
         Assert.Equal("#112233", monitor.CurrentSource.ColorHex);
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void DesktopWallpaperSnapshot_RejectsBlankMonitorId(string monitorId)
+    {
+        var error = Assert.Throws<ArgumentException>(() => new DesktopWallpaperSnapshot(
+            monitorId,
+            new MonitorBounds(0, 0, 1920, 1080),
+            null));
+
+        Assert.Equal("MonitorId", error.ParamName);
+    }
+
+    [Fact]
+    public void DesktopWallpaperSnapshot_RejectsNullBounds()
+    {
+        MonitorBounds? bounds = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => new DesktopWallpaperSnapshot(
+            "DISPLAY-1",
+            bounds!,
+            null));
+
+        Assert.Equal("Bounds", error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void DesktopWallpaperSnapshot_WithExpressionRejectsBlankMonitorId(string monitorId)
+    {
+        var snapshot = new DesktopWallpaperSnapshot(
+            "DISPLAY-1",
+            new MonitorBounds(0, 0, 1920, 1080),
+            null);
+
+        var error = Assert.Throws<ArgumentException>(() => snapshot with { MonitorId = monitorId });
+
+        Assert.Equal("value", error.ParamName);
+    }
+
+    [Fact]
+    public void DesktopWallpaperSnapshot_WithExpressionRejectsNullBounds()
+    {
+        var snapshot = new DesktopWallpaperSnapshot(
+            "DISPLAY-1",
+            new MonitorBounds(0, 0, 1920, 1080),
+            null);
+        MonitorBounds? bounds = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => snapshot with { Bounds = bounds! });
+
+        Assert.Equal("value", error.ParamName);
+    }
+
     [Fact]
     public async Task BasicPngWallpaperRenderer_RendersSolidColorAtMonitorSize()
     {
@@ -2443,6 +4053,38 @@ public sealed class CoreArchitectureTests
             Assert.Equal(18, height);
             Assert.Equal(32, rendered.Width);
             Assert.Equal(18, rendered.Height);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public void BasicPngWallpaperRenderer_RejectsNullStore()
+    {
+        RenderedWallpaperStore? store = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => new BasicPngWallpaperRenderer(store!));
+
+        Assert.Equal("store", error.ParamName);
+    }
+
+    [Fact]
+    public async Task BasicPngWallpaperRenderer_RejectsNullRenderRequest()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"waller-render-tests-{Guid.NewGuid():N}");
+        try
+        {
+            var renderer = new BasicPngWallpaperRenderer(new RenderedWallpaperStore(root));
+            RenderRequest? request = null;
+
+            var error = await Assert.ThrowsAsync<ArgumentNullException>(() => renderer.RenderAsync(request!));
+
+            Assert.Equal("request", error.ParamName);
         }
         finally
         {
@@ -2764,6 +4406,65 @@ public sealed class CoreArchitectureTests
                 WallpaperPlacement.Default));
     }
 
+    [Theory]
+    [InlineData("DrawWidth")]
+    [InlineData("DrawHeight")]
+    public void ImagePlacementPlan_RejectsInvalidDirectDrawDimensions(string parameterName)
+    {
+        var drawWidth = parameterName == "DrawWidth" ? 0 : 2;
+        var drawHeight = parameterName == "DrawHeight" ? 0 : 1;
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new ImagePlacementPlan(false, 0, 0, drawWidth, drawHeight));
+
+        Assert.Equal(parameterName, error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("DrawWidth")]
+    [InlineData("DrawHeight")]
+    public void ImagePlacementPlan_WithExpressionRejectsInvalidDrawDimensions(string propertyName)
+    {
+        var plan = new ImagePlacementPlan(false, 0, 0, 2, 1);
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() => propertyName == "DrawWidth"
+            ? plan with { DrawWidth = 0 }
+            : plan with { DrawHeight = 0 });
+
+        Assert.Equal("value", error.ParamName);
+    }
+
+    [Fact]
+    public void ImagePlacementPlan_RejectsNullPlacement()
+    {
+        WallpaperPlacement? placement = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() =>
+            ImagePlacementPlan.Create(
+                sourceWidth: 1,
+                sourceHeight: 1,
+                targetWidth: 2,
+                targetHeight: 2,
+                placement!));
+
+        Assert.Equal("placement", error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("source")]
+    [InlineData("placement")]
+    public void ImagePlacementRenderer_RejectsNullInputs(string parameterName)
+    {
+        var source = new PixelBuffer(1, 1, new byte[3]);
+        PixelBuffer? maybeSource = parameterName == "source" ? null : source;
+        WallpaperPlacement? maybePlacement = parameterName == "placement" ? null : WallpaperPlacement.Default;
+
+        var error = Assert.Throws<ArgumentNullException>(() =>
+            ImagePlacementRenderer.Render(maybeSource!, 2, 2, maybePlacement!));
+
+        Assert.Equal(parameterName, error.ParamName);
+    }
+
     [Fact]
     public async Task WallpaperApplyService_AppliesRenderedSolidColor()
     {
@@ -2790,6 +4491,48 @@ public sealed class CoreArchitectureTests
                 Directory.Delete(root, recursive: true);
             }
         }
+    }
+
+    [Theory]
+    [InlineData("renderer")]
+    [InlineData("applier")]
+    public void WallpaperApplyService_RejectsNullDependencies(string parameterName)
+    {
+        var renderer = new PassthroughWallpaperRenderer();
+        var applier = new RecordingWallpaperApplier(succeed: true);
+        IWallpaperRenderer? maybeRenderer = parameterName == "renderer" ? null : renderer;
+        IWallpaperApplier? maybeApplier = parameterName == "applier" ? null : applier;
+
+        var error = Assert.Throws<ArgumentNullException>(() =>
+            new WallpaperApplyService(maybeRenderer!, maybeApplier!));
+
+        Assert.Equal(parameterName, error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("monitor")]
+    [InlineData("monitor-ready")]
+    [InlineData("all")]
+    [InlineData("all-ready")]
+    [InlineData("matching")]
+    public async Task WallpaperApplyService_RejectsNullSession(string applyMode)
+    {
+        var service = new WallpaperApplyService(
+            new PassthroughWallpaperRenderer(),
+            new RecordingWallpaperApplier(succeed: true));
+        ActiveSession? session = null;
+
+        var error = await Assert.ThrowsAsync<ArgumentNullException>(() => applyMode switch
+        {
+            "monitor" => service.ApplyMonitorAsync(session!, "DISPLAY-1"),
+            "monitor-ready" => service.ApplyMonitorReadySourceAsync(session!, "DISPLAY-1"),
+            "all" => service.ApplyAllAsync(session!),
+            "all-ready" => service.ApplyAllReadySourcesAsync(session!),
+            "matching" => service.ApplyMatchingAsync(session!, _ => true),
+            _ => throw new InvalidOperationException($"Unknown apply mode: {applyMode}"),
+        });
+
+        Assert.Equal("session", error.ParamName);
     }
 
     [Fact]
@@ -2968,6 +4711,37 @@ public sealed class CoreArchitectureTests
     }
 
     [Fact]
+    public async Task WallpaperApplyService_LeavesSuccessfulMonitorsAppliedWhenLaterMonitorFails()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"waller-apply-tests-{Guid.NewGuid():N}");
+        try
+        {
+            var renderer = new BasicPngWallpaperRenderer(new RenderedWallpaperStore(root));
+            var applier = new FailingMonitorWallpaperApplier("DISPLAY-2");
+            var service = new WallpaperApplyService(renderer, applier);
+            var first = CreateMonitor("DISPLAY-1", 16, 16, WallpaperSource.FromSolidColor("#112233"));
+            var second = CreateMonitor("DISPLAY-2", 16, 16, WallpaperSource.FromSolidColor("#445566"));
+            var session = ActiveSession.FromMonitors([first, second]);
+
+            var result = await service.ApplyAllAsync(session);
+
+            Assert.Equal(1, result.Succeeded);
+            Assert.Equal(1, result.Failed);
+            Assert.Equal(MonitorApplyStatus.Applied, result.Session.Monitors[0].ApplyStatus);
+            Assert.Null(result.Session.Monitors[0].ApplyError);
+            Assert.Equal(MonitorApplyStatus.Error, result.Session.Monitors[1].ApplyStatus);
+            Assert.Equal(ApplyErrorCodes.WallpaperApplyFailed, result.Session.Monitors[1].ApplyError);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task WallpaperApplyService_UsesFriendlyErrorWhenRenderUnexpectedlyFails()
     {
         var renderer = new ThrowingWallpaperRenderer(new InvalidOperationException("boom"));
@@ -3080,6 +4854,14 @@ public sealed class CoreArchitectureTests
     }
 
     [Fact]
+    public void WallpaperRenderException_NormalizesUnknownErrorCode()
+    {
+        var error = new WallpaperRenderException("driver exploded", "render failed");
+
+        Assert.Equal(ApplyErrorCodes.WallpaperApplyFailed, error.ErrorCode);
+    }
+
+    [Fact]
     public void ApplySessionResult_ReportsWhetherAnyOutcomeExists()
     {
         var session = ActiveSession.FromMonitors([]);
@@ -3116,6 +4898,132 @@ public sealed class CoreArchitectureTests
     }
 
     [Fact]
+    public void ApplySessionResult_NoneCreatesNoOutcomeResult()
+    {
+        var session = ActiveSession.FromMonitors([]);
+
+        var result = ApplySessionResult.None(session);
+
+        Assert.Equal(0, result.Succeeded);
+        Assert.Equal(0, result.Failed);
+        Assert.Equal(0, result.Skipped);
+        Assert.False(result.HasAnyOutcome);
+        Assert.Same(session, result.Session);
+    }
+
+    [Fact]
+    public void ApplySessionResult_SkippedOnlyCreatesSkippedOutcome()
+    {
+        var session = ActiveSession.FromMonitors([]);
+
+        var result = ApplySessionResult.SkippedOnly(session, skipped: 3);
+
+        Assert.Equal(0, result.Succeeded);
+        Assert.Equal(0, result.Failed);
+        Assert.Equal(3, result.Skipped);
+        Assert.True(result.HasAnyOutcome);
+        Assert.False(result.HasAppliedOutcome);
+        Assert.Same(session, result.Session);
+    }
+
+    [Theory]
+    [InlineData(-1, 0, 0, "Succeeded")]
+    [InlineData(0, -1, 0, "Failed")]
+    [InlineData(0, 0, -1, "Skipped")]
+    public void ApplySessionResult_RejectsNegativeCounts(
+        int succeeded,
+        int failed,
+        int skipped,
+        string parameterName)
+    {
+        var session = ActiveSession.FromMonitors([]);
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new ApplySessionResult(session, succeeded, failed, skipped));
+
+        Assert.Equal(parameterName, error.ParamName);
+    }
+
+    [Fact]
+    public void ApplySessionResult_RejectsNullSession()
+    {
+        ActiveSession? session = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() =>
+            new ApplySessionResult(session!, Succeeded: 0, Failed: 0));
+
+        Assert.Equal("session", error.ParamName);
+    }
+
+    [Fact]
+    public void ApplySessionResult_WithSkippedRejectsNegativeSkippedCount()
+    {
+        var session = ActiveSession.FromMonitors([]);
+        var result = ApplySessionResult.None(session);
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() => result.WithSkipped(-1));
+
+        Assert.Equal("Skipped", error.ParamName);
+    }
+
+    [Theory]
+    [InlineData(-1, 0, "Completed")]
+    [InlineData(0, -1, "Total")]
+    [InlineData(2, 1, "Completed")]
+    public void ApplyProgress_RejectsInvalidCounts(
+        int completed,
+        int total,
+        string parameterName)
+    {
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new ApplyProgress(completed, total, "DISPLAY-1", MonitorApplyStatus.Applying));
+
+        Assert.Equal(parameterName, error.ParamName);
+    }
+
+    [Fact]
+    public void ApplyProgress_RejectsNullMonitorName()
+    {
+        string? monitorName = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() =>
+            new ApplyProgress(0, 1, monitorName!, MonitorApplyStatus.Applying));
+
+        Assert.Equal("MonitorName", error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void ApplyProgress_RejectsBlankMonitorName(string monitorName)
+    {
+        var error = Assert.Throws<ArgumentException>(() =>
+            new ApplyProgress(0, 1, monitorName, MonitorApplyStatus.Applying));
+
+        Assert.Equal("MonitorName", error.ParamName);
+    }
+
+    [Fact]
+    public void ApplyProgress_RejectsInvalidStatus()
+    {
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new ApplyProgress(0, 1, "DISPLAY-1", (MonitorApplyStatus)999));
+
+        Assert.Equal("value", error.ParamName);
+    }
+
+    [Fact]
+    public void ApplyProgress_WithExpressionRejectsInvalidStatus()
+    {
+        var progress = new ApplyProgress(0, 1, "DISPLAY-1", MonitorApplyStatus.Applying);
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            progress with { Status = (MonitorApplyStatus)999 });
+
+        Assert.Equal("value", error.ParamName);
+    }
+
+    [Fact]
     public void ApplyCanceledException_WithSkippedPreservesPartialResult()
     {
         var session = ActiveSession.FromMonitors([]);
@@ -3128,6 +5036,17 @@ public sealed class CoreArchitectureTests
         Assert.Equal(2, withSkipped.Result.Skipped);
         Assert.Same(session, withSkipped.Result.Session);
         Assert.Same(original, withSkipped.InnerException);
+    }
+
+    [Fact]
+    public void ApplyCanceledException_RejectsNullResult()
+    {
+        ApplySessionResult? result = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() =>
+            new ApplyCanceledException(result!));
+
+        Assert.Equal("result", error.ParamName);
     }
 
     [Fact]
@@ -3188,6 +5107,165 @@ public sealed class CoreArchitectureTests
 
         Assert.Equal(1, tracker.Succeeded);
         Assert.Equal(1, tracker.Failed);
+    }
+
+    [Theory]
+    [InlineData("success")]
+    [InlineData("failure")]
+    public void ApplyRunTracker_RejectsRecordingPastTotal(string outcome)
+    {
+        var tracker = new ApplyRunTracker(total: 1, progress: null);
+        tracker.RecordSuccess();
+
+        var error = Assert.Throws<InvalidOperationException>(() =>
+        {
+            if (outcome == "success")
+            {
+                tracker.RecordSuccess();
+                return;
+            }
+
+            tracker.RecordFailure();
+        });
+
+        Assert.Equal(
+            "Apply tracker cannot record more completed steps than its total.",
+            error.Message);
+    }
+
+    [Theory]
+    [InlineData("starting")]
+    [InlineData("completed")]
+    public void ApplyRunTracker_RejectsNullProgressMonitor(string action)
+    {
+        var tracker = new ApplyRunTracker(total: 1, progress: null);
+        MonitorSession? monitor = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() =>
+        {
+            if (action == "starting")
+            {
+                tracker.ReportStarting(monitor!);
+                return;
+            }
+
+            tracker.ReportCompleted(monitor!);
+        });
+
+        Assert.Equal("monitor", error.ParamName);
+    }
+
+    [Fact]
+    public void ApplyRunTracker_RejectsNullStepResult()
+    {
+        var tracker = new ApplyRunTracker(total: 1, progress: null);
+        MonitorApplyStepResult? result = null;
+
+        var error = Assert.Throws<ArgumentNullException>(() => tracker.Record(result!));
+
+        Assert.Equal("result", error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("result-session", "session")]
+    [InlineData("result-monitors", "monitors")]
+    [InlineData("canceled-session", "session")]
+    [InlineData("canceled-monitors", "monitors")]
+    public void ApplyRunTracker_RejectsNullResultProjectionInputs(string action, string parameterName)
+    {
+        var monitor = CreateMonitor("DISPLAY-1", 16, 16, WallpaperSource.FromSolidColor("#112233"));
+        var session = ActiveSession.FromMonitors([monitor]);
+        var tracker = new ApplyRunTracker(total: 1, progress: null);
+        ActiveSession? maybeSession = action.EndsWith("session", StringComparison.Ordinal) ? null : session;
+        IReadOnlyList<MonitorSession>? maybeMonitors = action.EndsWith("monitors", StringComparison.Ordinal)
+            ? null
+            : session.Monitors;
+
+        var error = Assert.Throws<ArgumentNullException>(() =>
+        {
+            if (action.StartsWith("result", StringComparison.Ordinal))
+            {
+                tracker.ToResult(maybeSession!, maybeMonitors!);
+                return;
+            }
+
+            tracker.ToCanceledException(maybeSession!, maybeMonitors!);
+        });
+
+        Assert.Equal(parameterName, error.ParamName);
+    }
+
+    [Fact]
+    public void MonitorApplyStepResult_RejectsNullMonitor()
+    {
+        MonitorSession? monitor = null;
+
+        var successError = Assert.Throws<ArgumentNullException>(() =>
+            MonitorApplyStepResult.Success(monitor!));
+        var failureError = Assert.Throws<ArgumentNullException>(() =>
+            MonitorApplyStepResult.Failure(monitor!, "failed"));
+
+        Assert.Equal("monitor", successError.ParamName);
+        Assert.Equal("monitor", failureError.ParamName);
+    }
+
+    [Fact]
+    public void MonitorApplyStepResult_DoesNotExposePublicConstructors()
+    {
+        var constructors = typeof(MonitorApplyStepResult).GetConstructors();
+
+        Assert.Empty(constructors);
+    }
+
+    [Fact]
+    public void MonitorApplyStepResult_SuccessAppliesAssignment()
+    {
+        var snapshot = CreateMonitor("DISPLAY-1", 16, 16, WallpaperSource.FromSolidColor("#112233"));
+        var monitor = ActiveSession.FromMonitors([snapshot]).Monitors[0];
+
+        var result = MonitorApplyStepResult.Success(monitor);
+
+        Assert.True(result.Succeeded);
+        Assert.Equal(MonitorApplyStatus.Applied, result.Monitor.ApplyStatus);
+        Assert.Null(result.Monitor.ApplyError);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("driver exploded")]
+    public void MonitorApplyStepResult_FailureFallsBackForUnknownErrorCode(string? errorCode)
+    {
+        var snapshot = CreateMonitor("DISPLAY-1", 16, 16, WallpaperSource.FromSolidColor("#112233"));
+        var monitor = ActiveSession.FromMonitors([snapshot]).Monitors[0];
+
+        var result = MonitorApplyStepResult.Failure(monitor, errorCode);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(MonitorApplyStatus.Error, result.Monitor.ApplyStatus);
+        Assert.Equal(ApplyErrorCodes.WallpaperApplyFailed, result.Monitor.ApplyError);
+    }
+
+    [Fact]
+    public void MonitorApplyStepResult_FailureMarksApplyError()
+    {
+        var snapshot = CreateMonitor("DISPLAY-1", 16, 16, WallpaperSource.FromSolidColor("#112233"));
+        var monitor = ActiveSession.FromMonitors([snapshot]).Monitors[0];
+
+        var result = MonitorApplyStepResult.Failure(monitor, ApplyErrorCodes.WallpaperApplyFailed);
+
+        Assert.False(result.Succeeded);
+        Assert.Equal(MonitorApplyStatus.Error, result.Monitor.ApplyStatus);
+        Assert.Equal(ApplyErrorCodes.WallpaperApplyFailed, result.Monitor.ApplyError);
+    }
+
+    [Fact]
+    public void ApplyRunTracker_RejectsNegativeTotal()
+    {
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            new ApplyRunTracker(total: -1, progress: null));
+
+        Assert.Equal("total", error.ParamName);
     }
 
     [Fact]
@@ -3266,17 +5344,47 @@ public sealed class CoreArchitectureTests
             var first = CreateMonitor("DISPLAY-1", 16, 16, WallpaperSource.FromImage(@"C:\missing-image-a.png"));
             var second = CreateMonitor("DISPLAY-2", 16, 16, WallpaperSource.FromImage(@"C:\missing-image-b.png"));
             var session = ActiveSession.FromMonitors([first, second]);
+            var progressEvents = new List<ApplyProgress>();
 
-            var result = await service.ApplyAllReadySourcesAsync(session);
+            var result = await service.ApplyAllReadySourcesAsync(session, progress => progressEvents.Add(progress));
 
             Assert.Equal(0, result.Succeeded);
             Assert.Equal(0, result.Failed);
             Assert.Equal(2, result.Skipped);
+            Assert.Empty(progressEvents);
             Assert.All(result.Session.Monitors, monitor =>
             {
                 Assert.Equal(MonitorApplyStatus.Error, monitor.ApplyStatus);
                 Assert.Equal(ApplyErrorCodes.MissingImageSource, monitor.ApplyError);
             });
+            Assert.Null(applier.LastWallpaper);
+            Assert.False(Directory.Exists(Path.Combine(root, "rendered")));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task WallpaperApplyService_ApplyAllReadySourcesWithNoMonitorsDoesNotRender()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"waller-apply-tests-{Guid.NewGuid():N}");
+        try
+        {
+            var applier = new RecordingWallpaperApplier(succeed: true);
+            var service = CreateApplyService(root, applier);
+            var session = ActiveSession.FromMonitors([]);
+
+            var result = await service.ApplyAllReadySourcesAsync(session);
+
+            Assert.Equal(0, result.Succeeded);
+            Assert.Equal(0, result.Failed);
+            Assert.Equal(0, result.Skipped);
+            Assert.Empty(result.Session.Monitors);
             Assert.Null(applier.LastWallpaper);
             Assert.False(Directory.Exists(Path.Combine(root, "rendered")));
         }
@@ -3478,6 +5586,23 @@ public sealed class CoreArchitectureTests
         }
     }
 
+    private sealed class FailingMonitorWallpaperApplier(string failedMonitorKey) : IWallpaperApplier
+    {
+        public Task<ApplyResult> ApplyAsync(
+            RenderedWallpaper wallpaper,
+            CancellationToken cancellationToken = default)
+        {
+            var result = string.Equals(
+                wallpaper.Monitor.MonitorKey,
+                failedMonitorKey,
+                StringComparison.OrdinalIgnoreCase)
+                ? ApplyResult.Failure(wallpaper.Monitor, ApplyErrorCodes.WallpaperApplyFailed)
+                : ApplyResult.Success(wallpaper.Monitor);
+
+            return Task.FromResult(result);
+        }
+    }
+
     private sealed class CancelingWallpaperRenderer : IWallpaperRenderer
     {
         public CancellationTokenSource? Cancellation { get; set; }
@@ -3673,6 +5798,14 @@ public sealed class CoreArchitectureTests
         {
             cancellationToken.ThrowIfCancellationRequested();
             return Task.FromResult(monitors);
+        }
+    }
+
+    private sealed class ThrowingMonitorDetector(Exception error) : IMonitorDetector
+    {
+        public Task<IReadOnlyList<MonitorSnapshot>> DetectAsync(CancellationToken cancellationToken = default)
+        {
+            throw error;
         }
     }
 

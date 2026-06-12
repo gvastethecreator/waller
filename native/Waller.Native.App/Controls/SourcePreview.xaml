@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="Waller.Native.App.Controls.SourcePreview"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Border
+        Width="{Binding PreviewWidth, ElementName=Root}"
+        Height="{Binding PreviewHeight, ElementName=Root}"
+        AutomationProperties.Name="{Binding PreviewText, ElementName=Root}"
+        CornerRadius="{ThemeResource ControlCornerRadius}"
+        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+        BorderThickness="1"
+        Background="{Binding PreviewBrush, ElementName=Root}">
+        <Grid>
+            <Border
+                Background="{Binding PreviewImageBrush, ElementName=Root}"
+                Visibility="{Binding PreviewImageVisibility, ElementName=Root}" />
+            <TextBlock
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                FontSize="{Binding PreviewTextFontSize, ElementName=Root}"
+                Text="{Binding PreviewText, ElementName=Root}"
+                TextAlignment="Center"
+                TextTrimming="{Binding PreviewTextTrimming, ElementName=Root}"
+                TextWrapping="{Binding PreviewTextWrapping, ElementName=Root}"
+                Visibility="{Binding PreviewTextVisibility, ElementName=Root}" />
+        </Grid>
+    </Border>
+</UserControl>

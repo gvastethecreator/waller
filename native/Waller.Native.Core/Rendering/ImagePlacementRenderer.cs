@@ -10,6 +10,9 @@ internal static class ImagePlacementRenderer
         int targetHeight,
         WallpaperPlacement placement)
     {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(placement);
+
         var target = PixelBuffer.CreateSolid(targetWidth, targetHeight, RgbColor.Black);
         if (source.Width <= 0 || source.Height <= 0)
         {

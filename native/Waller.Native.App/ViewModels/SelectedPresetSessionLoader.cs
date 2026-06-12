@@ -10,11 +10,43 @@ internal enum SelectedPresetLoadKind
     MissingPreset,
 }
 
-internal sealed record SelectedPresetLoadResult(
-    SelectedPresetLoadKind Kind,
-    SelectedPresetSession? Selection,
-    string DisplayName)
+internal sealed record SelectedPresetLoadResult
 {
+    public SelectedPresetLoadResult(
+        SelectedPresetLoadKind Kind,
+        SelectedPresetSession? Selection,
+        string DisplayName)
+    {
+        if (!Enum.IsDefined(Kind))
+        {
+            throw new ArgumentOutOfRangeException(nameof(Kind), Kind, "Unknown selected Preset load kind.");
+        }
+
+        if (Kind is SelectedPresetLoadKind.CurrentSetup or SelectedPresetLoadKind.LoadedPreset)
+        {
+            ArgumentNullException.ThrowIfNull(Selection);
+        }
+        else if (Selection is not null)
+        {
+            throw new ArgumentException("Missing Preset load results cannot include a selection.", nameof(Selection));
+        }
+
+        if (Kind is SelectedPresetLoadKind.LoadedPreset or SelectedPresetLoadKind.MissingPreset)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(DisplayName);
+        }
+
+        this.Kind = Kind;
+        this.Selection = Selection;
+        this.DisplayName = DisplayName;
+    }
+
+    public SelectedPresetLoadKind Kind { get; }
+
+    public SelectedPresetSession? Selection { get; }
+
+    public string DisplayName { get; }
+
     public static SelectedPresetLoadResult CurrentSetup(SelectedPresetSession selection) =>
         new(SelectedPresetLoadKind.CurrentSetup, selection, DisplayName: string.Empty);
 
@@ -58,6 +90,11 @@ internal static class SelectedPresetSessionLoader
         ActiveSession activeSession,
         PresetMenuItem item)
     {
+        ArgumentNullException.ThrowIfNull(presetStore);
+        ArgumentNullException.ThrowIfNull(presetMatcher);
+        ArgumentNullException.ThrowIfNull(activeSession);
+        ArgumentNullException.ThrowIfNull(item);
+
         if (item.IsCurrentSetup)
         {
             return SelectedPresetLoadResult.CurrentSetup(

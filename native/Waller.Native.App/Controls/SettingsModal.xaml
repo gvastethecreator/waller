@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="Waller.Native.App.Controls.SettingsModal"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Waller.Native.App.Controls">
+
+    <Grid
+        Background="{ThemeResource WallerModalOverlayBrush}"
+        Visibility="{Binding ViewModel.SettingsVisibility, ElementName=Root}">
+        <Border
+            MaxWidth="440"
+            Padding="20"
+            Margin="24"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Center"
+            CornerRadius="{ThemeResource OverlayCornerRadius}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            Background="{ThemeResource SolidBackgroundFillColorBaseBrush}">
+            <Grid RowSpacing="14">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock
+                            Text="{Binding ViewModel.Text.Settings, ElementName=Root}"
+                            Style="{StaticResource SubtitleTextBlockStyle}" />
+                        <TextBlock
+                            Text="{Binding ViewModel.Text.SettingsSubtitle, ElementName=Root}"
+                            Style="{StaticResource CaptionTextBlockStyle}" />
+                    </StackPanel>
+                    <Button
+                        Grid.Column="1"
+                        Command="{Binding ViewModel.CloseSettingsCommand, ElementName=Root}"
+                        AutomationProperties.AutomationId="CloseSettingsButton"
+                        AutomationProperties.Name="{Binding ViewModel.Text.Close, ElementName=Root}"
+                        ToolTipService.ToolTip="{Binding ViewModel.Text.Close, ElementName=Root}"
+                        TabIndex="4">
+                        <FontIcon Glyph="&#xE711;" Style="{StaticResource WallerButtonIconStyle}" />
+                    </Button>
+                </Grid>
+
+                <ComboBox
+                    x:Name="SettingsThemeComboBox"
+                    Grid.Row="1"
+                    AutomationProperties.AutomationId="SettingsThemeComboBox"
+                    AutomationProperties.Name="{Binding ViewModel.Text.Theme, ElementName=Root}"
+                    Header="{Binding ViewModel.Text.Theme, ElementName=Root}"
+                    DisplayMemberPath="DisplayName"
+                    ItemsSource="{Binding ViewModel.ThemeOptions, ElementName=Root}"
+                    SelectedItem="{Binding ViewModel.SelectedThemeOption, ElementName=Root, Mode=TwoWay}"
+                    TabIndex="0" />
+
+                <ComboBox
+                    Grid.Row="2"
+                    AutomationProperties.AutomationId="SettingsLanguageComboBox"
+                    AutomationProperties.Name="{Binding ViewModel.Text.Language, ElementName=Root}"
+                    Header="{Binding ViewModel.Text.Language, ElementName=Root}"
+                    DisplayMemberPath="DisplayName"
+                    ItemsSource="{Binding ViewModel.LanguageOptions, ElementName=Root}"
+                    SelectedItem="{Binding ViewModel.SelectedLanguageOption, ElementName=Root, Mode=TwoWay}"
+                    TabIndex="1" />
+
+                <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                    <Button
+                        Command="{Binding ViewModel.ClearRenderedCacheCommand, ElementName=Root}"
+                        AutomationProperties.AutomationId="ClearRenderedCacheButton"
+                        AutomationProperties.Name="{Binding ViewModel.Text.ClearCache, ElementName=Root}"
+                        IsEnabled="{Binding ViewModel.CanUseModalActions, ElementName=Root}"
+                        ToolTipService.ToolTip="{Binding ViewModel.Text.ClearCache, ElementName=Root}"
+                        TabIndex="2">
+                        <controls:IconText Glyph="&#xE74D;" Text="{Binding ViewModel.Text.ClearCache, ElementName=Root}" />
+                    </Button>
+                    <Button
+                        Command="{Binding ViewModel.SaveSettingsCommand, ElementName=Root}"
+                        AutomationProperties.AutomationId="SaveSettingsButton"
+                        AutomationProperties.Name="{Binding ViewModel.Text.SaveSettings, ElementName=Root}"
+                        IsEnabled="{Binding ViewModel.CanUseModalActions, ElementName=Root}"
+                        ToolTipService.ToolTip="{Binding ViewModel.Text.SaveSettings, ElementName=Root}"
+                        TabIndex="3">
+                        <controls:IconText Glyph="&#xE74E;" Text="{Binding ViewModel.Text.SaveSettings, ElementName=Root}" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

@@ -78,65 +78,6 @@ public sealed partial class MainPageViewModel
         StatusText = presetText.SavedNew(savedPreset.Name);
     }
 
-    private async Task LoadSelectedPresetAsync(PresetMenuItem item, int loadVersion)
-    {
-        SelectedPresetLoadResult result;
-        try
-        {
-            result = await localState.LoadSelectedPresetAsync(presetMatcher, activeSession, item);
-        }
-        catch (Exception)
-        {
-            if (loadVersion == selectedPresetLoadVersion)
-            {
-                StatusText = presetText.LoadFailed;
-            }
-
-            return;
-        }
-
-        if (loadVersion != selectedPresetLoadVersion)
-        {
-            return;
-        }
-
-        if (result.TryGetSelection(out var selection))
-        {
-            await ApplySelectedPresetSessionAsync(selection);
-        }
-
-        StatusText = result.StatusText(presetText);
-        if (result.ShouldRefreshPresetList)
-        {
-            await RefreshPresetListAsync(selectPresetId: null);
-        }
-    }
-
-    private async Task RefreshPresetListAsync(Guid? selectPresetId)
-    {
-        selectedPresetLoadVersion++;
-        isChangingPresetSelection = true;
-        try
-        {
-            var result = await localState.RefreshMainPresetsAsync(Presets, Text.CurrentSetup, selectPresetId);
-            SelectedPreset = result.SelectedPreset;
-            lastSelectedPresetId = result.LastSelectedPresetId;
-            if (result.RequestedPresetMissing)
-            {
-                await PersistLastSelectedPresetAsync(null);
-            }
-        }
-        finally
-        {
-            isChangingPresetSelection = false;
-        }
-    }
-
-    private async Task PersistLastSelectedPresetAsync(Guid? presetId)
-    {
-        lastSelectedPresetId = await localState.PersistLastSelectedPresetAsync(presetId);
-    }
-
     private async Task CompletePresetSaveAsync(PresetSaveCompletion completion)
     {
         var preset = completion.SelectedPresetRecord;
@@ -151,26 +92,4 @@ public sealed partial class MainPageViewModel
         await PersistLastSelectedPresetAsync(preset.Id);
         RefreshSessionSurface(selectFirst: false);
     }
-
-    private async Task ApplySelectedPresetSessionAsync(SelectedPresetSession selection)
-    {
-        selectedPresetRecord = selection.SelectedPresetRecord;
-        lastSelectedPresetId = selection.LastSelectedPresetId;
-        activeSession = selection.Session;
-        PresetNameDraft = selection.PresetNameDraft;
-        RefreshSessionSurface(selection.SelectFirst);
-        if (selection.PersistVisualMemory)
-        {
-            await PersistLastSelectedPresetAsync(selection.PersistPresetId);
-        }
-    }
-
-    private void ApplyActivePresetRename(ActivePresetRename rename)
-    {
-        selectedPresetRecord = rename.SelectedPresetRecord;
-        activeSession = rename.Session;
-        PresetNameDraft = rename.PresetNameDraft;
-        NotifySessionSummaryChanged();
-    }
-
 }

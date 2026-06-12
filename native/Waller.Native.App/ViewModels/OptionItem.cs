@@ -1,7 +1,19 @@
 namespace Waller.Native.App.ViewModels;
 
-public sealed record OptionItem<T>(T Value, string DisplayName)
+public sealed record OptionItem<T>
 {
+    public OptionItem(T Value, string DisplayName)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(DisplayName);
+
+        this.Value = Value;
+        this.DisplayName = DisplayName;
+    }
+
+    public T Value { get; }
+
+    public string DisplayName { get; }
+
     public override string ToString() => DisplayName;
 }
 
@@ -11,10 +23,13 @@ internal static class OptionItems
         ICollection<OptionItem<T>> target,
         IEnumerable<OptionItem<T>> options)
     {
+        ArgumentNullException.ThrowIfNull(target);
+        ArgumentNullException.ThrowIfNull(options);
+
         target.Clear();
         foreach (var option in options)
         {
-            target.Add(option);
+            target.Add(option ?? throw new ArgumentException("Option collection cannot include null items.", nameof(options)));
         }
     }
 
@@ -23,8 +38,14 @@ internal static class OptionItems
         T value,
         IEqualityComparer<T>? comparer = null)
     {
+        ArgumentNullException.ThrowIfNull(options);
+
         comparer ??= EqualityComparer<T>.Default;
-        return options.FirstOrDefault(option => comparer.Equals(option.Value, value));
+        return options.FirstOrDefault(option =>
+        {
+            ArgumentNullException.ThrowIfNull(option);
+            return comparer.Equals(option.Value, value);
+        });
     }
 
     public static OptionItem<T>? ReplaceAndSelect<T>(

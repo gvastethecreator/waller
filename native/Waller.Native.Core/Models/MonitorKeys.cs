@@ -16,11 +16,29 @@ public static class MonitorKeys
 
     public static HashSet<string> CreateSet(string monitorKey)
     {
-        return new HashSet<string>(Comparer) { monitorKey };
+        return new HashSet<string>(Comparer) { RequiredMonitorKey(monitorKey, nameof(monitorKey)) };
     }
 
     public static HashSet<string> CreateSet(IEnumerable<string> monitorKeys)
     {
-        return new HashSet<string>(monitorKeys, Comparer);
+        ArgumentNullException.ThrowIfNull(monitorKeys);
+
+        var set = CreateSet();
+        foreach (var monitorKey in monitorKeys)
+        {
+            set.Add(RequiredMonitorKey(monitorKey, nameof(monitorKeys)));
+        }
+
+        return set;
+    }
+
+    private static string RequiredMonitorKey(string monitorKey, string parameterName)
+    {
+        if (string.IsNullOrWhiteSpace(monitorKey))
+        {
+            throw new ArgumentException("Monitor key is required.", parameterName);
+        }
+
+        return monitorKey;
     }
 }

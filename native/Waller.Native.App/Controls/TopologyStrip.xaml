@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="Waller.Native.App.Controls.TopologyStrip"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:Waller.Native.App.ViewModels">
+
+    <Border
+        Padding="12"
+        CornerRadius="{ThemeResource OverlayCornerRadius}"
+        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+        BorderThickness="1"
+        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+        Visibility="{Binding ViewModel.TopologyVisibility, ElementName=Root}">
+        <ScrollViewer
+            HorizontalScrollBarVisibility="Auto"
+            HorizontalScrollMode="Auto"
+            VerticalScrollBarVisibility="Disabled"
+            VerticalScrollMode="Disabled">
+            <ItemsControl ItemsSource="{Binding ViewModel.Monitors, ElementName=Root}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <Canvas
+                            Width="{Binding ViewModel.TopologyWidth, ElementName=Root}"
+                            Height="{Binding ViewModel.TopologyHeight, ElementName=Root}" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemContainerStyle>
+                    <Style TargetType="ContentPresenter">
+                        <Setter Property="Canvas.Left" Value="{Binding TopologyLeft}" />
+                        <Setter Property="Canvas.Top" Value="{Binding TopologyTop}" />
+                    </Style>
+                </ItemsControl.ItemContainerStyle>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:DataType="vm:MonitorRowViewModel">
+                        <Border
+                            Canvas.Left="{x:Bind TopologyLeft}"
+                            Canvas.Top="{x:Bind TopologyTop}"
+                            Width="{x:Bind TopologyWidth}"
+                            Height="{x:Bind TopologyHeight}"
+                            CornerRadius="{ThemeResource ControlCornerRadius}"
+                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                            BorderThickness="{x:Bind TopologyBorderThickness, Mode=OneWay}"
+                            Background="{ThemeResource SystemControlBackgroundAccentBrush}"
+                            AutomationProperties.Name="{x:Bind TopologyAccessibleName, Mode=OneWay}"
+                            Opacity="{x:Bind TopologyOpacity, Mode=OneWay}">
+                            <Grid Padding="6" RowSpacing="2">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="*" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <TextBlock
+                                    HorizontalAlignment="Center"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Bind Session.Monitor.Identity.DisplayIndex, Mode=OneWay}"
+                                    Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                <TextBlock
+                                    Grid.Row="1"
+                                    HorizontalAlignment="Center"
+                                    Text="{x:Bind Resolution}"
+                                    Visibility="{x:Bind TopologyResolutionVisibility, Mode=OneWay}"
+                                    TextTrimming="CharacterEllipsis"
+                                    Style="{StaticResource CaptionTextBlockStyle}" />
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+    </Border>
+</UserControl>

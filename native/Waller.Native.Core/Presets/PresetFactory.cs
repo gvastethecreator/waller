@@ -6,16 +6,23 @@ public static class PresetFactory
 {
     public static Preset CreateFromSession(ActiveSession session, string name)
     {
+        ArgumentNullException.ThrowIfNull(session);
+
         return CreateFromSession(session, Guid.NewGuid(), name, createdAt: default);
     }
 
     public static Preset UpdateFromSession(ActiveSession session, PresetIdentity identity, DateTimeOffset createdAt)
     {
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(identity);
+
         return CreateFromSession(session, identity.Id, identity.Name, createdAt);
     }
 
     public static Preset Duplicate(Preset preset, string name)
     {
+        ArgumentNullException.ThrowIfNull(preset);
+
         var now = DateTimeOffset.UtcNow;
         return preset with
         {
@@ -28,6 +35,8 @@ public static class PresetFactory
 
     public static Preset Rename(Preset preset, string name)
     {
+        ArgumentNullException.ThrowIfNull(preset);
+
         return preset with { Name = PresetNames.Validate(name) };
     }
 

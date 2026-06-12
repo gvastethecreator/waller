@@ -43,6 +43,9 @@ public sealed partial class MonitorRowViewModel(
 
     public Thickness TopologyBorderThickness => IsSelected ? new Thickness(2) : new Thickness(1);
 
+    public Visibility TopologyResolutionVisibility =>
+        VisibilityStates.When(TopologyWidth >= 92 && TopologyHeight >= 48);
+
     public string SourceSummary =>
         MonitorSourceText.Summary(Session.DesiredAssignment.Source, text);
 
@@ -73,6 +76,13 @@ public sealed partial class MonitorRowViewModel(
         Session.ApplyError,
         IsMissingImageSource,
         Session.HasUnsavedPresetChanges);
+
+    public string TopologyAccessibleName =>
+        $"{DisplayName}, {Resolution}, {Bounds}, {PlacementSummary}, {StatusSummary}";
+
+    public string EditAccessibleName => $"{text.Edit} {DisplayName}";
+
+    public string ApplyAccessibleName => $"{text.Apply} {DisplayName}";
 
     public void ReplaceText(LocalizedText text)
     {

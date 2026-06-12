@@ -10,6 +10,8 @@ $nativeRoot = Split-Path -Parent $PSScriptRoot
 $buildScript = Join-Path $nativeRoot "BuildAndRun.ps1"
 $appProcessId = $null
 
+. "$PSScriptRoot\PackageRegistration.ps1"
+
 function Assert-LastExitCode {
     param([string]$Step)
 
@@ -54,9 +56,14 @@ try {
     $launch = $jsonMatch.Value | ConvertFrom-Json
     if ($launch.Error) {
         if ($launch.Error -match "0x80073D19|conflicting package|already installed") {
-            Write-Host "Package registration conflict detected. Run this read-only diagnostic:" -ForegroundColor Yellow
-            Write-Host "powershell -ExecutionPolicy Bypass -File .\scripts\TestDevPackageRegistration.ps1 -AllUsers" -ForegroundColor Yellow
-            Write-Host "Do not uninstall automatically; use scripts\UninstallDevPackage.ps1 -Uninstall only when cleanup is intentional." -ForegroundColor Yellow
+            Write-WallerPackageConflictHelp
+            Write-Host ""
+            Write-Host "Running read-only current-user package registration diagnostic now..." -ForegroundColor Yellow
+            $currentUserDiagnostic = powershell -ExecutionPolicy Bypass -File .\scripts\TestDevPackageRegistration.ps1 2>&1
+            $currentUserDiagnostic | Out-String | Write-Host
+            Write-Host "Running read-only all-users package registration diagnostic now..." -ForegroundColor Yellow
+            $allUsersDiagnostic = powershell -ExecutionPolicy Bypass -File .\scripts\TestDevPackageRegistration.ps1 -AllUsers 2>&1
+            $allUsersDiagnostic | Out-String | Write-Host
         }
 
         throw "winapp launch failed: $($launch.Error)"

@@ -2,13 +2,31 @@ using Waller.Native.Core.Models;
 
 namespace Waller.Native.Core.Sessions;
 
-internal sealed record MonitorApplyStepResult(
-    MonitorSession Monitor,
-    bool Succeeded)
+internal sealed record MonitorApplyStepResult
 {
-    public static MonitorApplyStepResult Success(MonitorSession monitor) =>
-        new(monitor.WithAppliedAssignment(), Succeeded: true);
+    private MonitorApplyStepResult(MonitorSession monitor, bool Succeeded)
+    {
+        ArgumentNullException.ThrowIfNull(monitor);
 
-    public static MonitorApplyStepResult Failure(MonitorSession monitor, string errorCode) =>
-        new(monitor.WithApplyError(errorCode), Succeeded: false);
+        Monitor = monitor;
+        this.Succeeded = Succeeded;
+    }
+
+    public MonitorSession Monitor { get; }
+
+    public bool Succeeded { get; }
+
+    public static MonitorApplyStepResult Success(MonitorSession monitor)
+    {
+        ArgumentNullException.ThrowIfNull(monitor);
+
+        return new(monitor.WithAppliedAssignment(), Succeeded: true);
+    }
+
+    public static MonitorApplyStepResult Failure(MonitorSession monitor, string? errorCode)
+    {
+        ArgumentNullException.ThrowIfNull(monitor);
+
+        return new(monitor.WithApplyError(ApplyErrorCodes.Normalize(errorCode)), Succeeded: false);
+    }
 }

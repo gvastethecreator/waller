@@ -1,5 +1,5 @@
 param(
-    [string]$XamlPath = ".\Waller.Native.App\MainPage.xaml"
+    [string]$XamlPath = ".\Waller.Native.App"
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,11 +13,22 @@ else {
 }
 
 if (-not (Test-Path -LiteralPath $resolvedPath)) {
-    throw "XAML file not found: $resolvedPath"
+    throw "XAML path not found: $resolvedPath"
 }
 
-$xamlText = Get-Content -LiteralPath $resolvedPath -Raw
-$xaml = [xml]$xamlText
+$xamlFiles = if ((Get-Item -LiteralPath $resolvedPath).PSIsContainer) {
+    Get-ChildItem -LiteralPath $resolvedPath -Recurse -Filter *.xaml |
+        Where-Object { $_.FullName -notmatch "\\(bin|obj)\\" } |
+        Sort-Object FullName
+}
+else {
+    @(Get-Item -LiteralPath $resolvedPath)
+}
+
+if ($xamlFiles.Count -eq 0) {
+    throw "No XAML files found: $resolvedPath"
+}
+
 $hardCodedUserText = @()
 
 $localizedTextAttributes = @(
@@ -29,30 +40,54 @@ $localizedTextAttributes = @(
     "ToolTipService.ToolTip"
 )
 
-function Get-NodeLabel {
-    param($Node)
+function Get-NativeRelativePath {
+    param([string]$Path)
 
-    $name = $Node.GetAttribute("x:Name")
-    if ([string]::IsNullOrWhiteSpace($name)) {
-        return $Node.LocalName
+    $root = (Resolve-Path -LiteralPath $nativeRoot).Path.TrimEnd("\", "/")
+    $resolved = (Resolve-Path -LiteralPath $Path).Path
+    if ($resolved.StartsWith($root, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return $resolved.Substring($root.Length).TrimStart("\", "/")
     }
 
-    return "$($Node.LocalName) '$name'"
+    return $resolved
 }
 
-foreach ($node in $xaml.SelectNodes("//*")) {
-    foreach ($attributeName in $localizedTextAttributes) {
-        $attributeValue = $node.GetAttribute($attributeName)
-        if ([string]::IsNullOrWhiteSpace($attributeValue)) {
-            continue
-        }
+function Get-NodeLabel {
+    param(
+        $Node,
+        [string]$RelativePath
+    )
 
-        $isBindingOrResource = $attributeValue.TrimStart().StartsWith("{")
-        $isAllowedBrandTitle = $node.LocalName -eq "TextBlock" `
-            -and $attributeName -eq "Text" `
-            -and $attributeValue -eq "Waller"
-        if (-not $isBindingOrResource -and -not $isAllowedBrandTitle -and $attributeValue -match "[A-Za-z]") {
-            $hardCodedUserText += "$($attributeName) on $(Get-NodeLabel $node): '$attributeValue'"
+    $name = $Node.GetAttribute("x:Name")
+    $nodeLabel = if ([string]::IsNullOrWhiteSpace($name)) {
+        $Node.LocalName
+    }
+    else {
+        "$($Node.LocalName) '$name'"
+    }
+
+    return "${RelativePath}: $nodeLabel"
+}
+
+foreach ($file in $xamlFiles) {
+    $relativePath = Get-NativeRelativePath $file.FullName
+    $xamlText = Get-Content -LiteralPath $file.FullName -Raw
+    $xaml = [xml]$xamlText
+
+    foreach ($node in $xaml.SelectNodes("//*")) {
+        foreach ($attributeName in $localizedTextAttributes) {
+            $attributeValue = $node.GetAttribute($attributeName)
+            if ([string]::IsNullOrWhiteSpace($attributeValue)) {
+                continue
+            }
+
+            $isBindingOrResource = $attributeValue.TrimStart().StartsWith("{")
+            $isAllowedBrandTitle = $node.LocalName -eq "TextBlock" `
+                -and $attributeName -eq "Text" `
+                -and $attributeValue -eq "Waller"
+            if (-not $isBindingOrResource -and -not $isAllowedBrandTitle -and $attributeValue -match "[A-Za-z]") {
+                $hardCodedUserText += "$($attributeName) on $(Get-NodeLabel $node $relativePath): '$attributeValue'"
+            }
         }
     }
 }
@@ -66,4 +101,4 @@ if ($hardCodedUserText.Count -gt 0) {
     exit 1
 }
 
-Write-Host "XAML localization lint passed."
+Write-Host "XAML localization lint passed for $($xamlFiles.Count) file(s)."

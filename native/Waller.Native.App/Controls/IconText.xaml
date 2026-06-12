@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="Waller.Native.App.Controls.IconText"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <StackPanel Style="{StaticResource WallerButtonContentStackStyle}">
+        <FontIcon Glyph="{Binding Glyph, ElementName=Root}" Style="{StaticResource WallerButtonIconStyle}" />
+        <TextBlock Text="{Binding Text, ElementName=Root}" />
+    </StackPanel>
+</UserControl>

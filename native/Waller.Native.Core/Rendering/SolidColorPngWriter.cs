@@ -11,6 +11,8 @@ internal static class SolidColorPngWriter
         PixelBuffer pixels,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(pixels);
+
         await AtomicFileWriter.WriteAsync(
             path,
             async (file, token) =>

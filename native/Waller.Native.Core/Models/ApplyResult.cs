@@ -1,17 +1,46 @@
 namespace Waller.Native.Core.Models;
 
-public sealed record ApplyResult(
-    MonitorIdentity Monitor,
-    bool Succeeded,
-    string? ErrorCode,
-    string? ErrorMessage)
+public sealed record ApplyResult
 {
-    public static ApplyResult Success(MonitorIdentity monitor) => new(monitor, true, null, null);
+    private ApplyResult(
+        MonitorIdentity monitor,
+        bool Succeeded,
+        string? ErrorCode,
+        string? ErrorMessage)
+    {
+        ArgumentNullException.ThrowIfNull(monitor);
 
-    public static ApplyResult Failure(MonitorIdentity monitor, string? errorCode, string? errorMessage = null) =>
-        new(
+        this.Monitor = monitor;
+        this.Succeeded = Succeeded;
+        this.ErrorCode = Succeeded
+            ? null
+            : ApplyErrorCodes.Normalize(ErrorCode);
+        this.ErrorMessage = Succeeded ? null : ErrorMessage;
+    }
+
+    public MonitorIdentity Monitor { get; }
+
+    public bool Succeeded { get; }
+
+    public string? ErrorCode { get; }
+
+    public string? ErrorMessage { get; }
+
+    public static ApplyResult Success(MonitorIdentity monitor)
+    {
+        ArgumentNullException.ThrowIfNull(monitor);
+
+        return new(monitor, Succeeded: true, ErrorCode: null, ErrorMessage: null);
+    }
+
+    public static ApplyResult Failure(MonitorIdentity monitor, string? errorCode, string? errorMessage = null)
+    {
+        ArgumentNullException.ThrowIfNull(monitor);
+
+        return new(
             monitor,
-            false,
-            ApplyErrorCodes.IsKnown(errorCode) ? errorCode : ApplyErrorCodes.WallpaperApplyFailed,
-            errorMessage);
+            Succeeded: false,
+            ErrorCode: errorCode,
+            ErrorMessage: errorMessage);
+    }
 }

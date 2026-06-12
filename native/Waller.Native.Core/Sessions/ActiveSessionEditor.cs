@@ -10,6 +10,11 @@ public sealed class ActiveSessionEditor
         WallpaperSource source,
         WallpaperPlacement placement)
     {
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentException.ThrowIfNullOrWhiteSpace(monitorKey);
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(placement);
+
         var normalizedPlacement = placement.NormalizeOffsets();
         var updated = false;
         var monitors = session.Monitors.Select(monitor =>
@@ -49,6 +54,9 @@ public sealed class ActiveSessionEditor
 
     public ActiveSession RemoveMissingAssignment(ActiveSession session, string monitorKey)
     {
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentException.ThrowIfNullOrWhiteSpace(monitorKey);
+
         var missingAssignments = RemoveMissingAssignments(session.MissingAssignments, monitorKey);
 
         if (missingAssignments.Count == session.MissingAssignments.Count)
@@ -68,6 +76,10 @@ public sealed class ActiveSessionEditor
         string missingMonitorKey,
         string targetMonitorKey)
     {
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentException.ThrowIfNullOrWhiteSpace(missingMonitorKey);
+        ArgumentException.ThrowIfNullOrWhiteSpace(targetMonitorKey);
+
         var assignment = session.MissingAssignments.FirstOrDefault(assignment =>
             MonitorKeys.Equals(assignment.SavedMonitor.MonitorKey, missingMonitorKey));
         if (assignment is null)

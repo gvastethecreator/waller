@@ -7,6 +7,8 @@ public static class PresetNames
 
     public static string Validate(string name)
     {
+        ArgumentNullException.ThrowIfNull(name);
+
         var trimmed = name.Trim();
         if (string.IsNullOrWhiteSpace(trimmed))
         {

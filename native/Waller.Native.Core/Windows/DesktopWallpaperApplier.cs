@@ -15,19 +15,20 @@ public sealed class DesktopWallpaperApplier : IWallpaperApplier
 
     internal DesktopWallpaperApplier(IDesktopWallpaperWriter writer)
     {
+        ArgumentNullException.ThrowIfNull(writer);
         this.writer = writer;
     }
 
     public Task<ApplyResult> ApplyAsync(RenderedWallpaper wallpaper, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(wallpaper);
         cancellationToken.ThrowIfCancellationRequested();
 
         if (!File.Exists(wallpaper.Path))
         {
             return Task.FromResult(ApplyResult.Failure(
                 wallpaper.Monitor,
-                ApplyErrorCodes.RenderedWallpaperMissing,
-                $"Rendered wallpaper does not exist: {wallpaper.Path}"));
+                ApplyErrorCodes.RenderedWallpaperMissing));
         }
 
         try
@@ -36,12 +37,11 @@ public sealed class DesktopWallpaperApplier : IWallpaperApplier
 
             return Task.FromResult(ApplyResult.Success(wallpaper.Monitor));
         }
-        catch (Exception error)
+        catch (Exception)
         {
             return Task.FromResult(ApplyResult.Failure(
                 wallpaper.Monitor,
-                ApplyErrorCodes.WallpaperApplyFailed,
-                error.Message));
+                ApplyErrorCodes.WallpaperApplyFailed));
         }
     }
 }

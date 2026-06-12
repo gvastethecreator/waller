@@ -7,6 +7,9 @@ internal static class AtomicFileWriter
         Func<Stream, CancellationToken, Task> write,
         CancellationToken cancellationToken)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        ArgumentNullException.ThrowIfNull(write);
+
         var directory = Path.GetDirectoryName(path);
         if (!string.IsNullOrWhiteSpace(directory))
         {

@@ -74,6 +74,33 @@ restore with `NU1301`, rerun the same command outside the restricted sandbox.
 
 Latest no-smoke local result:
 
+- 2026-06-12: Pass after local-data root validator prefactor.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 397 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after `MonitorApplyStepResult.Failure` error-code
+  normalization.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, package guards, solution build, packaged build, and tests.
+- Tests: Passed 394 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after Apply error-code normalization prefactor.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, package guards, solution build, packaged build, and tests.
+- Tests: Passed 393 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after `MonitorApplyStepResult` factory-boundary prefactor.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, package guards, solution build, packaged build, and tests.
+- Tests: Passed 388 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after `ApplyResult` factory-boundary prefactor.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, package guards, solution build, packaged build, and tests.
+- Tests: Passed 385 / Failed 0 / Skipped 0.
 - 2026-06-08: Pass after Manage Presets mutation prefactor.
 - Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
 - Covered XAML accessibility lint, XAML localization lint, solution build,
@@ -637,6 +664,24 @@ Check registration conflicts across users when launch reports `0x80073D19`:
 powershell -ExecutionPolicy Bypass -File .\scripts\TestDevPackageRegistration.ps1 -AllUsers
 ```
 
+`SmokeLaunch.ps1` now runs current-user and all-users read-only diagnostics as
+separate steps when `winapp` reports a registration conflict, so full
+verification output should include the current-user state before the elevated
+all-users blocker.
+Current-user/all-user lookup and registration display formatting are centralized
+in `scripts\PackageRegistration.ps1`; `TestPackageScriptGuards.ps1` blocks raw
+`Get-AppxPackage` calls outside that helper.
+Package-conflict help is also centralized in `scripts\PackageRegistration.ps1`;
+smoke launch, registration diagnostic, and uninstall preflight must print the
+same read-only diagnostic commands and warn that `-Uninstall` is intentional
+cleanup only.
+When `-AllUsers` is requested without elevation, the combined diagnostic skips
+current-user lookup and asks for a separate current-user preflight to avoid a
+false current-user registration report.
+`TestPackageDiagnosticBehavior.ps1` keeps those read-only diagnostic contracts
+covered in `Verify.ps1`, using an absent explicit package name so it does not
+depend on local package state.
+
 Expected exit codes:
 
 - `0`: no conflict found in checked scope.
@@ -648,6 +693,16 @@ Legacy uninstall preflight without removing it:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\UninstallDevPackage.ps1
 ```
+
+All-user uninstall preflight for package-registration conflicts:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\UninstallDevPackage.ps1 -AllUsers
+```
+
+This may need elevation and removes nothing unless `-Uninstall` is also passed.
+When all-user inspection is denied, the script reports the denied preflight
+without dumping a PowerShell stacktrace.
 
 Remove the development package explicitly:
 
@@ -673,6 +728,7 @@ Coverage:
 - single-monitor missing image preflight marks only the target monitor
 - missing image preflight reports ready monitor keys separately from skipped
   monitor keys
+- Apply preflight rejects overlapping ready/skipped monitor key sets
 - apply target planning selects monitor and preflight ready-key targets
   case-insensitively
 - preset exact key matching
@@ -715,6 +771,26 @@ Coverage:
   color values, is skipped before render/apply
 - Preset JSON with invalid saved monitor identity payloads, such as blank keys
   or non-positive dimensions, is skipped before matching
+- `Preset` rejects null items inside assignment collections at construction and
+  `with` mutation boundaries before matching/save normalization consumes them
+- `ActiveSession` and `Preset` collection null-item boundaries share
+  `RequiredList`, so future model collection contracts use the same copy/guard
+  behavior
+- Core model guards keep `MonitorIdentity` and `WallpaperSource` as explicit
+  records so monitor/source contracts stay reviewable before more native session
+  behavior is added
+- `WallpaperSource` rejects unsupported source kinds at construction and `with`
+  mutation time
+- `MonitorIdentity` converts null monitor keys to invalid empty keys instead of
+  letting null keys reach Preset matching
+- `ActiveSession` rejects null items inside monitor, monitor snapshot, and
+  missing-assignment collections at construction and `with` mutation boundaries
+- `MonitorSession` and `ApplyProgress` reject unsupported apply-status enum
+  values at construction and `with` mutation time before UI/progress projection
+  can consume them
+- `ApplyRunTracker` rejects recording more completed monitor steps than its
+  planned total, so Apply progress/session accounting cannot drift past target
+  count
 - Preset JSON with missing or regressing timestamps is normalized on load
 - Preset creation from Active Session with missing assignments
 - User settings JSON roundtrip
@@ -728,6 +804,11 @@ Coverage:
 - supported language culture lookup falls back through `AppLanguages`
 - User settings policy centralizes invalid theme fallback, language fallback,
   minimum window size, and incomplete window position cleanup
+- Runtime Settings preference mutation rejects unsupported theme enum values and
+  unsupported languages while preserving JSON-load normalization for invalid
+  saved settings
+- Window placement mutation clamps saved width/height to the minimum Settings
+  size before the store writes normalized JSON
 - window placement is updated through a complete size/position helper
 - startup loads saved settings before first session status text
 - unexpected startup initialization failures are caught by the page and surfaced
@@ -741,6 +822,11 @@ Coverage:
   crashing Settings
 - Rendered cache file names sanitize monitor keys, cap long names, and avoid
   sanitized-name collisions with a hash
+- Pixel buffers copy input data and reject out-of-bounds pixel reads/writes with
+  explicit argument errors before image placement/rendering can fail with raw
+  index errors
+- Rendered wallpaper outputs reject relative paths before Apply receives a
+  rendered PNG reference
 - Shared atomic file writer writes final output only after the callback
   completes and preserves existing output when the callback fails
 - Rendered PNG writing keeps existing final output if an atomic write is
@@ -1201,6 +1287,19 @@ Verify:
 - Anchor positions available: 3x3 positions.
 - Source, fit, anchor, and position controls show localized labels, not raw enum
   names.
+- Primary shell actions and monitor-row Edit/Apply actions show icon+text
+  content while keeping localized accessible names/tooltips.
+- Image picker, Preset management, delete confirmation, cache clear, and
+  Settings save actions show icon+text content with the same accessible names.
+- Disconnected-monitor Reassign/Forget and Apply cancellation also use
+  icon+text content, and XAML lint blocks action buttons from reverting to
+  `Content` attributes.
+- Modal close buttons use compact close icons with localized accessible
+  names/tooltips.
+- Header commands remain reachable through horizontal scrolling at narrow window
+  widths instead of forcing overlap or clipped top-bar layout.
+- Save As, Manage Presets, and Settings modals shrink within narrow windows
+  instead of overflowing their overlay.
 - Position X/Y controls accept -100..100 and persist through monitor selection,
   Preset save/load, and Apply rendering.
 - Reset position returns both X/Y controls to `0,0`, marks the selected monitor

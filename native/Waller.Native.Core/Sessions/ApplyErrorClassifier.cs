@@ -6,9 +6,7 @@ namespace Waller.Native.Core.Sessions;
 public static class ApplyErrorClassifier
 {
     public static string FriendlyErrorCode(string? errorCode) =>
-        ApplyErrorCodes.IsKnown(errorCode)
-            ? errorCode!
-            : ApplyErrorCodes.WallpaperApplyFailed;
+        ApplyErrorCodes.Normalize(errorCode);
 
     public static string FriendlyErrorCode(Exception error) => error switch
     {

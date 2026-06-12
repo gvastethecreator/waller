@@ -1,21 +1,138 @@
 namespace Waller.Native.Core.Models;
 
-public sealed record PresetIdentity(Guid Id, string Name);
-
-public sealed record Preset(
-    int SchemaVersion,
-    Guid Id,
-    string Name,
-    IReadOnlyList<PresetAssignment> Assignments,
-    DateTimeOffset CreatedAt,
-    DateTimeOffset UpdatedAt)
+public sealed record PresetIdentity
 {
+    private string name = string.Empty;
+
+    public PresetIdentity(Guid Id, string Name)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(Name);
+
+        this.Id = Id;
+        this.Name = Name;
+    }
+
+    public Guid Id { get; init; }
+
+    public string Name
+    {
+        get => name;
+        init
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(value);
+            name = value;
+        }
+    }
+}
+
+public sealed record Preset
+{
+    private string name = string.Empty;
+    private IReadOnlyList<PresetAssignment> assignments = [];
+
+    public Preset(
+        int SchemaVersion,
+        Guid Id,
+        string Name,
+        IReadOnlyList<PresetAssignment> Assignments,
+        DateTimeOffset CreatedAt,
+        DateTimeOffset UpdatedAt)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(Name);
+
+        this.SchemaVersion = SchemaVersion;
+        this.Id = Id;
+        this.Name = Name;
+        assignments = RequiredList.Copy(
+            Assignments,
+            nameof(Assignments),
+            "Preset assignment list cannot include null items.");
+        this.CreatedAt = CreatedAt;
+        this.UpdatedAt = UpdatedAt;
+    }
+
     public const int CurrentSchemaVersion = 1;
+
+    public int SchemaVersion { get; init; }
+
+    public Guid Id { get; init; }
+
+    public string Name
+    {
+        get => name;
+        init
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(value);
+            name = value;
+        }
+    }
+
+    public IReadOnlyList<PresetAssignment> Assignments
+    {
+        get => assignments;
+        init
+        {
+            assignments = RequiredList.Copy(
+                value,
+                nameof(value),
+                "Preset assignment list cannot include null items.");
+        }
+    }
+
+    public DateTimeOffset CreatedAt { get; init; }
+
+    public DateTimeOffset UpdatedAt { get; init; }
 
     public PresetIdentity Identity => new(Id, Name);
 }
 
-public sealed record PresetAssignment(
-    MonitorIdentity SavedMonitor,
-    WallpaperSource Source,
-    WallpaperPlacement Placement);
+public sealed record PresetAssignment
+{
+    private MonitorIdentity savedMonitor = null!;
+    private WallpaperSource source = null!;
+    private WallpaperPlacement placement = null!;
+
+    public PresetAssignment(
+        MonitorIdentity SavedMonitor,
+        WallpaperSource Source,
+        WallpaperPlacement Placement)
+    {
+        ArgumentNullException.ThrowIfNull(SavedMonitor);
+        ArgumentNullException.ThrowIfNull(Source);
+        ArgumentNullException.ThrowIfNull(Placement);
+
+        this.SavedMonitor = SavedMonitor;
+        this.Source = Source;
+        this.Placement = Placement;
+    }
+
+    public MonitorIdentity SavedMonitor
+    {
+        get => savedMonitor;
+        init
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            savedMonitor = value;
+        }
+    }
+
+    public WallpaperSource Source
+    {
+        get => source;
+        init
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            source = value;
+        }
+    }
+
+    public WallpaperPlacement Placement
+    {
+        get => placement;
+        init
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            placement = value;
+        }
+    }
+}

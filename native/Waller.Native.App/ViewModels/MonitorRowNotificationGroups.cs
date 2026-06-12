@@ -10,6 +10,9 @@ internal static class MonitorRowNotificationGroups
         nameof(MonitorRowViewModel.SourcePreviewTextVisibility),
         nameof(MonitorRowViewModel.PlacementSummary),
         nameof(MonitorRowViewModel.StatusSummary),
+        nameof(MonitorRowViewModel.TopologyAccessibleName),
+        nameof(MonitorRowViewModel.EditAccessibleName),
+        nameof(MonitorRowViewModel.ApplyAccessibleName),
     ];
 
     public static IEnumerable<string> CurrentMonitorSession =>
@@ -26,6 +29,9 @@ internal static class MonitorRowNotificationGroups
         nameof(MonitorRowViewModel.SourcePreviewTextVisibility),
         nameof(MonitorRowViewModel.PlacementSummary),
         nameof(MonitorRowViewModel.StatusSummary),
+        nameof(MonitorRowViewModel.TopologyAccessibleName),
+        nameof(MonitorRowViewModel.EditAccessibleName),
+        nameof(MonitorRowViewModel.ApplyAccessibleName),
     ];
 
     public static IEnumerable<string> MissingMonitorText =>
@@ -35,5 +41,7 @@ internal static class MonitorRowNotificationGroups
         nameof(MissingMonitorRowViewModel.SourceSummary),
         nameof(MissingMonitorRowViewModel.SourcePreviewTextVisibility),
         nameof(MissingMonitorRowViewModel.PlacementSummary),
+        nameof(MissingMonitorRowViewModel.ReassignAccessibleName),
+        nameof(MissingMonitorRowViewModel.ForgetAccessibleName),
     ];
 }

@@ -4,10 +4,20 @@ using Waller.Native.Core.Windows;
 
 namespace Waller.Native.Core.Sessions;
 
-public sealed class WallpaperApplyService(
-    IWallpaperRenderer renderer,
-    IWallpaperApplier applier)
+public sealed class WallpaperApplyService
 {
+    private readonly IWallpaperRenderer renderer;
+    private readonly IWallpaperApplier applier;
+
+    public WallpaperApplyService(IWallpaperRenderer renderer, IWallpaperApplier applier)
+    {
+        ArgumentNullException.ThrowIfNull(renderer);
+        ArgumentNullException.ThrowIfNull(applier);
+
+        this.renderer = renderer;
+        this.applier = applier;
+    }
+
     public async Task<ApplySessionResult> ApplyMonitorAsync(
         ActiveSession session,
         string monitorKey,
@@ -53,6 +63,13 @@ public sealed class WallpaperApplyService(
         ApplyProgressHandler? progress,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(preflight);
+
+        if (!preflight.HasReadyMonitors)
+        {
+            return ApplySessionResult.SkippedOnly(preflight.Session, preflight.SkippedCount);
+        }
+
         try
         {
             var result = await ApplyAsync(
@@ -84,6 +101,9 @@ public sealed class WallpaperApplyService(
         ApplyProgressHandler? progress,
         CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(targetPlan);
+
         var monitors = session.Monitors.ToList();
         var total = targetPlan.Count(monitors);
         var tracker = new ApplyRunTracker(total, progress);
