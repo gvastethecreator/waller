@@ -4,21 +4,78 @@ using Windows.UI;
 
 namespace Waller.Native.App.ViewModels;
 
-internal sealed record MonitorEditDraft(
-    WallpaperSourceKind SourceKind,
-    string ImagePath,
-    string ColorHex,
-    Color Color,
-    WallpaperFitMode FitMode,
-    WallpaperAnchor Anchor,
-    double OffsetXPercent = 0,
-    double OffsetYPercent = 0)
+internal sealed record MonitorEditDraft
 {
+    public MonitorEditDraft(
+        WallpaperSourceKind SourceKind,
+        string? ImagePath,
+        string? ColorHex,
+        Color Color,
+        WallpaperFitMode FitMode,
+        WallpaperAnchor Anchor,
+        double OffsetXPercent = 0,
+        double OffsetYPercent = 0)
+    {
+        if (!Enum.IsDefined(SourceKind))
+        {
+            throw new ArgumentOutOfRangeException(nameof(SourceKind), SourceKind, "Unknown editor source kind.");
+        }
+
+        if (!Enum.IsDefined(FitMode))
+        {
+            throw new ArgumentOutOfRangeException(nameof(FitMode), FitMode, "Unknown editor fit mode.");
+        }
+
+        if (!Enum.IsDefined(Anchor))
+        {
+            throw new ArgumentOutOfRangeException(nameof(Anchor), Anchor, "Unknown editor anchor.");
+        }
+
+        if (!double.IsFinite(OffsetXPercent))
+        {
+            throw new ArgumentOutOfRangeException(nameof(OffsetXPercent), OffsetXPercent, "Editor X offset must be finite.");
+        }
+
+        if (!double.IsFinite(OffsetYPercent))
+        {
+            throw new ArgumentOutOfRangeException(nameof(OffsetYPercent), OffsetYPercent, "Editor Y offset must be finite.");
+        }
+
+        this.SourceKind = SourceKind;
+        this.ImagePath = ImagePath ?? string.Empty;
+        this.ColorHex = SourceKind == WallpaperSourceKind.SolidColor
+            ? global::Waller.Native.Core.Models.ColorHexValue.Normalize(ColorHex ?? string.Empty)
+            : ColorHex ?? "#000000";
+        this.Color = Color;
+        this.FitMode = FitMode;
+        this.Anchor = Anchor;
+        this.OffsetXPercent = OffsetXPercent;
+        this.OffsetYPercent = OffsetYPercent;
+    }
+
+    public WallpaperSourceKind SourceKind { get; }
+
+    public string ImagePath { get; }
+
+    public string ColorHex { get; }
+
+    public Color Color { get; }
+
+    public WallpaperFitMode FitMode { get; }
+
+    public WallpaperAnchor Anchor { get; }
+
+    public double OffsetXPercent { get; }
+
+    public double OffsetYPercent { get; }
+
     public bool IsMissingRequiredImagePath =>
         SourceKind == WallpaperSourceKind.Image && string.IsNullOrWhiteSpace(ImagePath);
 
     public static MonitorEditDraft FromAssignment(PresetAssignment assignment)
     {
+        ArgumentNullException.ThrowIfNull(assignment);
+
         var colorHex = assignment.Source.ColorHex ?? "#000000";
         var color = ColorHexValue(colorHex);
 
@@ -56,9 +113,11 @@ internal sealed record MonitorEditDraft(
         ActiveSessionEditor editor,
         ActiveSession session,
         string monitorKey) =>
-        editor.UpdateAssignment(
-            session,
-            monitorKey,
+        (editor ?? throw new ArgumentNullException(nameof(editor))).UpdateAssignment(
+            session ?? throw new ArgumentNullException(nameof(session)),
+            string.IsNullOrWhiteSpace(monitorKey)
+                ? throw new ArgumentException("Monitor key is required.", nameof(monitorKey))
+                : monitorKey,
             ToSource(),
             ToPlacement());
 

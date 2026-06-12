@@ -14,6 +14,545 @@ checklist for behavior that still depends on a real Windows session.
 
 Latest verification:
 
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  centralizing local-data root validation in
+  `Storage\LocalDataRootDirectory.RequireFullyQualified`. Presets, Settings,
+  and rendered-wallpaper cache stores now reject relative roots before creating
+  app data, keeping all local MVP state under explicit fully qualified paths.
+  `TestCoreCodeGuards.ps1` guards the shared helper and all three consumers.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  normalizing `MonitorApplyStepResult.Failure` error codes before monitor state
+  mutation. Apply tracker inputs now share the same error-code vocabulary as
+  render exceptions and applier results, while lower-level `MonitorSession`
+  still rejects blank raw error strings.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  centralizing Apply error-code normalization in `ApplyErrorCodes.Normalize`.
+  `ApplyResult`, `WallpaperRenderException`, and `ApplyErrorClassifier` now use
+  the same fallback rule for unknown error codes, making future Apply error
+  additions one-model change instead of three separate branches.
+  `TestCoreCodeGuards.ps1` now guards those call sites.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  closing `MonitorApplyStepResult` construction behind `Success` and `Failure`
+  helpers. Apply step results can no longer bypass the helper-owned state
+  transition that marks monitors as applied or failed before
+  `ApplyRunTracker` aggregates counts. `TestCoreCodeGuards.ps1` now guards the
+  private constructor and both factory projections.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  closing `ApplyResult` construction behind factory helpers. `ApplyResult`
+  no longer exposes a public constructor that can accept success results with
+  hidden error fields; callers must use `Success` or `Failure`, preserving the
+  small Apply result vocabulary before more apply orchestration work.
+  `TestCoreCodeGuards.ps1` now blocks reopening that constructor.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  extracting shared required-list validation to `Models\RequiredList.cs`.
+  `ActiveSession` and `Preset` now use one helper for null-list, null-item, and
+  copy-on-write collection boundaries, reducing duplicated guard code before the
+  next state/model contracts are added. `TestCoreCodeGuards.ps1` now guards the
+  shared helper and its consumers.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  tightening rendered-wallpaper output contracts. `RenderedWallpaper` now
+  rejects relative output paths, so the apply layer only receives absolute
+  rendered PNG paths from the renderer/store pipeline. `TestCoreCodeGuards.ps1`
+  now guards this render/apply boundary.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  hardening Apply preflight results. `ApplyPreflightResult` now rejects overlap
+  between ready and skipped monitor key sets, so one monitor cannot be both an
+  apply target and a skipped missing-source target. `TestCoreCodeGuards.ps1`
+  now guards this preflight invariant.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  hardening `PixelBuffer` for renderer work. Pixel buffers now copy constructor
+  input data and reject out-of-bounds `GetPixel`/`SetPixel` coordinates with
+  explicit argument errors, avoiding later array-index failures during image
+  placement/rendering work. `TestCoreCodeGuards.ps1` now guards this rendering
+  buffer contract.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  moving window-size minimum enforcement into `UserSettings.WithWindowPlacement`.
+  Runtime window placement saves now clamp width/height before Settings save
+  state mutates, instead of relying only on store-level normalization.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  tightening runtime Settings preference mutation. `UserSettings.WithPreferences`
+  now rejects unsupported theme enum values and unsupported language codes, and
+  normalizes supported language casing before App Settings save state can mutate.
+  The base `UserSettings` constructor remains lenient so JSON-loaded invalid
+  settings can still flow through `UserSettingsPolicy.Normalize`.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  hardening Preset assignment collection boundaries. `Preset` construction and
+  `with` mutation now reject null assignment items before Preset matching, save
+  normalization, or JSON-loaded invalid shapes can fail later in the workflow.
+  `TestCoreCodeGuards.ps1` now guards the Preset assignment copy contract.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  hardening `ActiveSession` collection boundaries. Active Session constructors,
+  `with` mutation, and `FromMonitors` now reject null monitor/session/missing
+  assignment items before editor, Preset matching, or Apply code can hit later
+  null failures. `TestCoreCodeGuards.ps1` now guards the shared list-copy and
+  null-item validation helper.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  tightening Apply run accounting. `ApplyRunTracker` now records success/failure
+  through one guarded completion helper and rejects attempts to record more
+  completed monitor steps than the planned target total, preventing impossible
+  progress/session summaries before future Apply orchestration changes.
+  `TestCoreCodeGuards.ps1` now guards this accounting contract.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  hardening native Apply status contracts. `MonitorSession` and `ApplyProgress`
+  now reject unsupported `MonitorApplyStatus` values at construction and `with`
+  mutation time, so invalid status enum values cannot leak into row state,
+  progress reporting, or future Apply orchestration splits. `TestCoreCodeGuards.ps1`
+  now guards those status contracts alongside monitor/source model contracts.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making core `MonitorIdentity` and `WallpaperSource` explicit records instead
+  of positional records. `MonitorIdentity` now normalizes null monitor keys to
+  empty while preserving legacy invalid-shape detection through
+  `IsValidForPresetAssignment`; `WallpaperSource` now rejects unsupported source
+  enum values at construction and `with` mutation time while still letting
+  `TryNormalize` reject legacy invalid payloads. `scripts\TestCoreCodeGuards.ps1`
+  now keeps those model contracts from regressing, and the verify gate runs it
+  before JSON/build/tests.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  centralizing package-registration conflict guidance in
+  `scripts\PackageRegistration.ps1`. `SmokeLaunch.ps1`,
+  `TestDevPackageRegistration.ps1`, and `UninstallDevPackage.ps1` now print the
+  same exact read-only diagnostic, elevated all-users diagnostic, cleanup
+  preflight, and intentional `-Uninstall` guidance when `0x80073D19` or package
+  registration conflicts block launch. `TestPackageDiagnosticBehavior.ps1`
+  covers the shared help text for non-elevated all-users diagnostics and
+  uninstall preflight. Full packaged smoke remains blocked on the local
+  all-users/current-user registration conflict until cleanup is approved and run.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  hardening App-side Settings DTOs: `SettingsPreferenceDraft` rejects unknown
+  themes and unsupported languages before modal save/load state mutates,
+  `SettingsPreferenceSaveResult` rejects failed saves that still carry Preset
+  visual-memory output, and `SettingsPreferenceStore`/`SettingsSaveRequest`
+  reject missing store/request/draft/status dependencies. Shared option helpers
+  now reject missing option collections and null option entries before localized
+  dropdown refresh reaches Settings or editor surfaces. Managed Preset command
+  DTOs now reject empty ids, invalid delete confirmations, null command text
+  presenters, and empty Preset menu ids before modal commands mutate Presets.
+  Apply/editor workflow result DTOs now reject impossible states like successful
+  Apply without session or monitor assignment results that mix success with
+  validation failures. Editor draft/source/disconnected-monitor result DTOs now
+  reject invalid enum/offset/status/dependency inputs before a future
+  `MonitorEditViewModel` split. Preset menu refresh/list/localized-surface
+  helpers now reject missing collections, blank Current setup labels, empty
+  selection ids, and impossible stale visual-memory results before UI selection
+  changes. Localized option selection and monitor-row projection helpers now
+  validate option collections/text/enums and topology projection dimensions before
+  Settings/editor dropdowns or monitor workspace rows update. Localized surface
+  refresh output is now an explicit result object instead of the last App-side
+  positional DTO. WinUI code guards now keep those Settings/option/managed-Preset
+  command/workflow-result/editor/Preset-menu/surface-projection contracts in
+  place, and their repeated text-contract checks now share `Test-TextContracts`
+  so future guard additions do not require another copy-paste loop. Preset
+  matcher assignment indexing now also rejects missing normalized assignment
+  lists/dictionaries before exact/fallback matching consumes the index.
+  Covered 15 XAML files,
+  WinUI/JSON/local-data/error-text/MVP-scope code guards, package
+  asset/script/update/signing/launch guards, package diagnostic behavior,
+  solution build, packaged debug build, and 352 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making disconnected-monitor row actions compact icon-only buttons while
+  preserving localized accessible names/tooltips, plus a XAML guard that keeps
+  those stale-monitor row actions narrow for localized labels. Covered 15 XAML
+  files, WinUI/JSON/error-text/MVP-scope code guards, package asset/script
+  guards, package diagnostic behavior checks, solution build, packaged debug
+  build, and 259 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  improving topology-strip compactness: small monitor tiles now hide the
+  resolution label through `TopologyResolutionVisibility`, keep the full detail
+  in the accessible topology name, and XAML lint guards the compact
+  visibility/trimming binding. Covered 15 XAML files,
+  WinUI/JSON/error-text/MVP-scope code guards, package asset/script guards,
+  package diagnostic behavior checks, solution build, packaged debug build, and
+  259 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  adding XAML accessibility guards that keep final operation status visible
+  through a persistent `StatusInfoBar` and require the no-monitor/no-preset empty
+  states to remain present in `MonitorWorkspace` and `ManagePresetsModal`.
+  Covered 15 XAML files, WinUI/JSON/error-text/MVP-scope code guards, package
+  asset/script guards, package diagnostic behavior checks, solution build,
+  packaged debug build, and 259 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  proving Apply-all partial failure keeps earlier successful monitors in Applied
+  status, marking the render-failure/no-Windows-touch and partial-success
+  acceptance items done, and making `WallpaperApplyService` reject missing
+  renderer/applier dependencies before orchestration starts. Covered 15 XAML
+  files, WinUI/JSON/error-text/MVP-scope code guards, package asset/script
+  guards, package diagnostic behavior checks, solution build, packaged debug
+  build, and 259 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  tightening render/apply contracts: `RenderRequest`, `RenderedWallpaper`,
+  `BasicPngWallpaperRenderer`, `DesktopWallpaperApplier`, `PixelBuffer`,
+  `SolidColorPngWriter`, `ImagePlacementPlan`, and `ImagePlacementRenderer` now
+  reject missing/invalid inputs before render, PNG, scaling, file-existence, or
+  COM work starts. Covered 15 XAML files, WinUI/JSON/error-text/MVP-scope code
+  guards, package asset/script guards, package diagnostic behavior checks,
+  solution build, packaged debug build, and 256 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making `WallerAppDataPaths.RootFor(...)` reject blank local app-data paths
+  before composing the Waller app folder, plus a WinUI code guard that keeps
+  that App-side root validation in place. `RenderedCacheClearResult` now also
+  rejects negative delete/failure counts before cache-clear UI copy can format
+  impossible totals. Covered 15 XAML files, WinUI/JSON/error-text/MVP-scope code
+  guards, package asset/script guards, package diagnostic behavior checks,
+  solution build, packaged debug build, and 241 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making `RenderedWallpaperStore` reject blank local-data roots before creating
+  rendered-cache output paths, matching Preset and Settings store boundaries.
+  Covered 15 XAML files, WinUI/JSON/error-text/MVP-scope code guards, package
+  asset/script guards, package diagnostic behavior checks, solution build,
+  packaged debug build, and 239 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  adding the `#RRGGBB` hint and `MaxLength=7` constraint to the solid-color
+  editor field, plus a XAML accessibility guard that keeps the color hex field
+  bounded before Core validation maps invalid colors to localized status. Covered
+  15 XAML files, WinUI/JSON/error-text/MVP-scope code guards, package
+  asset/script guards, package diagnostic behavior checks, solution build,
+  packaged debug build, and 236 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making atomic local file writes reject blank paths and missing write callbacks
+  before creating temp files. Covered 15 XAML files, WinUI/JSON/error-text/MVP
+  scope code guards, package asset/script guards, package diagnostic behavior
+  checks, solution build, packaged debug build, and 236 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making Settings store/policy reject blank local-data roots and null settings
+  before touching local JSON. Covered 15 XAML files, WinUI/JSON/error-text/MVP
+  scope code guards, package asset/script guards, package diagnostic behavior
+  checks, solution build, packaged debug build, and 232 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making Preset store/save policy reject blank local-data roots and null presets
+  before touching local JSON. Covered 15 XAML files, WinUI/JSON/error-text/MVP
+  scope code guards, package asset/script guards, package diagnostic behavior
+  checks, solution build, packaged debug build, and 227 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making Preset matcher and assignment normalization reject null session/preset
+  or assignment inputs before Apply-Preset matching. Covered 15 XAML files,
+  WinUI/JSON/error-text/MVP-scope code guards, package asset/script guards,
+  package diagnostic behavior checks, solution build, packaged debug build, and
+  222 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making Preset name/factory entrypoints reject null name, session, identity,
+  and preset inputs before local JSON payload construction. Covered 15 XAML
+  files, WinUI/JSON/error-text/MVP-scope code guards, package asset/script
+  guards, package diagnostic behavior checks, solution build, packaged debug
+  build, and 219 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  adding active-session factory/editor boundary guards for missing detector,
+  monitor list, preset, session, monitor-key, source, and placement inputs.
+  Covered 15 XAML files, WinUI/JSON/error-text/MVP-scope code guards, package
+  asset/script guards, package diagnostic behavior checks, solution build,
+  packaged debug build, and 214 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making `MonitorSnapshot` reject null identity/source inputs and blank display
+  names before row, progress, and accessibility projection. Covered 15 XAML
+  files, WinUI/JSON/error-text/MVP-scope code guards, package asset/script
+  guards, package diagnostic behavior checks, solution build, packaged debug
+  build, and 202 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making `MonitorSession` transition helpers reject null monitor/assignment
+  inputs and blank Apply error codes. Covered 15 XAML files,
+  WinUI/JSON/error-text/MVP-scope code guards, package asset/script guards,
+  package diagnostic behavior checks, solution build, packaged debug build, and
+  198 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making `MonitorKeys.CreateSet` reject blank/null key input while preserving
+  case-insensitive monitor-key sets. Covered 15 XAML files,
+  WinUI/JSON/error-text/MVP-scope code guards, package asset/script guards,
+  package diagnostic behavior checks, solution build, packaged debug build, and
+  194 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making `ApplyPreflightResult` copy/normalize constructor key sets so caller
+  mutations cannot alter ready/skipped target state. Covered 15 XAML files,
+  WinUI/JSON/error-text/MVP-scope code guards, package asset/script guards,
+  package diagnostic behavior checks, solution build, packaged debug build, and
+  189 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making `ApplyTargetPlan` reject blank monitor keys, missing ready-key sets,
+  and null monitor/list inputs before target counting. Covered 15 XAML files,
+  WinUI/JSON/error-text/MVP-scope code guards, package asset/script guards,
+  package diagnostic behavior checks, solution build, packaged debug build, and
+  188 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making `ApplyPreflightResult` reject null session/key-set references and
+  adding `WithSession` so skipped-monitor preflight can keep normalized key sets
+  while replacing session state. Covered 15 XAML files,
+  WinUI/JSON/error-text/MVP-scope code guards, package asset/script guards,
+  package diagnostic behavior checks, solution build, packaged debug build, and
+  183 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making Apply cancellation and monitor step-result contracts reject null
+  result/monitor references and blank failure codes before tracker aggregation.
+  Covered 15 XAML files, WinUI/JSON/error-text/MVP-scope code guards, package
+  asset/script guards, package diagnostic behavior checks, solution build,
+  packaged debug build, and 179 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making `ApplySessionResult` reject null sessions before UI summary or
+  cancellation projection can receive an invalid result. Covered 15 XAML files,
+  WinUI/JSON/error-text/MVP-scope code guards, package asset/script guards,
+  package diagnostic behavior checks, solution build, packaged debug build, and
+  175 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making `ApplyProgress` reject null, empty, or blank monitor names before UI
+  progress projection. Covered 15 XAML files, WinUI/JSON/error-text/MVP-scope
+  code guards, package asset/script guards, package diagnostic behavior checks,
+  solution build, packaged debug build, and 174 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  adding an `ApplyRunTracker` constructor guard for negative target totals.
+  Covered 15 XAML files, WinUI/JSON/error-text/MVP-scope code guards, package
+  asset/script guards, package diagnostic behavior checks, solution build,
+  packaged debug build, and 171 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  strengthening `scripts\TestXamlAccessibility.ps1` so buttons must keep
+  `ToolTipService.ToolTip`, preserving command hints after the UI extraction.
+  Covered 15 XAML files, WinUI/JSON/error-text/MVP-scope code guards, package
+  asset/script guards, package diagnostic behavior checks, solution build,
+  packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  adding `scripts\TestPackageDiagnosticBehavior.ps1` and wiring it into
+  `Verify.ps1` so package registration diagnostics keep read-only current-user
+  behavior, non-elevated all-users exit-code behavior, and no-stacktrace
+  failure output. Covered 15 XAML files, WinUI/JSON/error-text/MVP-scope code
+  guards, package asset/script guards, package diagnostic behavior checks,
+  solution build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  updating `SmokeLaunch.ps1` so package registration conflicts run current-user
+  and all-users read-only diagnostics as separate steps. Local smoke still
+  fails at `0x80073D19`, but now reports current user clean before the all-users
+  elevated-terminal requirement. Covered 15 XAML files,
+  WinUI/JSON/error-text/MVP-scope code guards, package asset/script guards,
+  solution build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  fixing a package diagnostic edge case where non-elevated combined `-AllUsers`
+  mode could report a false current-user registration. Combined non-elevated
+  all-users mode now skips current-user lookup and asks for separate
+  current-user/elevated all-user preflights. Covered 15 XAML files,
+  WinUI/JSON/error-text/MVP-scope code guards, package asset/script guards,
+  solution build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  a read-only all-users cleanup preflight still failed with `Access is denied`,
+  confirming the shell was not elevated, and
+  `scripts\UninstallDevPackage.ps1 -AllUsers` was changed to report that denied
+  preflight cleanly instead of dumping a PowerShell stacktrace. Covered 15 XAML
+  files, WinUI/JSON/error-text/MVP-scope code guards, package asset/script
+  guards, solution build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  confirming packaged smoke still fails at registration conflict `0x80073D19`
+  with current user clean and all-user inspection denied, then adding explicit
+  all-user cleanup preflight/support to `scripts\UninstallDevPackage.ps1`
+  guarded by `-Uninstall`. Covered 15 XAML files,
+  WinUI/JSON/error-text/MVP-scope code guards, package asset/script guards,
+  solution build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  centralizing package registration lookup/display helpers in
+  `scripts\PackageRegistration.ps1` and strengthening
+  `scripts\TestPackageScriptGuards.ps1` against raw `Get-AppxPackage` calls
+  outside that helper. Covered 15 XAML files,
+  WinUI/JSON/error-text/MVP-scope code guards, package asset/script guards,
+  solution build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  converting English and Spanish `LocalizedText` catalog constructors to named
+  arguments and adding a WinUI code guard that blocks unnamed language-catalog
+  arguments. Covered 15 XAML files, WinUI/JSON/error-text/MVP-scope code
+  guards, package asset/script guards, solution build, packaged debug build,
+  and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  splitting concrete English and Spanish catalog values into
+  `LocalizedText.Catalog.English.cs` and
+  `LocalizedText.Catalog.Spanish.cs`, leaving `LocalizedText.Catalog.cs` as the
+  selector only and adding a WinUI code guard against reintroducing monolithic
+  language catalogs there. Covered 15 XAML files,
+  WinUI/JSON/error-text/MVP-scope code guards, package asset/script guards,
+  solution build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  moving placement fit/anchor/offset copy from `PlacementText.cs` into
+  `LocalizedText.Catalog.cs` and adding a WinUI code guard against hard-coded
+  placement labels in `PlacementText.cs`. Covered 15 XAML files,
+  WinUI/JSON/error-text/MVP-scope code guards, package asset/script guards,
+  solution build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  strengthening `scripts\TestPackageScriptGuards.ps1` so package installs can
+  only appear in `InstallDevMsix.ps1`, matching the existing removal guard for
+  `UninstallDevPackage.ps1`. Covered 15 XAML files,
+  WinUI/JSON/error-text/MVP-scope code guards, package asset/script guards,
+  solution build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  adding `scripts\TestMvpScopeGuards.ps1` and wiring it into `Verify.ps1` so
+  App/Core cannot gain non-MVP feature hooks for image editing, Identify, logs,
+  import/export, plugins, tray behavior, or scheduled wallpapers. Covered 15
+  XAML files, WinUI/JSON/error-text/MVP-scope code guards, package asset/script
+  guards, solution build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  removing rendered-wallpaper missing path text from `DesktopWallpaperApplier`
+  results and strengthening `TestErrorTextCodeGuards.ps1` against interpolated
+  `ApplyResult.Failure` messages in production Core/App code. Covered 15 XAML
+  files, WinUI/JSON/error-text code guards, package asset/script guards,
+  solution build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  removing raw writer exception-message payloads from
+  `DesktopWallpaperApplier`, adding `TestErrorTextCodeGuards.ps1` to block raw
+  `Exception.Message` usage in production Core/App code, and wiring that guard
+  into `Verify.ps1`. Covered 15 XAML files, WinUI/JSON/error-text code guards,
+  package asset/script guards, solution build, packaged debug build, and 160
+  tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  adding screen-reader names for topology tiles and footer status/progress
+  surfaces, plus XAML lint coverage for those non-interactive accessibility
+  surfaces. Covered 15 XAML files, WinUI/JSON code guards, package
+  asset/script guards, solution build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  adding explicit localized `AutomationProperties.Name` values to remaining
+  interactive inputs, pickers, and lists, plus XAML lint coverage that blocks
+  unnamed interactive controls. Covered 15 XAML files, WinUI/JSON code guards,
+  package asset/script guards, solution build, packaged debug build, and 160
+  tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  splitting remaining selected-monitor editor flow into focused
+  `MainPageViewModel.Editor.Selection.cs`, `.Assignment.cs`,
+  `.Disconnected.cs`, and `.Options.cs` partials, with a WinUI code guard added
+  against recreating monolithic `MainPageViewModel.Editor.cs`. Covered 15 XAML
+  files, WinUI/JSON code guards, package asset/script guards, solution build,
+  packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  splitting Preset save/load/selection flow into focused
+  `MainPageViewModel.Presets.Save.cs`, `.Load.cs`, and `.Selection.cs`
+  partials, with a WinUI code guard added against recreating monolithic
+  `MainPageViewModel.Presets.cs`. Covered 15 XAML files, WinUI/JSON code
+  guards, package asset/script guards, solution build, packaged debug build, and
+  160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  splitting Manage Presets modal flow into focused
+  `MainPageViewModel.PresetManagement.Mutate.cs`, `.Delete.cs`, and `.List.cs`
+  partials, leaving the base Preset-management partial for open/close only.
+  WinUI code guards now block moving mutation/delete/list helpers back into the
+  base partial. Covered 15 XAML files, WinUI/JSON code guards, package
+  asset/script guards, solution build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  splitting main-page surface projections into focused
+  `MainPageViewModel.Surface.Editor.cs`, `.Modals.cs`, `.MonitorWorkspace.cs`,
+  `.Presets.cs`, `.Settings.cs`, and `.Shell.cs` partials, with a WinUI code
+  guard added against recreating monolithic `MainPageViewModel.Surface.cs`.
+  Covered 15 XAML files, WinUI/JSON code guards, package asset/script guards,
+  solution build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  splitting main-page observable state and collections into focused
+  `MainPageViewModel.State.Apply.cs`, `.Editor.cs`, `.Modals.cs`,
+  `.MonitorWorkspace.cs`, `.Presets.cs`, and `.Settings.cs` partials, with a
+  WinUI code guard added against recreating monolithic
+  `MainPageViewModel.State.cs`. Covered 15 XAML files, WinUI/JSON code guards,
+  package asset/script guards, solution build, packaged debug build, and 160
+  tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  expanding XAML accessibility/theme and localization lint scripts to scan the
+  full `Waller.Native.App` XAML tree by default, while composition-boundary
+  checks remain scoped to `MainPage.xaml` so extracted owner controls are linted
+  for real accessibility/localization issues. Covered 15 XAML files, WinUI/JSON
+  code guards, package asset/script guards, solution build, packaged debug
+  build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  splitting selected-monitor editor source/placement responsibilities into
+  `MainPageViewModel.Editor.Source.cs` and
+  `MainPageViewModel.Editor.Placement.cs`, splitting source-generated
+  property-change hooks into focused `MainPageViewModel.Changes.*.cs` partials,
+  and adding WinUI code guards for those boundaries. Covered lints, package
+  asset/script guards, solution build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  extracting Topology strip and monitor workspace into
+  `Controls/TopologyStrip.xaml` and `Controls/MonitorWorkspace.xaml`, with XAML
+  lint coverage added against inline topology/workspace bindings and controls in
+  `MainPage.xaml`. Covered lints, package asset/script guards, solution build,
+  packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  extracting Edit panel and status footer into `Controls/EditPanel.xaml` and
+  `Controls/StatusFooter.xaml`, with XAML lint coverage added against inline
+  editor controls and status/progress footer bindings in `MainPage.xaml`.
+  Covered lints, package asset/script guards, solution build, packaged debug
+  build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  extracting Settings and Manage Presets into `Controls/SettingsModal.xaml` and
+  `Controls/ManagePresetsModal.xaml`, routing Settings, Manage Presets, and
+  delete-confirmation focus through modal controls, and adding XAML lint guards
+  against inline modal controls in `MainPage.xaml`. Covered lints, package
+  asset/script guards, solution build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  extracting the Save As modal into `Controls/SaveAsModal.xaml`, moving
+  Save-As focus through the modal control, and adding a XAML lint guard against
+  inline Save As modal controls in `MainPage.xaml`. Covered lints, package
+  asset/script guards, solution build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  extracting the top header/toolbar into `Controls/ShellHeader.xaml` and adding
+  a XAML lint guard against inline shell-header controls in `MainPage.xaml`.
+  Covered lints, package asset/script guards, solution build, packaged debug
+  build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  extracting disconnected-monitor row layout/actions into
+  `Controls/MissingMonitorRow.xaml` and adding a XAML lint guard against inline
+  disconnected-monitor row action buttons in `MainPage.xaml`. Covered lints,
+  package asset/script guards, solution build, packaged debug build, and 160
+  tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  extracting current-monitor row layout/actions into `Controls/MonitorRow.xaml`
+  and adding a XAML lint guard against inline current-monitor row action buttons
+  in `MainPage.xaml`. Covered lints, package asset/script guards, solution
+  build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  extracting duplicated source-thumbnail rendering into
+  `Controls/SourcePreview.xaml` and adding a XAML lint guard against inline
+  source-preview bindings in `MainPage.xaml`. Covered lints, package
+  asset/script guards, solution build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  extracting repeated icon/text button content into `Controls/IconText.xaml` and
+  adding a XAML lint guard against inline button icon/text stacks in
+  `MainPage.xaml`. Covered lints, package asset/script guards, solution build,
+  packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  moving action-button icon sizing and icon/text spacing into shared XAML
+  resources and adding a XAML lint guard against hard-coded `FontIcon.FontSize`
+  values. Covered lints, package asset/script guards, solution build, packaged
+  debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  converting the last text-only visible action buttons to explicit icon/text
+  child content and adding a XAML lint guard against `Button` `Content`
+  attribute shortcuts. Covered lints, package asset/script guards, solution
+  build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  converting modal close buttons to compact accessible close-icon buttons.
+  Covered lints, package asset/script guards, solution build, packaged debug
+  build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  adding native icon+text treatment to secondary editor, Preset-management, and
+  Settings actions. Covered lints, package asset/script guards, solution build,
+  packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  centralizing the app local-data root policy and guarding against direct
+  `LocalApplicationData` lookups outside `WallerAppDataPaths`. Covered lints,
+  package asset/script guards, solution build, packaged debug build, and 160
+  tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making modal overlay surfaces responsive and adding the XAML lint guard for
+  fixed-width modal regressions. Covered lints, package asset/script guards,
+  solution build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making the top command row scroll horizontally inside a flexible header column.
+  Covered lints, package asset/script guards, solution build, packaged debug
+  build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  adding native icon+text treatment to primary shell and monitor-row actions.
+  Covered lints, package asset/script guards, solution build, packaged debug
+  build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  adding automatic read-only package-registration diagnostics on smoke launch
+  conflict and guarding package removal scripts. Covered lints, package
+  asset/script guards, solution build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  adding WinUI code guards for the new `MainPageViewModel` and `LocalizedText`
+  partial boundaries. Covered lints, package asset/script guards, solution
+  build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  splitting main-page observable state and remaining localized text projections
+  into focused partial files. Covered lints, package asset/script guards,
+  solution build, packaged debug build, and 160 tests.
+- 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  splitting main-page surface projections and Apply-localized text into focused
+  partial files. Covered lints, package asset/script guards, solution build,
+  packaged debug build, and 160 tests.
 - 2026-06-09: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
   splitting Manage Presets modal commands into
   `MainPageViewModel.PresetManagement.cs`. Covered lints, package asset/script
@@ -48,35 +587,94 @@ Latest verification:
 
 Recent prefactor:
 
-- 2026-06-09: Manage Presets modal commands now live in
-  `MainPageViewModel.PresetManagement.cs`. `MainPageViewModel.Presets.cs` keeps
-  save/save-as/load/selection flow, making the next Presets surface extraction
-  narrower.
+- 2026-06-09: disconnected-monitor Reassign/Forget and Apply cancellation now
+  use native icon+text content. `MainPage.xaml` no longer uses `Button`
+  `Content` attributes for actions, and the XAML accessibility lint now blocks
+  those shortcuts so buttons keep explicit child content and accessible names.
+
+- 2026-06-09: Save As, Manage Presets, and Settings modal close buttons now use
+  compact native close icons while retaining localized accessible names and
+  tooltips.
+
+- 2026-06-09: image picking, Save As confirmation, Manage Presets mutations,
+  delete confirmation, cache clear, and Settings save actions now use native
+  icon+text button content while preserving localized labels/tooltips and
+  automation ids.
+
+- 2026-06-09: app local-data root policy now lives behind
+  `WallerAppDataPaths.AppFolderName` and `WallerAppDataPaths.RootFor(...)`.
+  WinUI code guards now block new direct `%LOCALAPPDATA%`/`LocalApplicationData`
+  lookups outside that path helper.
+
+- 2026-06-09: Save As, Manage Presets, and Settings modal surfaces now use
+  `MaxWidth` with stretch/margin instead of fixed `Width`, so they keep their
+  desktop size but shrink inside narrow windows. The XAML accessibility lint now
+  blocks fixed-width modal overlay regressions.
+
+- 2026-06-09: the top command row now lives in a flexible grid column with
+  horizontal scrolling, so localized command labels and icon+text buttons do not
+  force the header wider than small windows.
+
+- 2026-06-09: primary shell actions and current-monitor row Edit/Apply actions
+  now use native icon+text button content instead of plain text-only commands,
+  improving scanability while preserving localized labels/tooltips and existing
+  automation ids.
+
+- 2026-06-09: `SmokeLaunch.ps1` now runs the read-only
+  `TestDevPackageRegistration.ps1 -AllUsers` diagnostic automatically when
+  `winapp` reports a package registration conflict such as `0x80073D19`.
+  `TestPackageScriptGuards.ps1` now also blocks `Remove-AppxPackage` outside
+  `UninstallDevPackage.ps1`, keeping smoke diagnostics non-destructive.
+
+- 2026-06-09: WinUI code guards now protect the new partial boundaries:
+  `MainPageViewModel.cs` may not regain observable state/surface projections,
+  and `LocalizedText.cs` may not regain domain-specific projection methods that
+  belong in focused `LocalizedText.*.cs` files.
+
+- 2026-06-09: Main page observable state and collections now live in focused
+  `MainPageViewModel.State.*.cs` partials; `MainPageViewModel.cs` now holds
+  constructor wiring, injected services, and private backing fields only.
+
+- 2026-06-09: Remaining localized text projection split into
+  `LocalizedText.Editor.cs`, `LocalizedText.Monitor.cs`, and
+  `LocalizedText.Shell.cs`. `LocalizedText.cs` now keeps only the record shape,
+  culture-aware formatting, and language helper.
+
+- 2026-06-09: Main page surface projections now live in focused
+  `MainPageViewModel.Surface.*.cs` partials, leaving `MainPageViewModel.cs`
+  focused on construction, services, and private backing fields.
+
+- 2026-06-09: Apply-specific localized summaries now live in
+  `LocalizedText.Apply.cs`, so Apply result/progress/error copy can evolve next
+  to Apply orchestration without touching the main localization projection file.
+
+- 2026-06-09: Manage Presets modal commands now live in focused
+  `MainPageViewModel.PresetManagement.*.cs` partials. Preset save/load/selection
+  flow now lives in focused `MainPageViewModel.Presets.*.cs` partials.
 
 - 2026-06-09: English/Spanish UI copy now lives in
   `LocalizedText.Catalog.cs`, while `LocalizedText.cs` keeps formatting and
   domain/result text projection. This makes future `.resw` migration or extra
   languages less tangled with view-model status logic.
 
-- 2026-06-09: source-generated property-change hooks now live in
-  `MainPageViewModel.Changes.cs`, and `ResetPositionCommand` moved with the
-  editor flow. The main view-model file is now a compact state/derived-property
-  definition instead of a mixed state + command + change-handler file.
+- 2026-06-09: source-generated property-change hooks now live in focused
+  `MainPageViewModel.Changes.*.cs` partials, and `ResetPositionCommand` moved
+  with the editor flow. The main view-model file is now construction/service
+  wiring instead of a mixed state + command + change-handler file.
 
 - 2026-06-09: shell initialization, current-session refresh, row/session
   refresh, modal close dispatch, and notification helpers now live in
-  `MainPageViewModel.Shell.cs`. `MainPageViewModel.cs` now mostly holds state,
-  derived properties, and source-generated property-change hooks.
+  `MainPageViewModel.Shell.cs`. `MainPageViewModel.cs` now mostly holds
+  construction/service wiring.
 
 - 2026-06-09: editor, source-selection, placement, and disconnected-monitor
-  commands/helpers now live in `MainPageViewModel.Editor.cs`. The main
-  view-model file now focuses on shared shell state and property notifications,
-  while editor orchestration has a clear path toward a focused editor surface.
+  commands/helpers now live in focused `MainPageViewModel.Editor*.cs` partials.
+  The main view-model file now focuses on construction/service wiring.
 
 - 2026-06-09: Preset save/load/manage commands and helper flow now live in
-  `MainPageViewModel.Presets.cs`. The main view-model file is reduced to the
-  shared shell/editor surface while Preset orchestration has a clear extraction
-  point for a future focused Presets surface.
+  focused `MainPageViewModel.Presets.*.cs` and
+  `MainPageViewModel.PresetManagement.*.cs` partials. The main view-model file
+  is reduced toward construction/service wiring.
 
 - 2026-06-09: Apply commands and Apply run UI projection now live in
   `MainPageViewModel.Apply.cs`. `MainPageViewModel.cs` keeps less command
@@ -427,7 +1025,8 @@ Commands are wired:
   formats, duplicate AutomationIds within the same XAML scope, and missing
   `UpdateSourceTrigger=PropertyChanged` on TwoWay TextBox `x:Bind`. It also
   blocks hard-coded `CornerRadius` and `Background` color literals in
-  `MainPage.xaml`; `Verify.ps1` runs it before build/test/smoke work.
+  `MainPage.xaml`, fixed-width modal overlay borders, and `Button` `Content`
+  attribute shortcuts; `Verify.ps1` runs it before build/test/smoke work.
 - The XAML accessibility lint also requires monitor/disconnected-monitor row
   DataTemplate roots with row action buttons to expose `AutomationProperties.Name`.
 - `scripts\TestXamlLocalization.ps1` blocks hard-coded user-visible `Text`,
@@ -440,6 +1039,12 @@ Commands are wired:
   status instead of unobserved async lambdas. It also blocks hard-coded
   `StatusText`/`ApplyProgressText` string literals so visible status copy keeps
   flowing through localized presenters.
+- `scripts\TestWinUICodeGuards.ps1` also guards the current partial layout:
+  bindable state/surface projections stay out of `MainPageViewModel.cs`, and
+  domain-specific localized projection methods stay out of `LocalizedText.cs`.
+- It also blocks direct `LocalApplicationData`/`LOCALAPPDATA` usage outside
+  `WallerAppDataPaths`, keeping Presets, Settings, and rendered-cache paths on
+  one update-safe app-data root.
 - `scripts\TestJsonCodeGuards.ps1` blocks direct `JsonSerializer` persistence
   calls outside `LocalJsonFile`, so Preset/Settings local data stays on
   `WallerJsonContext` source-generated metadata and avoids Release trim drift.
@@ -1462,6 +2067,343 @@ suppression because `IDesktopWallpaper` is activated by CLSID, not by a managed
 constructor. A manual `PublishTrimmed=true` probe now leaves warnings only in
 external Windows SDK/WinRT assemblies. Keep Release untrimmed until packaged
 trimmed launch/apply is manually validated.
+
+2026-06-09 modal keyboard-order guard:
+Manage Presets confirm-delete now has explicit `TabIndex`, the close button was
+moved later in the traversal order, and `TestXamlAccessibility.ps1` blocks
+missing, invalid, or duplicate `TabIndex` values on interactive controls inside
+Save As, Settings, and Manage Presets modals. This keeps modal keyboard
+traversal deterministic while preserving dynamic row/list behavior for manual
+packaged smoke.
+
+2026-06-09 MainPage modal-focus prefactor:
+`MainPage.xaml.cs` now routes view-model property changes through named
+`OnViewModelPropertyChanged` logic instead of an inline constructor lambda.
+`TestWinUICodeGuards.ps1` blocks reintroducing inline MainPage
+`PropertyChanged` lambdas, keeping future modal focus wiring easy to review.
+
+2026-06-09 InfoBar accessibility guard:
+Edit-panel source warnings and Manage Presets delete confirmation now expose
+`AutomationProperties.Name` plus live-region settings. `TestXamlAccessibility.ps1`
+blocks InfoBars without screen-reader names or live settings, matching the
+existing footer status behavior.
+
+2026-06-09 no-monitor Apply coverage:
+Added Core coverage for `ApplyAllReadySourcesAsync` with an empty Active
+Session. It now explicitly proves the no-monitor path returns zero
+succeeded/failed/skipped monitors, leaves the session empty, and does not create
+rendered output or call the Windows applier.
+
+2026-06-09 no-ready Apply prefactor:
+`WallpaperApplyService.ApplyReadyPreflightAsync` now returns directly when
+preflight finds no ready monitors. All-missing-source Apply all now proves no
+progress events are emitted, no rendered output is created, and Windows applier
+is not called.
+
+2026-06-09 Apply result factory prefactor:
+`ApplySessionResult` now owns `None` and `SkippedOnly` factories. The no-ready
+Apply path uses `SkippedOnly`, keeping zero-count outcome construction in the
+result contract instead of open-coded in the service.
+
+2026-06-09 Apply result count guard:
+`ApplySessionResult` now rejects negative succeeded, failed, or skipped counts.
+`WithSkipped` now constructs a new validated result instead of using an init-only
+clone, so invalid skipped totals cannot bypass the guard. This keeps invalid
+Apply totals out of UI result copy, cancellation wrapping, and future Apply
+aggregation.
+
+2026-06-09 Apply progress count guard:
+`ApplyProgress` now rejects negative completed/total counts and completed values
+greater than total. This keeps invalid Apply progress out of footer copy and
+future progress aggregation.
+
+2026-06-09 source-preview accessibility:
+`Controls/SourcePreview.xaml` and its current/disconnected row usages now expose
+`AutomationProperties.Name` from the localized source summary. XAML
+accessibility lint blocks source previews without accessible names so thumbnail
+meaning is not visual-only.
+
+2026-06-09 Edit panel layout stability:
+`Controls/EditPanel.xaml` now keeps source-specific Image/Color/Empty editor
+content inside a fixed-height `SourceEditorHost` scroll region. Placement
+controls stay in a stable vertical position when monitor selection switches
+between source kinds, and XAML accessibility lint blocks removing the stable
+host. `Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after this change
+with 259 tests.
+
+2026-06-09 Edit panel keyboard order:
+`Controls/EditPanel.xaml` now includes color swatches in the explicit keyboard
+sequence and shifts placement controls after source-detail controls. XAML
+accessibility lint now blocks missing or reordered edit-panel `TabIndex` values,
+keeping keyboard-only editing predictable as editor controls move.
+`Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after this change with 259
+tests.
+
+2026-06-09 Row action accessibility:
+Current and disconnected monitor row action buttons now use row-specific
+accessible names from their row view models, so screen readers announce actions
+with the target monitor instead of repeated generic Edit/Apply/Reassign/Forget
+labels. XAML accessibility lint blocks reverting row action automation names
+back to generic parent command text. `Verify.ps1 -SkipSmoke -DisableNuGetAudit`
+passed after this change with 259 tests.
+
+2026-06-09 Signing strategy guard:
+`docs\PACKAGING.md` now separates development signing from release signing.
+Development signing stays local under ignored `artifacts\signing\` with manual
+certificate trust; release signing remains blocked on production certificate
+decision, timestamping, and clean-profile install/update/uninstall smoke.
+`scripts\TestSigningPolicy.ps1` is now part of `Verify.ps1` and blocks missing
+cert ignore rules, signing artifacts outside `artifacts\signing\`, or packaging
+docs that drop the dev-vs-release signing policy.
+`Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after this change with 259
+tests.
+
+2026-06-09 Unknown Apply error copy:
+Unknown row-level Apply error codes now map to localized Apply-specific fallback
+copy (`UnknownApplyError`) instead of generic validation copy (`CheckValue`) or
+raw error codes. `TestErrorTextCodeGuards.ps1` blocks generic/raw Apply error
+fallbacks in `LocalizedText.Apply.cs`. `Verify.ps1 -SkipSmoke
+-DisableNuGetAudit` passed after this change with 259 tests.
+
+2026-06-09 Local app-data policy guard:
+`scripts\TestLocalDataPolicy.ps1` now verifies that default local data uses
+`%LOCALAPPDATA%\Waller`, avoids package-identity storage APIs, and passes the
+same root directory into Presets, Settings, and rendered wallpaper stores.
+`Verify.ps1` runs this guard before error/package gates, and Slice 9 now marks
+the app-data path acceptance as covered by `WallerAppDataPaths`,
+`WallerLocalDataStores`, and the guard. `Verify.ps1 -SkipSmoke
+-DisableNuGetAudit` passed after this change with 259 tests.
+
+2026-06-09 Package update policy guard:
+`scripts\TestPackageUpdatePolicy.ps1` now verifies that version updates stay
+limited to `Identity.Version`, do not mutate package `Identity.Name` or
+`Identity.Publisher`, and that `docs\PACKAGING.md` keeps update behavior tied to
+stable `%LOCALAPPDATA%\Waller` Presets/settings. Slice 9 now marks update
+preservation covered at the policy/script level while keeping real update smoke
+as a release blocker. `Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+this change with 259 tests.
+
+2026-06-09 Launch contract guard:
+`scripts\TestLaunchContract.ps1` now verifies the packaged launch contract
+without registering the app: manifest `Application Id` stays `App`, MainWindow
+and TitleBar stay titled `Waller`, `BuildAndRun.ps1` launches through
+`winapp run`, and `SmokeLaunch.ps1` keeps detached JSON parsing plus
+process/title/responding assertions and cleanup. Slice 9 now marks Start-menu
+launch readiness covered at the launch-contract level while keeping real
+Start-menu smoke blocked on package registration cleanup.
+`powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke
+-DisableNuGetAudit` passed after this change with 259 tests.
+
+2026-06-09 Modal keyboard contract guard:
+`scripts\TestModalKeyboardContract.ps1` now verifies the keyboard-only modal
+contract without launching the app: `MainPage.xaml.cs` keeps named Escape
+handling, closes only the top open modal, marks the key handled, and defers
+focus through `DispatcherQueue`; Save As, Manage Presets, Settings, and delete
+confirmation keep named focus targets and code-behind focus methods. Slice 8
+now marks modal keyboard behavior guarded at script level while manual packaged
+accessibility smoke remains needed.
+`powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke
+-DisableNuGetAudit` passed after this change with 259 tests.
+
+2026-06-09 Shell command contract guard:
+`scripts\TestShellCommandContract.ps1` now verifies the top-shell command
+contract without launching the app: Preset picker remains bound to
+`SelectedPreset`, primary shell buttons remain bound to the expected commands
+and enablement gates, Ctrl+S/Ctrl+Shift+S/Ctrl+M/Ctrl+R/Ctrl+I/Ctrl+Enter stay
+assigned, and the command row remains inside a horizontal `ScrollViewer` for
+narrow windows.
+`powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke
+-DisableNuGetAudit` passed after this change with 259 tests.
+
+2026-06-09 Apply preflight boundary guards:
+`ApplyPreflight.SkipMissingImageSources` now rejects a missing `ActiveSession`,
+and `SkipMissingImageSource` rejects both missing sessions and blank monitor
+keys before missing-source planning. This keeps invalid caller state from being
+reported as a no-target Apply result and adds Core coverage for those boundary
+contracts.
+`powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke
+-DisableNuGetAudit` passed after this change with 263 tests.
+
+2026-06-09 Apply service session guards:
+`WallpaperApplyService` now rejects missing `ActiveSession` inputs across
+monitor, ready-source monitor, all, ready-source all, and matching Apply
+entrypoints before target planning or progress tracking starts. Core tests cover
+all public Apply modes so caller bugs fail as boundary errors instead of
+null-reference failures inside the apply loop.
+`powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke
+-DisableNuGetAudit` passed after this change with 268 tests.
+
+2026-06-09 Apply run tracker boundary guards:
+`ApplyRunTracker` now rejects missing progress monitors, step results, sessions,
+and monitor lists before progress callbacks or final/canceled result projection.
+Core tests cover the tracker boundary so apply-loop contract mistakes fail at
+the tracker surface instead of becoming null-reference failures in progress or
+result construction.
+`powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke
+-DisableNuGetAudit` passed after this change with 275 tests.
+
+2026-06-09 Wallpaper source file helper guards:
+`WallpaperSourceFiles` now rejects missing `WallpaperSource` inputs before image
+existence or display-name projection. Core tests cover missing/existing/file-name
+helpers so selected-row warnings, row previews, disconnected rows, and Apply
+preflight share the same missing-source boundary behavior.
+`powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke
+-DisableNuGetAudit` passed after this change with 278 tests.
+
+2026-06-09 App composition boundary guards:
+`WallerAppServices`, `WallerLocalDataStores`, and the internal
+`MainPageViewModel` service constructor now reject missing services/stores at
+composition time. `TestWinUICodeGuards.ps1` guards those `ThrowIfNull` checks so
+startup, Apply, Presets, Settings, and local-data flows cannot be wired with
+null collaborators and fail later during initialization.
+`powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke
+-DisableNuGetAudit` passed after this change with 278 tests.
+
+2026-06-09 Current-session loader Core prefactor:
+`CurrentSessionLoader` moved from App view-model code into Core Sessions. Core
+tests now cover primary-session success, empty-primary fallback, primary
+detector failure fallback, cancellation propagation, null detector guards, and
+null result-session rejection. `TestWinUICodeGuards.ps1` blocks recreating the
+App-side loader file so startup detection/fallback policy stays outside
+`MainPageViewModel`. `powershell -ExecutionPolicy Bypass -File
+.\scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after this change
+with 285 tests.
+
+2026-06-09 Active Session collection guards:
+`ActiveSession` now rejects null monitor and missing-assignment collections in
+the constructor and through `with` updates, and copies incoming collections so
+caller list mutation cannot alter session state after construction. Core tests
+cover constructor guards, `with` guards, and collection-copy behavior before
+editor, Preset, Apply, or row projection code consumes the session.
+`powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke
+-DisableNuGetAudit` passed after this change with 290 tests.
+
+2026-06-09 Monitor Session constructor guards:
+`MonitorSession` now rejects missing detected monitor and desired-assignment
+references in its constructor and through `with` updates. Core tests cover both
+direct construction and `with` mutation so Apply, Preset matching, and row
+projection cannot receive monitor sessions without a monitor snapshot or desired
+assignment. `powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1
+-SkipSmoke -DisableNuGetAudit` passed after this change with 294 tests.
+
+2026-06-09 Preset model boundary guards:
+`PresetIdentity`, `Preset`, and `PresetAssignment` now reject missing names,
+assignment collections, saved monitors, sources, and placements at
+construction/`with` update time. `Preset` copies assignment lists so caller
+mutation cannot alter saved Preset state after construction. Core tests cover
+identity/name guards, null assignment lists, assignment-list copying, and
+saved-monitor/source/placement guards. `powershell -ExecutionPolicy Bypass
+-File .\scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after this
+change with 309 tests.
+
+2026-06-09 Wallpaper placement enum guards:
+`WallpaperPlacement` now rejects invalid fit/anchor enum values in the
+constructor and through `with` updates, while still leaving offset clamping to
+`NormalizeOffsets`. Core tests cover direct construction and `with` mutation so
+rendering, row previews, and Preset matching cannot receive undefined placement
+modes after model creation. `powershell -ExecutionPolicy Bypass -File
+.\scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after this change
+with 313 tests.
+
+2026-06-09 ApplyResult invariant guards:
+`ApplyResult` now rejects missing monitor identities, clears error code/message
+fields for success results, and normalizes unknown failure codes to
+`wallpaper-apply-failed` in the constructor as well as factory helpers. Core
+tests cover null success/failure monitors, direct-constructor monitor guard, and
+direct-constructor success cleanup. `powershell -ExecutionPolicy Bypass -File
+.\scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after this change
+with 317 tests.
+
+2026-06-09 UserSettings language boundary:
+`UserSettings` now converts null language values to an empty draft value during
+construction and `with` updates. `UserSettingsPolicy.Normalize` remains the only
+place that chooses the default supported language, so parseable but incomplete
+settings payloads cannot leak null language state into Settings/UI code. Core
+tests cover constructor, `with`, and policy normalization behavior.
+`powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke
+-DisableNuGetAudit` passed after this change with 320 tests and 0 warnings.
+
+2026-06-09 Topology layout boundary guards:
+`MonitorTopologyLayout.Calculate` and `TileFor` now reject missing bounds and
+non-positive surface/tile dimensions before WinUI projection can produce invalid
+canvas or tile sizes. Core tests cover null bounds, invalid surface dimensions,
+null tile bounds, and invalid tile minimums.
+`powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke
+-DisableNuGetAudit` passed after this change with 328 tests and 0 warnings.
+
+2026-06-09 Monitor bounds dimension guards:
+`MonitorBounds` now rejects non-positive width/height during construction and
+`with` updates. Core tests cover direct construction and mutation guards so
+topology, row projection, and render dimensions cannot consume zero-size monitor
+geometry. `powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1
+-SkipSmoke -DisableNuGetAudit` passed after this change with 332 tests and 0
+warnings.
+
+2026-06-09 Topology DTO invariant guards:
+`MonitorTopologyLayout` and `MonitorTopologyTile` now reject non-positive direct
+constructor values and `with` updates for surface, scale, and tile dimensions.
+This closes the bypass around `Calculate`/`TileFor` so WinUI topology projection
+cannot receive invalid canvas or tile DTOs from direct construction. `powershell
+-ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke
+-DisableNuGetAudit` passed after this change with 342 tests and 0 warnings.
+
+2026-06-09 Image placement DTO invariant guards:
+`ImagePlacementPlan` now rejects non-positive direct constructor values and
+`with` updates for draw dimensions, closing the bypass around the `Create`
+factory before renderer pixel loops consume placement DTOs. `powershell
+-ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke
+-DisableNuGetAudit` passed after this change with 346 tests and 0 warnings.
+
+2026-06-09 Desktop wallpaper snapshot guards:
+`DesktopWallpaperSnapshot` now rejects blank monitor ids and missing bounds in
+direct construction and `with` updates, keeping COM reader/test-double bugs from
+becoming anonymous monitor rows during Windows detector projection. `powershell
+-ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke
+-DisableNuGetAudit` passed after this change with 352 tests and 0 warnings.
+
+2026-06-09 Preset menu item guards:
+`PresetMenuItem` now rejects blank names in direct construction and `with`
+updates, so top-shell and Manage Presets lists cannot render invisible choices
+while Preset menu/list helpers continue splitting away from `MainPageViewModel`.
+`TestWinUICodeGuards.ps1` now blocks removing that validation. `powershell
+-ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke
+-DisableNuGetAudit` passed after this change with 352 tests and 0 warnings.
+
+2026-06-09 Source-selection DTO guards:
+`ImageSelectionDraft` now normalizes picker paths and rejects blank display
+names at construction time. `MonitorSourceSelection` now validates source kind,
+normalizes image paths/colors for the active source kind, and exposes immutable
+fields so partial `with` updates cannot desynchronize source kind from payload.
+`TestWinUICodeGuards.ps1` blocks removing those checks. `powershell
+-ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke
+-DisableNuGetAudit` passed after this change with 352 tests and 0 warnings.
+
+2026-06-09 Option and swatch DTO guards:
+`OptionItem<T>` now rejects blank display names so localized dropdowns cannot
+render invisible choices. `ColorSwatchOption` now normalizes hex values and
+rejects missing brushes before swatches reach editor source selection.
+`TestWinUICodeGuards.ps1` blocks removing those DTO checks. `powershell
+-ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke
+-DisableNuGetAudit` passed after this change with 352 tests and 0 warnings.
+
+2026-06-09 Preset session DTO guards:
+`ActivePresetRename`, `PresetSessionSaveResult`, `PresetSaveCompletion`, and
+`SelectedPresetSession` now reject missing or incomplete App-side Preset
+transition state before save/load/rename handlers mutate `MainPageViewModel`.
+`PresetSessionSave` and `SelectedPresetSessionFactory.FromPreset` also reject
+missing dependencies/inputs at the boundary. `TestWinUICodeGuards.ps1` blocks
+removing those App DTO checks while test coverage remains Core-focused.
+`powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke
+-DisableNuGetAudit` passed after this change with 352 tests and 0 warnings.
+
+2026-06-09 Preset load/delete/mutation result guards:
+`SelectedPresetLoadResult`, `ManagedPresetMutationResult`, and
+`ManagedPresetDeleteResult` now reject impossible result shapes before command
+handlers consume them. Managed delete now creates active-Preset replacement
+selection only after delete success is proven, not when missing/write-failed
+branches return. `TestWinUICodeGuards.ps1` blocks removing these contracts.
+`powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke
+-DisableNuGetAudit` passed after this change with 352 tests and 0 warnings.
 
 ## Good Next Commit Shape
 

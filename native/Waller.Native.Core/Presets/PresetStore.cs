@@ -8,7 +8,9 @@ public sealed class PresetStore(string rootDirectory)
 {
     private const string PresetFileSearchPattern = "*.json";
 
-    private readonly string presetsDirectory = Path.Combine(rootDirectory, "presets");
+    private readonly string presetsDirectory = Path.Combine(
+        LocalDataRootDirectory.RequireFullyQualified(rootDirectory),
+        "presets");
 
     public async Task<IReadOnlyList<Preset>> ListAsync(CancellationToken cancellationToken = default)
     {
@@ -100,10 +102,17 @@ public sealed class PresetStore(string rootDirectory)
 
     private static async Task<Preset?> LoadFromPathAsync(string path, CancellationToken cancellationToken)
     {
-        var preset = await LocalJsonFile.ReadRecoverableAsync(
-            path,
-            WallerJsonContext.Default.Preset,
-            cancellationToken);
-        return PresetFilePolicy.NormalizeLoaded(preset);
+        try
+        {
+            var preset = await LocalJsonFile.ReadRecoverableAsync(
+                path,
+                WallerJsonContext.Default.Preset,
+                cancellationToken);
+            return PresetFilePolicy.NormalizeLoaded(preset);
+        }
+        catch (ArgumentException)
+        {
+            return null;
+        }
     }
 }

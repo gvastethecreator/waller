@@ -2,7 +2,15 @@ using System.Collections.ObjectModel;
 
 namespace Waller.Native.App.ViewModels;
 
-internal sealed record LocalizedSurfaceRefreshResult(PresetMenuItem? SelectedPreset);
+internal sealed record LocalizedSurfaceRefreshResult
+{
+    public LocalizedSurfaceRefreshResult(PresetMenuItem? SelectedPreset)
+    {
+        this.SelectedPreset = SelectedPreset;
+    }
+
+    public PresetMenuItem? SelectedPreset { get; }
+}
 
 internal static class LocalizedSurfaceRefresh
 {
@@ -13,6 +21,11 @@ internal static class LocalizedSurfaceRefresh
         ObservableCollection<MissingMonitorRowViewModel> missingMonitors,
         LocalizedText text)
     {
+        ArgumentNullException.ThrowIfNull(presets);
+        ArgumentNullException.ThrowIfNull(monitors);
+        ArgumentNullException.ThrowIfNull(missingMonitors);
+        ArgumentNullException.ThrowIfNull(text);
+
         var refreshedSelectedPreset = PresetMenuLists.ReplaceCurrentSetupName(
             presets,
             selectedPreset,

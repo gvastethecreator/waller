@@ -8,6 +8,8 @@ internal sealed class ApplyTargetPlan
 
     private ApplyTargetPlan(Func<MonitorSession, bool> shouldApply)
     {
+        ArgumentNullException.ThrowIfNull(shouldApply);
+
         this.shouldApply = shouldApply;
     }
 
@@ -17,12 +19,16 @@ internal sealed class ApplyTargetPlan
 
     public static ApplyTargetPlan Monitor(string monitorKey)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(monitorKey);
+
         return new ApplyTargetPlan(
             monitor => MonitorKeys.Equals(monitor.Monitor.Identity.MonitorKey, monitorKey));
     }
 
     public static ApplyTargetPlan ReadyKeys(IReadOnlySet<string> monitorKeys)
     {
+        ArgumentNullException.ThrowIfNull(monitorKeys);
+
         var keys = MonitorKeys.CreateSet(monitorKeys);
         if (keys.Count == 0)
         {
@@ -40,10 +46,17 @@ internal sealed class ApplyTargetPlan
         return new ApplyTargetPlan(shouldApply);
     }
 
-    public bool Includes(MonitorSession monitor) => shouldApply(monitor);
+    public bool Includes(MonitorSession monitor)
+    {
+        ArgumentNullException.ThrowIfNull(monitor);
+
+        return shouldApply(monitor);
+    }
 
     public int Count(IReadOnlyList<MonitorSession> monitors)
     {
+        ArgumentNullException.ThrowIfNull(monitors);
+
         return monitors.Count(Includes);
     }
 }

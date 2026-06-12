@@ -3,9 +3,22 @@ using Waller.Native.Core.Sessions;
 
 namespace Waller.Native.App.ViewModels;
 
-internal sealed record DisconnectedMonitorEditResult(
-    ActiveSession? Session,
-    string StatusText);
+internal sealed record DisconnectedMonitorEditResult
+{
+    public DisconnectedMonitorEditResult(
+        ActiveSession? Session,
+        string StatusText)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(StatusText);
+
+        this.Session = Session;
+        this.StatusText = StatusText;
+    }
+
+    public ActiveSession? Session { get; }
+
+    public string StatusText { get; }
+}
 
 internal static class DisconnectedMonitorEdit
 {
@@ -15,10 +28,10 @@ internal static class DisconnectedMonitorEdit
         MissingMonitorRowViewModel monitor,
         MonitorEditTextPresenter text) =>
         new(
-            editor.RemoveMissingAssignment(
-                session,
-                monitor.Assignment.SavedMonitor.MonitorKey),
-            text.ForgotDisconnectedMonitor(monitor.DisplayName));
+            (editor ?? throw new ArgumentNullException(nameof(editor))).RemoveMissingAssignment(
+                session ?? throw new ArgumentNullException(nameof(session)),
+                (monitor ?? throw new ArgumentNullException(nameof(monitor))).Assignment.SavedMonitor.MonitorKey),
+            (text ?? throw new ArgumentNullException(nameof(text))).ForgotDisconnectedMonitor(monitor.DisplayName));
 
     public static DisconnectedMonitorEditResult Reassign(
         ActiveSessionEditor editor,
@@ -27,6 +40,11 @@ internal static class DisconnectedMonitorEdit
         MonitorRowViewModel? target,
         MonitorEditTextPresenter text)
     {
+        ArgumentNullException.ThrowIfNull(editor);
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(monitor);
+        ArgumentNullException.ThrowIfNull(text);
+
         if (target is null)
         {
             return new(Session: null, text.SelectMonitorBeforeReassign);

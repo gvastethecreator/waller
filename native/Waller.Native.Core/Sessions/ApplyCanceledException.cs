@@ -1,9 +1,16 @@
 namespace Waller.Native.Core.Sessions;
 
-public sealed class ApplyCanceledException(ApplySessionResult result, Exception? innerException = null)
-    : OperationCanceledException("Wallpaper apply was cancelled.", innerException)
+public sealed class ApplyCanceledException : OperationCanceledException
 {
-    public ApplySessionResult Result { get; } = result;
+    public ApplyCanceledException(ApplySessionResult result, Exception? innerException = null)
+        : base("Wallpaper apply was cancelled.", innerException)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+
+        Result = result;
+    }
+
+    public ApplySessionResult Result { get; }
 
     public ApplyCanceledException WithSkipped(int skipped)
     {

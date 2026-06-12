@@ -4,6 +4,8 @@ internal sealed class PixelBuffer
 {
     public PixelBuffer(int width, int height, byte[] data)
     {
+        ArgumentNullException.ThrowIfNull(data);
+
         if (width <= 0)
         {
             throw new ArgumentOutOfRangeException(nameof(width), "Pixel buffer width must be positive.");
@@ -24,7 +26,7 @@ internal sealed class PixelBuffer
 
         Width = width;
         Height = height;
-        Data = data;
+        Data = data.ToArray();
     }
 
     public int Width { get; }
@@ -62,5 +64,18 @@ internal sealed class PixelBuffer
         Data[offset + 2] = color.Blue;
     }
 
-    private int GetOffset(int x, int y) => checked(((y * Width) + x) * 3);
+    private int GetOffset(int x, int y)
+    {
+        if (x < 0 || x >= Width)
+        {
+            throw new ArgumentOutOfRangeException(nameof(x), "Pixel x coordinate is outside the buffer.");
+        }
+
+        if (y < 0 || y >= Height)
+        {
+            throw new ArgumentOutOfRangeException(nameof(y), "Pixel y coordinate is outside the buffer.");
+        }
+
+        return checked(((y * Width) + x) * 3);
+    }
 }

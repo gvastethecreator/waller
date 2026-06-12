@@ -3,20 +3,39 @@ using Waller.Native.Core.Settings;
 
 namespace Waller.Native.App.ViewModels;
 
-internal sealed record SettingsPreferenceSaveResult(
-    Guid? LastSelectedPresetId,
-    bool WriteFailed)
+internal sealed record SettingsPreferenceSaveResult
 {
+    public SettingsPreferenceSaveResult(
+        Guid? LastSelectedPresetId,
+        bool WriteFailed)
+    {
+        if (WriteFailed && LastSelectedPresetId is not null)
+        {
+            throw new ArgumentException("Failed Settings save results cannot include last selected Preset.", nameof(LastSelectedPresetId));
+        }
+
+        this.LastSelectedPresetId = LastSelectedPresetId;
+        this.WriteFailed = WriteFailed;
+    }
+
+    public Guid? LastSelectedPresetId { get; }
+
+    public bool WriteFailed { get; }
+
     public static SettingsPreferenceSaveResult Success(Guid? lastSelectedPresetId) =>
         new(lastSelectedPresetId, WriteFailed: false);
 
     public static SettingsPreferenceSaveResult LocalWriteFailed() =>
         new(LastSelectedPresetId: null, WriteFailed: true);
 
-    public string StatusText(ShellStatusTextPresenter shellText) =>
-        WriteFailed
+    public string StatusText(ShellStatusTextPresenter shellText)
+    {
+        ArgumentNullException.ThrowIfNull(shellText);
+
+        return WriteFailed
             ? shellText.LocalDataWriteFailed
             : shellText.SettingsSaved;
+    }
 
     public bool TryGetSavedLastSelectedPresetId(out Guid? lastSelectedPresetId)
     {
@@ -27,13 +46,20 @@ internal sealed record SettingsPreferenceSaveResult(
 
 internal static class SettingsPreferenceStore
 {
-    public static async Task<SettingsPreferenceDraft> LoadDraftAsync(UserSettingsStore settingsStore) =>
-        SettingsPreferenceDraft.From(await settingsStore.LoadAsync());
+    public static async Task<SettingsPreferenceDraft> LoadDraftAsync(UserSettingsStore settingsStore)
+    {
+        ArgumentNullException.ThrowIfNull(settingsStore);
+
+        return SettingsPreferenceDraft.From(await settingsStore.LoadAsync());
+    }
 
     public static async Task<SettingsPreferenceSaveResult> SaveRequestAsync(
         UserSettingsStore settingsStore,
         SettingsSaveRequest request)
     {
+        ArgumentNullException.ThrowIfNull(settingsStore);
+        ArgumentNullException.ThrowIfNull(request);
+
         return await LocalDataWriteGuard.TryAsync(
             async () =>
             {
@@ -48,6 +74,8 @@ internal static class SettingsPreferenceStore
         UserSettingsStore settingsStore,
         Guid? presetId)
     {
+        ArgumentNullException.ThrowIfNull(settingsStore);
+
         return await LocalDataWriteGuard.TryAsync<Guid?>(
             async () =>
             {

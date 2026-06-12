@@ -4,6 +4,8 @@ public static class PresetAssignments
 {
     public static PresetAssignment Normalize(PresetAssignment assignment)
     {
+        ArgumentNullException.ThrowIfNull(assignment);
+
         var source = WallpaperSource.TryNormalize(assignment.Source)
             ?? throw new ArgumentException("Preset assignment source is invalid.", nameof(assignment));
 

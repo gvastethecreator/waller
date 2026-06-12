@@ -5,7 +5,9 @@ namespace Waller.Native.Core.Settings;
 
 public sealed class UserSettingsStore(string rootDirectory)
 {
-    private readonly string settingsPath = Path.Combine(rootDirectory, "settings.json");
+    private readonly string settingsPath = Path.Combine(
+        LocalDataRootDirectory.RequireFullyQualified(rootDirectory),
+        "settings.json");
 
     public async Task<UserSettings> LoadAsync(CancellationToken cancellationToken = default)
     {
@@ -36,4 +38,5 @@ public sealed class UserSettingsStore(string rootDirectory)
             WallerJsonContext.Default.UserSettings,
             cancellationToken);
     }
+
 }

@@ -1,25 +1,44 @@
+using System.Diagnostics.CodeAnalysis;
+
 namespace Waller.Native.App.ViewModels;
 
-internal sealed record ManagedPresetCommandInput(
-    Guid Id,
-    string NameDraft)
+internal sealed record ManagedPresetCommandInput
 {
+    public ManagedPresetCommandInput(
+        Guid Id,
+        string NameDraft)
+    {
+        if (Id == Guid.Empty)
+        {
+            throw new ArgumentException("Managed Preset command id is required.", nameof(Id));
+        }
+
+        this.Id = Id;
+        this.NameDraft = NameDraft ?? string.Empty;
+    }
+
+    public Guid Id { get; }
+
+    public string NameDraft { get; }
+
     public static bool TryRename(
         PresetMenuItem? selectedPreset,
         string nameDraft,
         PresetTextPresenter text,
-        out ManagedPresetCommandInput input,
+        [NotNullWhen(true)] out ManagedPresetCommandInput? input,
         out string statusText)
     {
+        ArgumentNullException.ThrowIfNull(text);
+
         if (!TryGetId(selectedPreset, text.SelectToRename, out var id, out statusText))
         {
-            input = Empty;
+            input = null;
             return false;
         }
 
         if (!PresetNameInput.TryValidateRequired(nameDraft, text, out var name, out statusText))
         {
-            input = Empty;
+            input = null;
             return false;
         }
 
@@ -32,12 +51,14 @@ internal sealed record ManagedPresetCommandInput(
         PresetMenuItem? selectedPreset,
         string nameDraft,
         PresetTextPresenter text,
-        out ManagedPresetCommandInput input,
+        [NotNullWhen(true)] out ManagedPresetCommandInput? input,
         out string statusText)
     {
+        ArgumentNullException.ThrowIfNull(text);
+
         if (!TryGetId(selectedPreset, text.SelectToDuplicate, out var id, out statusText))
         {
-            input = Empty;
+            input = null;
             return false;
         }
 
@@ -49,12 +70,14 @@ internal sealed record ManagedPresetCommandInput(
     public static bool TryDeleteConfirmation(
         PresetMenuItem? selectedPreset,
         PresetTextPresenter text,
-        out PresetDeleteConfirmation confirmation,
+        [NotNullWhen(true)] out PresetDeleteConfirmation? confirmation,
         out string statusText)
     {
+        ArgumentNullException.ThrowIfNull(text);
+
         if (!TryGetId(selectedPreset, text.SelectToDelete, out var id, out statusText))
         {
-            confirmation = new PresetDeleteConfirmation(Guid.Empty, string.Empty);
+            confirmation = null;
             return false;
         }
 
@@ -62,8 +85,6 @@ internal sealed record ManagedPresetCommandInput(
         statusText = string.Empty;
         return true;
     }
-
-    private static ManagedPresetCommandInput Empty => new(Guid.Empty, string.Empty);
 
     private static bool TryGetId(
         PresetMenuItem? selectedPreset,

@@ -9,6 +9,8 @@ public static class UserSettingsPolicy
 
     public static UserSettings Normalize(UserSettings settings)
     {
+        ArgumentNullException.ThrowIfNull(settings);
+
         var theme = Enum.IsDefined(settings.Theme)
             ? settings.Theme
             : UserSettings.Default.Theme;

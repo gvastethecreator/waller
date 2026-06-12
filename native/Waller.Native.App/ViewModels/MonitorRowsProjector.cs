@@ -14,6 +14,11 @@ internal static class MonitorRowsProjector
         string? selectedMonitorKey,
         bool selectFirst)
     {
+        ArgumentNullException.ThrowIfNull(monitors);
+        ArgumentNullException.ThrowIfNull(missingMonitors);
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(text);
+
         var topology = MonitorTopologyLayout.Calculate(
             session.Monitors.Select(monitor => monitor.Monitor.Bounds).ToList());
 
@@ -52,7 +57,31 @@ internal static class MonitorRowsProjector
                 ?? monitors.FirstOrDefault();
 }
 
-internal sealed record MonitorRowsProjection(
-    double TopologyWidth,
-    double TopologyHeight,
-    MonitorRowViewModel? SelectedMonitor);
+internal sealed record MonitorRowsProjection
+{
+    public MonitorRowsProjection(
+        double TopologyWidth,
+        double TopologyHeight,
+        MonitorRowViewModel? SelectedMonitor)
+    {
+        if (TopologyWidth <= 0 || !double.IsFinite(TopologyWidth))
+        {
+            throw new ArgumentOutOfRangeException(nameof(TopologyWidth), TopologyWidth, "Topology width must be positive and finite.");
+        }
+
+        if (TopologyHeight <= 0 || !double.IsFinite(TopologyHeight))
+        {
+            throw new ArgumentOutOfRangeException(nameof(TopologyHeight), TopologyHeight, "Topology height must be positive and finite.");
+        }
+
+        this.TopologyWidth = TopologyWidth;
+        this.TopologyHeight = TopologyHeight;
+        this.SelectedMonitor = SelectedMonitor;
+    }
+
+    public double TopologyWidth { get; }
+
+    public double TopologyHeight { get; }
+
+    public MonitorRowViewModel? SelectedMonitor { get; }
+}

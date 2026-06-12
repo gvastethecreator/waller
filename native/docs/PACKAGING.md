@@ -39,20 +39,69 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke -Releas
 | Script | Purpose | Mutates machine state |
 | --- | --- | --- |
 | `scripts\Verify.ps1` | Runs lint/build/test/smoke/package gates. | Only when smoke registers debug package. |
-| `scripts\SmokeLaunch.ps1` | Builds, launches packaged app, verifies process/title, closes app. | Registers debug package through `winapp run`. |
+| `scripts\TestModalKeyboardContract.ps1` | Verifies modal Escape close and initial focus routing for Save As, Manage Presets, Settings, and delete confirmation. | No. |
+| `scripts\TestShellCommandContract.ps1` | Verifies top-shell command bindings, command gating, keyboard accelerators, and horizontal overflow handling. | No. |
+| `scripts\SmokeLaunch.ps1` | Builds, launches packaged app, verifies process/title, closes app. On registration conflict, runs the read-only package registration diagnostic automatically. | Registers debug package through `winapp run`. |
 | `scripts\BuildRelease.ps1` | Builds Release without launching/signing. | No. |
 | `scripts\PrepareDevCertificate.ps1` | Generates local dev PFX/CER. | Writes ignored files under `artifacts\signing\`. |
 | `scripts\PackageDevMsix.ps1` | Builds Release and creates signed dev MSIX. | Writes ignored files under `artifacts\packages\`. |
 | `scripts\InspectDevMsix.ps1` | Verifies MSIX manifest/signature. | No. |
 | `scripts\PackageManifest.ps1` | Shared helpers for manifest path resolution, MSIX manifest reads, package identity resolution, and MSIX version validation. | No. |
+| `scripts\PackageRegistration.ps1` | Shared read-only helpers for current-user/all-user package registration lookup and display formatting. | No. |
 | `scripts\SetPackageVersion.ps1` | Reads or changes package manifest version. | Only with `-Version`. |
 | `scripts\TestDevCertificateTrust.ps1` | Checks cert trust stores. | No. |
 | `scripts\TestDevPackageRegistration.ps1` | Checks current/all-user package registrations from explicit, MSIX, or source manifest identity. | No. |
+| `scripts\TestPackageDiagnosticBehavior.ps1` | Read-only regression checks for package registration diagnostics, including non-elevated all-users behavior. | No. |
 | `scripts\TestPackageAssets.ps1` | Verifies package identity/version text plus manifest/window asset references. | No. |
-| `scripts\TestPackageScriptGuards.ps1` | Blocks direct package manifest reads outside shared helpers. | No. |
+| `scripts\TestLaunchContract.ps1` | Verifies stable AUMID suffix, Waller window title, and `winapp`-based smoke-launch contract. | No. |
+| `scripts\TestSigningPolicy.ps1` | Verifies signing docs, ignored cert patterns, and that local cert artifacts stay under `artifacts\signing\`. | No. |
+| `scripts\TestLocalDataPolicy.ps1` | Verifies Presets, Settings, and rendered cache share `%LOCALAPPDATA%\Waller` instead of package-identity storage. | No. |
+| `scripts\TestPackageUpdatePolicy.ps1` | Verifies version updates do not change package identity and docs keep update behavior tied to stable local app data. | No. |
+| `scripts\TestPackageScriptGuards.ps1` | Blocks direct package manifest reads outside shared helpers, package registration lookups outside `PackageRegistration.ps1`, package installs outside `InstallDevMsix.ps1`, and package removal outside `UninstallDevPackage.ps1`. | No. |
 | `scripts\InstallDevMsix.ps1` | Inspects MSIX, checks current-user registration and cert trust; installs only with `-Install`. | Only with `-Install`. |
-| `scripts\UninstallDevPackage.ps1` | Lists installed dev package from explicit, MSIX, or source manifest identity; removes only with `-Uninstall`. | Only with `-Uninstall`. |
+| `scripts\UninstallDevPackage.ps1` | Lists installed dev package from explicit, MSIX, or source manifest identity; supports current-user or elevated all-user cleanup; removes only with `-Uninstall`. | Only with `-Uninstall`. |
 | `scripts\FindWinApp.ps1` | Finds `winapp.exe` in PATH or NuGet cache. | No. |
+
+## Local App Data
+
+Waller keeps user data outside package-identity storage:
+
+```text
+%LOCALAPPDATA%\Waller
+```
+
+That root contains Presets, Settings, and rendered wallpaper cache. Package name,
+publisher, signing certificate, version, install/update, and future Store/MSIX
+identity changes must not move this root. `TestLocalDataPolicy.ps1` guards the
+default app root and shared store construction before build/package gates.
+
+## Launch Contract
+
+Packaged launch must use package identity, not the generated `.exe` directly:
+
+- Package `Application Id` stays `App`, producing stable AUMID suffix `!App`.
+- Main window and title bar titles stay `Waller`.
+- `BuildAndRun.ps1` launches through `winapp run`.
+- `SmokeLaunch.ps1` uses detached `winapp` JSON, verifies process
+  `Waller.Native.App`, title `Waller`, `Responding=True`, and cleans up the
+  launched process.
+- `TestLaunchContract.ps1` guards these launch-contract assumptions before
+  build/package gates. Real Start-menu launch smoke still requires a successful
+  package registration.
+
+## Update Policy
+
+Updates preserve user data by separating package update metadata from local app
+data:
+
+- `SetPackageVersion.ps1 changes only Identity.Version`; package name and
+  publisher stay stable.
+- Presets/settings live under `%LOCALAPPDATA%\Waller`, not package identity
+  storage.
+- Package identity, publisher, signing certificate, and version changes must not
+  move or delete Presets/settings.
+- `TestPackageUpdatePolicy.ps1` guards the version-update script and this policy
+  before build/package gates.
 
 ## Versioning
 
@@ -87,6 +136,28 @@ Before creating a dev package for handoff/testing, prefer:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke -Package
 ```
+
+## Signing Strategy
+
+Development signing:
+
+- Use the generated local `CN=Waller` dev certificate only for internal MVP
+  handoff and local package install tests.
+- Keep generated `.pfx` and `.cer` files under ignored `artifacts\signing\`.
+- Trusting the dev certificate is an intentional elevated/manual step; package
+  creation must not install or trust certificates.
+- Dev packages are useful for launch/install validation, not public release.
+
+Release signing:
+
+- Production distribution needs a real production certificate decision before
+  any user-facing MSIX handoff.
+- Production packages should use a timestamping service so signatures survive
+  certificate expiry.
+- Production signing material must stay outside the repository and outside
+  `artifacts\signing\`; only metadata and commands belong in docs/scripts.
+- Do not enable trimming or call a package release-ready until clean-profile
+  install, Start-menu launch, update, uninstall, and wallpaper Apply smoke pass.
 
 ## Development Certificate
 
@@ -251,6 +322,17 @@ Check package registration across users when launch reports `0x80073D19`:
 powershell -ExecutionPolicy Bypass -File .\scripts\TestDevPackageRegistration.ps1 -AllUsers
 ```
 
+When not elevated, combined `-AllUsers` mode skips current-user lookup to avoid
+misreporting current-user state. Run the script without `-AllUsers` for
+current-user-only preflight, then rerun `-AllUsers` from an elevated terminal
+for the conclusive all-user check.
+`SmokeLaunch.ps1` runs those two read-only diagnostics separately when `winapp`
+reports `0x80073D19`.
+`SmokeLaunch.ps1`, `TestDevPackageRegistration.ps1`, and
+`UninstallDevPackage.ps1` share the same package-conflict help from
+`scripts\PackageRegistration.ps1`, so the `0x80073D19` path always prints exact
+read-only diagnostics first and treats `-Uninstall` as explicit cleanup.
+
 Exit codes:
 
 - `0`: no current-user registration found, and all-user check passed or was not requested.
@@ -278,6 +360,19 @@ Remove installed dev package:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\UninstallDevPackage.ps1 -Uninstall
+```
+
+Elevated all-user cleanup preflight for `0x80073D19` conflicts:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\UninstallDevPackage.ps1 -AllUsers
+```
+
+If all-user inspection is denied, re-run from an elevated terminal. Remove
+all-user dev registrations only when intentional and from an elevated terminal:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\UninstallDevPackage.ps1 -AllUsers -Uninstall
 ```
 
 Current package identity:

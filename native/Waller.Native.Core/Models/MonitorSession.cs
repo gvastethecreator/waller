@@ -9,16 +9,75 @@ public enum MonitorApplyStatus
     Error,
 }
 
-public sealed record MonitorSession(
-    MonitorSnapshot Monitor,
-    PresetAssignment DesiredAssignment,
-    PresetAssignment? LastAppliedAssignment,
-    MonitorApplyStatus ApplyStatus,
-    string? ApplyError,
-    bool HasUnsavedPresetChanges)
+public sealed record MonitorSession
 {
+    private MonitorSnapshot monitor = null!;
+    private PresetAssignment desiredAssignment = null!;
+    private MonitorApplyStatus applyStatus;
+
+    public MonitorSession(
+        MonitorSnapshot Monitor,
+        PresetAssignment DesiredAssignment,
+        PresetAssignment? LastAppliedAssignment,
+        MonitorApplyStatus ApplyStatus,
+        string? ApplyError,
+        bool HasUnsavedPresetChanges)
+    {
+        ArgumentNullException.ThrowIfNull(Monitor);
+        ArgumentNullException.ThrowIfNull(DesiredAssignment);
+
+        this.Monitor = Monitor;
+        this.DesiredAssignment = DesiredAssignment;
+        this.LastAppliedAssignment = LastAppliedAssignment;
+        this.ApplyStatus = ApplyStatus;
+        this.ApplyError = ApplyError;
+        this.HasUnsavedPresetChanges = HasUnsavedPresetChanges;
+    }
+
+    public MonitorSnapshot Monitor
+    {
+        get => monitor;
+        init
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            monitor = value;
+        }
+    }
+
+    public PresetAssignment DesiredAssignment
+    {
+        get => desiredAssignment;
+        init
+        {
+            ArgumentNullException.ThrowIfNull(value);
+            desiredAssignment = value;
+        }
+    }
+
+    public PresetAssignment? LastAppliedAssignment { get; init; }
+
+    public MonitorApplyStatus ApplyStatus
+    {
+        get => applyStatus;
+        init
+        {
+            if (!Enum.IsDefined(value))
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), value, "Monitor apply status is invalid.");
+            }
+
+            applyStatus = value;
+        }
+    }
+
+    public string? ApplyError { get; init; }
+
+    public bool HasUnsavedPresetChanges { get; init; }
+
     public static MonitorSession FromMonitor(MonitorSnapshot monitor)
     {
+        ArgumentNullException.ThrowIfNull(monitor);
+
         var assignment = PresetAssignments.Normalize(new PresetAssignment(
             monitor.Identity,
             monitor.CurrentSource,
@@ -35,6 +94,8 @@ public sealed record MonitorSession(
 
     public MonitorSession WithPendingAssignment(PresetAssignment assignment, bool hasUnsavedPresetChanges)
     {
+        ArgumentNullException.ThrowIfNull(assignment);
+
         return this with
         {
             DesiredAssignment = assignment,
@@ -65,6 +126,8 @@ public sealed record MonitorSession(
 
     public MonitorSession WithApplyError(string error)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(error);
+
         return this with
         {
             ApplyStatus = MonitorApplyStatus.Error,

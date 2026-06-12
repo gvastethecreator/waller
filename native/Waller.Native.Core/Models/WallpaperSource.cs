@@ -7,11 +7,38 @@ public enum WallpaperSourceKind
     Empty,
 }
 
-public sealed record WallpaperSource(
-    WallpaperSourceKind Kind,
-    string? ImagePath = null,
-    string? ColorHex = null)
+public sealed record WallpaperSource
 {
+    private WallpaperSourceKind kind;
+
+    public WallpaperSource(
+        WallpaperSourceKind Kind,
+        string? ImagePath = null,
+        string? ColorHex = null)
+    {
+        this.Kind = Kind;
+        this.ImagePath = ImagePath;
+        this.ColorHex = ColorHex;
+    }
+
+    public WallpaperSourceKind Kind
+    {
+        get => kind;
+        init
+        {
+            if (!Enum.IsDefined(value))
+            {
+                throw new ArgumentOutOfRangeException(nameof(value), value, "Wallpaper source kind is not supported.");
+            }
+
+            kind = value;
+        }
+    }
+
+    public string? ImagePath { get; init; }
+
+    public string? ColorHex { get; init; }
+
     public static WallpaperSource Empty { get; } = new(WallpaperSourceKind.Empty);
 
     public static WallpaperSource FromImage(string imagePath)

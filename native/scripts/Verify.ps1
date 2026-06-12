@@ -40,20 +40,60 @@ try {
         powershell -ExecutionPolicy Bypass -File .\scripts\TestXamlLocalization.ps1
     }
 
+    Invoke-Step "Modal keyboard contract" {
+        powershell -ExecutionPolicy Bypass -File .\scripts\TestModalKeyboardContract.ps1
+    }
+
+    Invoke-Step "Shell command contract" {
+        powershell -ExecutionPolicy Bypass -File .\scripts\TestShellCommandContract.ps1
+    }
+
     Invoke-Step "WinUI code guards" {
         powershell -ExecutionPolicy Bypass -File .\scripts\TestWinUICodeGuards.ps1
+    }
+
+    Invoke-Step "Core code guards" {
+        powershell -ExecutionPolicy Bypass -File .\scripts\TestCoreCodeGuards.ps1
     }
 
     Invoke-Step "JSON code guards" {
         powershell -ExecutionPolicy Bypass -File .\scripts\TestJsonCodeGuards.ps1
     }
 
+    Invoke-Step "Local data policy guard" {
+        powershell -ExecutionPolicy Bypass -File .\scripts\TestLocalDataPolicy.ps1
+    }
+
+    Invoke-Step "Error text code guards" {
+        powershell -ExecutionPolicy Bypass -File .\scripts\TestErrorTextCodeGuards.ps1
+    }
+
+    Invoke-Step "MVP scope guards" {
+        powershell -ExecutionPolicy Bypass -File .\scripts\TestMvpScopeGuards.ps1
+    }
+
     Invoke-Step "Package asset lint" {
         powershell -ExecutionPolicy Bypass -File .\scripts\TestPackageAssets.ps1
     }
 
+    Invoke-Step "Launch contract guard" {
+        powershell -ExecutionPolicy Bypass -File .\scripts\TestLaunchContract.ps1
+    }
+
+    Invoke-Step "Package update policy guard" {
+        powershell -ExecutionPolicy Bypass -File .\scripts\TestPackageUpdatePolicy.ps1
+    }
+
+    Invoke-Step "Signing policy guard" {
+        powershell -ExecutionPolicy Bypass -File .\scripts\TestSigningPolicy.ps1
+    }
+
     Invoke-Step "Package script guards" {
         powershell -ExecutionPolicy Bypass -File .\scripts\TestPackageScriptGuards.ps1
+    }
+
+    Invoke-Step "Package diagnostic behavior" {
+        powershell -ExecutionPolicy Bypass -File .\scripts\TestPackageDiagnosticBehavior.ps1
     }
 
     Invoke-Step "Build solution" {

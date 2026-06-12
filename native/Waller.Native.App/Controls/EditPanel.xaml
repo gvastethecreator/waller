@@ -1,0 +1,193 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="Waller.Native.App.Controls.EditPanel"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Waller.Native.App.Controls"
+    xmlns:vm="using:Waller.Native.App.ViewModels">
+
+    <Border
+        Padding="16"
+        CornerRadius="{ThemeResource OverlayCornerRadius}"
+        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+        BorderThickness="1"
+        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+        Visibility="{Binding ViewModel.EditPanelVisibility, ElementName=Root}">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" VerticalScrollMode="Auto">
+            <StackPanel Spacing="12">
+                <TextBlock
+                    Text="{Binding ViewModel.Text.EditMonitor, ElementName=Root}"
+                    Style="{StaticResource SubtitleTextBlockStyle}" />
+                <TextBlock
+                    Text="{Binding ViewModel.SelectedMonitorDisplayName, ElementName=Root}"
+                    TextTrimming="CharacterEllipsis"
+                    ToolTipService.ToolTip="{Binding ViewModel.SelectedMonitorDisplayName, ElementName=Root}"
+                    Style="{StaticResource BodyStrongTextBlockStyle}" />
+
+                <ComboBox
+                    AutomationProperties.AutomationId="SourceComboBox"
+                    AutomationProperties.Name="{Binding ViewModel.Text.Source, ElementName=Root}"
+                    Header="{Binding ViewModel.Text.Source, ElementName=Root}"
+                    DisplayMemberPath="DisplayName"
+                    IsEnabled="{Binding ViewModel.CanEditMonitorAssignment, ElementName=Root}"
+                    ItemsSource="{Binding ViewModel.SourceOptions, ElementName=Root}"
+                    SelectedItem="{Binding ViewModel.SelectedSourceOption, ElementName=Root, Mode=TwoWay}"
+                    TabIndex="0" />
+
+                <ScrollViewer
+                    x:Name="SourceEditorHost"
+                    MinHeight="320"
+                    MaxHeight="320"
+                    VerticalScrollBarVisibility="Auto"
+                    VerticalScrollMode="Auto">
+                    <StackPanel Spacing="12">
+                        <TextBox
+                            AutomationProperties.AutomationId="ImagePathTextBox"
+                            AutomationProperties.Name="{Binding ViewModel.Text.ImagePath, ElementName=Root}"
+                            Header="{Binding ViewModel.Text.ImagePath, ElementName=Root}"
+                            IsEnabled="{Binding ViewModel.CanEditMonitorAssignment, ElementName=Root}"
+                            Text="{Binding ViewModel.EditImagePath, ElementName=Root, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            Visibility="{Binding ViewModel.ImageSourceEditorVisibility, ElementName=Root}"
+                            TabIndex="1" />
+
+                        <InfoBar
+                            AutomationProperties.Name="{Binding ViewModel.SelectedSourceWarning, ElementName=Root}"
+                            AutomationProperties.LiveSetting="Polite"
+                            IsOpen="True"
+                            Severity="Warning"
+                            Message="{Binding ViewModel.SelectedSourceWarning, ElementName=Root}"
+                            Visibility="{Binding ViewModel.SelectedSourceWarningVisibility, ElementName=Root}" />
+
+                        <Button
+                            Command="{Binding ViewModel.ChooseImageCommand, ElementName=Root}"
+                            AutomationProperties.AutomationId="ChooseImageButton"
+                            AutomationProperties.Name="{Binding ViewModel.Text.ChooseImage, ElementName=Root}"
+                            IsEnabled="{Binding ViewModel.CanUseShellCommands, ElementName=Root}"
+                            ToolTipService.ToolTip="{Binding ViewModel.Text.ChooseImage, ElementName=Root}"
+                            Visibility="{Binding ViewModel.ImageSourceEditorVisibility, ElementName=Root}"
+                            TabIndex="2">
+                            <controls:IconText Glyph="&#xE8E5;" Text="{Binding ViewModel.Text.ChooseImage, ElementName=Root}" />
+                        </Button>
+
+                        <TextBox
+                            AutomationProperties.AutomationId="ColorHexTextBox"
+                            AutomationProperties.Name="{Binding ViewModel.Text.Color, ElementName=Root}"
+                            Header="{Binding ViewModel.Text.Color, ElementName=Root}"
+                            IsEnabled="{Binding ViewModel.CanEditMonitorAssignment, ElementName=Root}"
+                            MaxLength="7"
+                            PlaceholderText="#RRGGBB"
+                            Text="{Binding ViewModel.EditColorHex, ElementName=Root, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            Visibility="{Binding ViewModel.ColorSourceEditorVisibility, ElementName=Root}"
+                            TabIndex="3" />
+
+                        <ColorPicker
+                            AutomationProperties.AutomationId="ColorPicker"
+                            AutomationProperties.Name="{Binding ViewModel.Text.Color, ElementName=Root}"
+                            Color="{Binding ViewModel.EditColor, ElementName=Root, Mode=TwoWay}"
+                            IsEnabled="{Binding ViewModel.CanEditMonitorAssignment, ElementName=Root}"
+                            Visibility="{Binding ViewModel.ColorSourceEditorVisibility, ElementName=Root}"
+                            TabIndex="4" />
+
+                        <ItemsControl
+                            ItemsSource="{Binding ViewModel.ColorSwatches, ElementName=Root}"
+                            Visibility="{Binding ViewModel.ColorSourceEditorVisibility, ElementName=Root}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <ItemsWrapGrid Orientation="Horizontal" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ColorSwatchOption">
+                                    <Button
+                                        Width="28"
+                                        Height="28"
+                                        Margin="0,0,6,6"
+                                        Padding="0"
+                                        AutomationProperties.AutomationId="ColorSwatchButton"
+                                        Background="{x:Bind Brush, Mode=OneTime}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        Command="{Binding ViewModel.SelectColorSwatchCommand, ElementName=Root}"
+                                        CommandParameter="{Binding}"
+                                        IsEnabled="{Binding ViewModel.CanEditMonitorAssignment, ElementName=Root}"
+                                        AutomationProperties.Name="{x:Bind Hex, Mode=OneTime}"
+                                        TabIndex="5"
+                                        ToolTipService.ToolTip="{x:Bind Hex, Mode=OneTime}" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+                </ScrollViewer>
+
+                <ComboBox
+                    AutomationProperties.AutomationId="FitComboBox"
+                    AutomationProperties.Name="{Binding ViewModel.Text.Fit, ElementName=Root}"
+                    Header="{Binding ViewModel.Text.Fit, ElementName=Root}"
+                    DisplayMemberPath="DisplayName"
+                    IsEnabled="{Binding ViewModel.CanEditPlacement, ElementName=Root}"
+                    ItemsSource="{Binding ViewModel.FitOptions, ElementName=Root}"
+                    SelectedItem="{Binding ViewModel.SelectedFitOption, ElementName=Root, Mode=TwoWay}"
+                    TabIndex="6" />
+
+                <ComboBox
+                    AutomationProperties.AutomationId="AnchorComboBox"
+                    AutomationProperties.Name="{Binding ViewModel.Text.Anchor, ElementName=Root}"
+                    Header="{Binding ViewModel.Text.Anchor, ElementName=Root}"
+                    DisplayMemberPath="DisplayName"
+                    IsEnabled="{Binding ViewModel.CanEditPlacement, ElementName=Root}"
+                    ItemsSource="{Binding ViewModel.AnchorOptions, ElementName=Root}"
+                    SelectedItem="{Binding ViewModel.SelectedAnchorOption, ElementName=Root, Mode=TwoWay}"
+                    TabIndex="7" />
+
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <NumberBox
+                        AutomationProperties.AutomationId="OffsetXNumberBox"
+                        AutomationProperties.Name="{Binding ViewModel.Text.PositionX, ElementName=Root}"
+                        Header="{Binding ViewModel.Text.PositionX, ElementName=Root}"
+                        IsEnabled="{Binding ViewModel.CanEditPlacement, ElementName=Root}"
+                        LargeChange="25"
+                        Maximum="100"
+                        Minimum="-100"
+                        SmallChange="5"
+                        SpinButtonPlacementMode="Inline"
+                        TabIndex="8"
+                        ValidationMode="InvalidInputOverwritten"
+                        Value="{Binding ViewModel.EditOffsetXPercent, ElementName=Root, Mode=TwoWay}" />
+
+                    <NumberBox
+                        Grid.Column="1"
+                        AutomationProperties.AutomationId="OffsetYNumberBox"
+                        AutomationProperties.Name="{Binding ViewModel.Text.PositionY, ElementName=Root}"
+                        Header="{Binding ViewModel.Text.PositionY, ElementName=Root}"
+                        IsEnabled="{Binding ViewModel.CanEditPlacement, ElementName=Root}"
+                        LargeChange="25"
+                        Maximum="100"
+                        Minimum="-100"
+                        SmallChange="5"
+                        SpinButtonPlacementMode="Inline"
+                        TabIndex="9"
+                        ValidationMode="InvalidInputOverwritten"
+                        Value="{Binding ViewModel.EditOffsetYPercent, ElementName=Root, Mode=TwoWay}" />
+
+                    <Button
+                        Grid.Column="2"
+                        VerticalAlignment="Bottom"
+                        Command="{Binding ViewModel.ResetPositionCommand, ElementName=Root}"
+                        AutomationProperties.AutomationId="ResetPositionButton"
+                        AutomationProperties.Name="{Binding ViewModel.Text.ResetPosition, ElementName=Root}"
+                        IsEnabled="{Binding ViewModel.CanEditPlacement, ElementName=Root}"
+                        ToolTipService.ToolTip="{Binding ViewModel.Text.ResetPosition, ElementName=Root}"
+                        TabIndex="10">
+                        <FontIcon Glyph="&#xE777;" Style="{StaticResource WallerButtonIconStyle}" />
+                    </Button>
+                </Grid>
+            </StackPanel>
+        </ScrollViewer>
+    </Border>
+</UserControl>

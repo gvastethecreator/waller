@@ -6,6 +6,8 @@ internal static class PresetFilePolicy
 {
     public static Preset NormalizeForSave(Preset preset, DateTimeOffset savedAt)
     {
+        ArgumentNullException.ThrowIfNull(preset);
+
         return preset with
         {
             SchemaVersion = Preset.CurrentSchemaVersion,

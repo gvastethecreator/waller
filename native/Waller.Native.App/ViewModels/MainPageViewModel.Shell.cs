@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.Input;
+using Waller.Native.Core.Sessions;
 
 namespace Waller.Native.App.ViewModels;
 

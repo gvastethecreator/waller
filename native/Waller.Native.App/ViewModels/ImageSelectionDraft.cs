@@ -2,8 +2,34 @@ using Waller.Native.Core.Models;
 
 namespace Waller.Native.App.ViewModels;
 
-internal sealed record ImageSelectionDraft(string ImagePath, string DisplayFileName)
+internal sealed record ImageSelectionDraft
 {
+    private string imagePath = string.Empty;
+    private string displayFileName = string.Empty;
+
+    public ImageSelectionDraft(string ImagePath, string DisplayFileName)
+    {
+        imagePath = WallpaperSourcePath.NormalizeImagePath(ImagePath);
+        ArgumentException.ThrowIfNullOrWhiteSpace(DisplayFileName);
+        displayFileName = DisplayFileName;
+    }
+
+    public string ImagePath
+    {
+        get => imagePath;
+        init => imagePath = WallpaperSourcePath.NormalizeImagePath(value);
+    }
+
+    public string DisplayFileName
+    {
+        get => displayFileName;
+        init
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(value);
+            displayFileName = value;
+        }
+    }
+
     public static ImageSelectionDraft? FromPickerPath(
         string? imagePath,
         out WallpaperSourcePathException? error)

@@ -2,13 +2,49 @@ using Waller.Native.Core.Models;
 
 namespace Waller.Native.Core.Rendering;
 
-internal sealed record ImagePlacementPlan(
-    bool IsTile,
-    int OriginX,
-    int OriginY,
-    int DrawWidth,
-    int DrawHeight)
+internal sealed record ImagePlacementPlan
 {
+    private int drawWidth;
+    private int drawHeight;
+
+    public ImagePlacementPlan(bool IsTile, int OriginX, int OriginY, int DrawWidth, int DrawHeight)
+    {
+        ValidatePositiveDimension(DrawWidth, nameof(DrawWidth));
+        ValidatePositiveDimension(DrawHeight, nameof(DrawHeight));
+
+        this.IsTile = IsTile;
+        this.OriginX = OriginX;
+        this.OriginY = OriginY;
+        drawWidth = DrawWidth;
+        drawHeight = DrawHeight;
+    }
+
+    public bool IsTile { get; init; }
+
+    public int OriginX { get; init; }
+
+    public int OriginY { get; init; }
+
+    public int DrawWidth
+    {
+        get => drawWidth;
+        init
+        {
+            ValidatePositiveDimension(value, nameof(value));
+            drawWidth = value;
+        }
+    }
+
+    public int DrawHeight
+    {
+        get => drawHeight;
+        init
+        {
+            ValidatePositiveDimension(value, nameof(value));
+            drawHeight = value;
+        }
+    }
+
     public static ImagePlacementPlan Create(
         int sourceWidth,
         int sourceHeight,
@@ -16,6 +52,8 @@ internal sealed record ImagePlacementPlan(
         int targetHeight,
         WallpaperPlacement placement)
     {
+        ArgumentNullException.ThrowIfNull(placement);
+
         ValidatePositiveDimension(sourceWidth, nameof(sourceWidth));
         ValidatePositiveDimension(sourceHeight, nameof(sourceHeight));
         ValidatePositiveDimension(targetWidth, nameof(targetWidth));

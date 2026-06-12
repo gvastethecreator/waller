@@ -2,12 +2,21 @@ using Waller.Native.Core.Models;
 
 namespace Waller.Native.Core.Rendering;
 
-public sealed class BasicPngWallpaperRenderer(RenderedWallpaperStore store) : IWallpaperRenderer
+public sealed class BasicPngWallpaperRenderer : IWallpaperRenderer
 {
+    private readonly RenderedWallpaperStore store;
+
+    public BasicPngWallpaperRenderer(RenderedWallpaperStore store)
+    {
+        ArgumentNullException.ThrowIfNull(store);
+        this.store = store;
+    }
+
     public async Task<RenderedWallpaper> RenderAsync(
         RenderRequest request,
         CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(request);
         cancellationToken.ThrowIfCancellationRequested();
 
         var monitor = request.Monitor;

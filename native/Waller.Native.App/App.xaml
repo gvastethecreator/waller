@@ -11,6 +11,13 @@
                 <!-- Other merged dictionaries here -->
             </ResourceDictionary.MergedDictionaries>
             <SolidColorBrush x:Key="WallerModalOverlayBrush" Color="#80000000" />
+            <Style x:Key="WallerButtonIconStyle" TargetType="FontIcon">
+                <Setter Property="FontSize" Value="14" />
+            </Style>
+            <Style x:Key="WallerButtonContentStackStyle" TargetType="StackPanel">
+                <Setter Property="Orientation" Value="Horizontal" />
+                <Setter Property="Spacing" Value="6" />
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

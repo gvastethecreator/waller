@@ -6,6 +6,8 @@ public static class ApplyPreflight
 {
     public static ApplyPreflightResult SkipMissingImageSources(ActiveSession session)
     {
+        ArgumentNullException.ThrowIfNull(session);
+
         var skippedKeys = session.Monitors
             .Where(monitor => WallpaperSourceFiles.IsMissingImageFile(monitor.DesiredAssignment.Source))
             .Select(monitor => monitor.Monitor.Identity.MonitorKey)
@@ -21,6 +23,9 @@ public static class ApplyPreflight
 
     public static ApplyPreflightResult SkipMissingImageSource(ActiveSession session, string monitorKey)
     {
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentException.ThrowIfNullOrWhiteSpace(monitorKey);
+
         var target = session.Monitors.FirstOrDefault(monitor =>
             MonitorKeys.Equals(monitor.Monitor.Identity.MonitorKey, monitorKey));
         if (target is null || !WallpaperSourceFiles.IsMissingImageFile(target.DesiredAssignment.Source))
@@ -55,7 +60,7 @@ public static class ApplyPreflight
                     : monitor).ToList(),
         };
 
-        return result with { Session = nextSession };
+        return result.WithSession(nextSession);
     }
 
     private static HashSet<string> ToMonitorKeySet(this IEnumerable<string> monitorKeys) =>

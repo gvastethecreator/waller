@@ -41,6 +41,10 @@ public sealed partial class MissingMonitorRowViewModel(PresetAssignment assignme
 
     public string PlacementSummary => text.PlacementSummary(Assignment.Placement);
 
+    public string ReassignAccessibleName => $"{text.Reassign} {DisplayName}";
+
+    public string ForgetAccessibleName => $"{text.Forget} {DisplayName}";
+
     public void ReplaceText(LocalizedText text)
     {
         this.text = text;

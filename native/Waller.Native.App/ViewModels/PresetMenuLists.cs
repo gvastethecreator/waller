@@ -10,10 +10,15 @@ internal static class PresetMenuLists
         IReadOnlyList<Preset> presets,
         string currentSetupName)
     {
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(presets);
+        ArgumentException.ThrowIfNullOrWhiteSpace(currentSetupName);
+
         items.Clear();
         items.Add(PresetMenuItem.CreateCurrentSetup(currentSetupName));
         foreach (var preset in presets)
         {
+            ArgumentNullException.ThrowIfNull(preset);
             items.Add(new PresetMenuItem(preset.Id, preset.Name));
         }
     }
@@ -22,9 +27,13 @@ internal static class PresetMenuLists
         ObservableCollection<PresetMenuItem> items,
         IReadOnlyList<Preset> presets)
     {
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentNullException.ThrowIfNull(presets);
+
         items.Clear();
         foreach (var preset in presets)
         {
+            ArgumentNullException.ThrowIfNull(preset);
             items.Add(new PresetMenuItem(preset.Id, preset.Name));
         }
     }
@@ -33,6 +42,12 @@ internal static class PresetMenuLists
         IReadOnlyList<PresetMenuItem> items,
         Guid? id)
     {
+        ArgumentNullException.ThrowIfNull(items);
+        if (id == Guid.Empty)
+        {
+            throw new ArgumentException("Preset menu selection id cannot be empty.", nameof(id));
+        }
+
         if (id is null)
         {
             return items.FirstOrDefault();
@@ -46,6 +61,9 @@ internal static class PresetMenuLists
         PresetMenuItem? selected,
         string currentSetupName)
     {
+        ArgumentNullException.ThrowIfNull(items);
+        ArgumentException.ThrowIfNullOrWhiteSpace(currentSetupName);
+
         for (var index = 0; index < items.Count; index++)
         {
             if (!items[index].IsCurrentSetup)

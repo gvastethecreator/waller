@@ -8,4 +8,9 @@ public static class ApplyErrorCodes
 
     public static bool IsKnown(string? errorCode) =>
         errorCode is MissingImageSource or RenderedWallpaperMissing or WallpaperApplyFailed;
+
+    public static string Normalize(string? errorCode) =>
+        IsKnown(errorCode)
+            ? errorCode!
+            : WallpaperApplyFailed;
 }

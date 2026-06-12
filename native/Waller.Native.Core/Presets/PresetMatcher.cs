@@ -6,6 +6,9 @@ public sealed class PresetMatcher
 {
     public ActiveSession ApplyPreset(ActiveSession session, Preset preset)
     {
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(preset);
+
         var unmatchedAssignments = new List<PresetAssignment>();
         var assignmentIndex = BuildAssignmentIndex(preset.Assignments);
 
@@ -72,7 +75,21 @@ public sealed class PresetMatcher
             .FirstOrDefault();
     }
 
-    private sealed record AssignmentIndex(
-        IReadOnlyList<PresetAssignment> UniqueAssignments,
-        IReadOnlyDictionary<string, PresetAssignment> ByMonitorKey);
+    private sealed record AssignmentIndex
+    {
+        public AssignmentIndex(
+            IReadOnlyList<PresetAssignment> UniqueAssignments,
+            IReadOnlyDictionary<string, PresetAssignment> ByMonitorKey)
+        {
+            ArgumentNullException.ThrowIfNull(UniqueAssignments);
+            ArgumentNullException.ThrowIfNull(ByMonitorKey);
+
+            this.UniqueAssignments = UniqueAssignments;
+            this.ByMonitorKey = ByMonitorKey;
+        }
+
+        public IReadOnlyList<PresetAssignment> UniqueAssignments { get; }
+
+        public IReadOnlyDictionary<string, PresetAssignment> ByMonitorKey { get; }
+    }
 }
