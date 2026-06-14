@@ -43,6 +43,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke -Releas
 | `scripts\TestShellCommandContract.ps1` | Verifies top-shell command bindings, command gating, keyboard accelerators, and horizontal overflow handling. | No. |
 | `scripts\SmokeLaunch.ps1` | Builds, launches packaged app, verifies process/title, closes app. On registration conflict, runs the read-only package registration diagnostic automatically. | Registers debug package through `winapp run`. |
 | `scripts\SmokeSurface.ps1` | Builds, launches packaged app, verifies process/title/responding, checks shell and modal controls through UI Automation, optionally verifies Settings JSON roundtrip, closes app. | Registers debug package through `winapp run`; with `-SettingsRoundTrip`, temporarily writes and restores package-local `LocalCache\Local\Waller\settings.json`. |
+| `scripts\SmokeApply.ps1` | Builds, launches packaged app, invokes Apply all through UI Automation, verifies rendered PNGs, wallpaper path changes, and restores the previous wallpapers. | Temporarily changes current-user wallpapers, then restores them in `finally`. |
 | `scripts\BuildRelease.ps1` | Builds Release without launching/signing. | No. |
 | `scripts\PrepareDevCertificate.ps1` | Generates local dev PFX/CER. | Writes ignored files under `artifacts\signing\`. |
 | `scripts\PackageDevMsix.ps1` | Builds Release and creates signed dev MSIX. | Writes ignored files under `artifacts\packages\`. |
@@ -56,7 +57,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke -Releas
 | `scripts\TestPackageAssets.ps1` | Verifies package identity/version text plus manifest/window asset references. | No. |
 | `scripts\TestLaunchContract.ps1` | Verifies stable AUMID suffix, Waller window title, and `winapp`-based smoke-launch contract. | No. |
 | `scripts\TestSigningPolicy.ps1` | Verifies signing docs, ignored cert patterns, and that local cert artifacts stay under `artifacts\signing\`. | No. |
-| `scripts\TestLocalDataPolicy.ps1` | Verifies Presets, Settings, and rendered cache share one Waller local-data root. In packaged runs, Windows resolves that root under package `LocalCache\Local`. | No. |
+| `scripts\TestLocalDataPolicy.ps1` | Verifies Presets/Settings stay package-local while rendered PNGs use a shell-readable user-profile cache. | No. |
 | `scripts\TestPackageUpdatePolicy.ps1` | Verifies version updates do not change package identity and docs keep update behavior tied to stable local app data. | No. |
 | `scripts\TestPackageScriptGuards.ps1` | Blocks direct package manifest reads outside shared helpers, package registration lookups outside `PackageRegistration.ps1`, package installs outside `InstallDevMsix.ps1`, and package removal outside `UninstallDevPackage.ps1`. | No. |
 | `scripts\InstallDevMsix.ps1` | Inspects MSIX, checks current-user registration and cert trust; installs only with `-Install`. | Only with `-Install`. |
@@ -65,15 +66,15 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke -Releas
 
 ## Local App Data
 
-Waller keeps user data under one local app-data root:
+Waller keeps app-managed data under one local app-data root:
 
 ```text
 Waller
 ```
 
-That root contains Presets, Settings, and rendered wallpaper cache. In packaged
-WinUI runs, Windows resolves `Environment.SpecialFolder.LocalApplicationData` to
-the package family `LocalCache\Local`, so the effective path is:
+That root contains Presets and Settings. In packaged WinUI runs, Windows
+resolves `Environment.SpecialFolder.LocalApplicationData` to the package family
+`LocalCache\Local`, so the effective path is:
 
 ```text
 %LOCALAPPDATA%\Packages\<package-family-name>\LocalCache\Local\Waller
@@ -82,6 +83,17 @@ the package family `LocalCache\Local`, so the effective path is:
 Package version updates preserve this data as long as package name and publisher
 stay stable. `TestLocalDataPolicy.ps1` guards shared store construction before
 build/package gates.
+
+Rendered wallpaper PNGs intentionally do not live under package-local AppData:
+Windows `IDesktopWallpaper` cannot read those virtualized files. Runtime render
+output goes under:
+
+```text
+%USERPROFILE%\.waller\rendered
+```
+
+`SmokeApply.ps1` verifies that packaged Apply writes there, changes all current
+wallpaper paths, then restores the previous wallpaper state.
 
 ## Launch Contract
 
@@ -111,6 +123,8 @@ data:
   publisher stay stable.
 - Presets/settings live under package `LocalCache\Local\Waller` for packaged
   runs.
+- Rendered PNGs live under `%USERPROFILE%\.waller\rendered` so the Windows
+  wallpaper shell can read them.
 - Package name and publisher stay stable so version updates keep the same
   package family local cache.
 - `TestPackageUpdatePolicy.ps1` guards the version-update script and this policy

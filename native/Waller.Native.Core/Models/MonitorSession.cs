@@ -21,8 +21,7 @@ public sealed record MonitorSession
         PresetAssignment? LastAppliedAssignment,
         MonitorApplyStatus ApplyStatus,
         string? ApplyError,
-        bool HasUnsavedPresetChanges,
-        string? ApplyErrorMessage = null)
+        bool HasUnsavedPresetChanges)
     {
         ArgumentNullException.ThrowIfNull(Monitor);
         ArgumentNullException.ThrowIfNull(DesiredAssignment);
@@ -32,7 +31,6 @@ public sealed record MonitorSession
         this.LastAppliedAssignment = LastAppliedAssignment;
         this.ApplyStatus = ApplyStatus;
         this.ApplyError = ApplyError;
-        this.ApplyErrorMessage = ApplyErrorMessage;
         this.HasUnsavedPresetChanges = HasUnsavedPresetChanges;
     }
 
@@ -72,8 +70,6 @@ public sealed record MonitorSession
 
     public string? ApplyError { get; init; }
 
-    public string? ApplyErrorMessage { get; init; }
-
     public bool HasUnsavedPresetChanges { get; init; }
 
     public static MonitorSession FromMonitor(MonitorSnapshot monitor)
@@ -103,7 +99,6 @@ public sealed record MonitorSession
             DesiredAssignment = assignment,
             ApplyStatus = MonitorApplyStatus.Pending,
             ApplyError = null,
-            ApplyErrorMessage = null,
             HasUnsavedPresetChanges = hasUnsavedPresetChanges,
         };
     }
@@ -114,7 +109,6 @@ public sealed record MonitorSession
         {
             ApplyStatus = MonitorApplyStatus.Applying,
             ApplyError = null,
-            ApplyErrorMessage = null,
         };
     }
 
@@ -125,11 +119,10 @@ public sealed record MonitorSession
             ApplyStatus = MonitorApplyStatus.Applied,
             LastAppliedAssignment = DesiredAssignment,
             ApplyError = null,
-            ApplyErrorMessage = null,
         };
     }
 
-    public MonitorSession WithApplyError(string error, string? errorMessage = null)
+    public MonitorSession WithApplyError(string error)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(error);
 
@@ -137,7 +130,6 @@ public sealed record MonitorSession
         {
             ApplyStatus = MonitorApplyStatus.Error,
             ApplyError = error,
-            ApplyErrorMessage = string.IsNullOrWhiteSpace(errorMessage) ? null : errorMessage,
         };
     }
 }

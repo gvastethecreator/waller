@@ -41,8 +41,7 @@ public sealed class DesktopWallpaperApplier : IWallpaperApplier
         {
             return Task.FromResult(ApplyResult.Failure(
                 wallpaper.Monitor,
-                ApplyErrorCodes.WallpaperApplyFailed,
-                error.Message));
+                ApplyErrorCodes.WallpaperApplyFailed));
         }
     }
 }

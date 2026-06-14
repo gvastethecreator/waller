@@ -50,6 +50,17 @@ Settings through the packaged app and verifies the package-local
 `LocalCache\Local\Waller\settings.json` resolved from the launch AUMID. The
 smoke backs up and restores the previous Settings file before exit.
 
+Full local verification with packaged Apply smoke:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SurfaceSmoke -SettingsRoundTrip -ApplySmoke -DisableNuGetAudit
+```
+
+Adds a restore-safe packaged Apply run. It captures current wallpapers, invokes
+`ApplyAllButton`, verifies successful status, observes rendered PNGs under
+`%USERPROFILE%\.waller\rendered`, verifies wallpaper paths changed, then
+restores the original wallpaper paths.
+
 Full local verification without launch smoke:
 
 ```powershell
@@ -108,6 +119,34 @@ restore with `NU1301`, rerun the same command outside the restricted sandbox.
 
 Latest full local result:
 
+- 2026-06-14: Package gate passed.
+- Command: `scripts\Verify.ps1 -SkipSmoke -Package -DisableNuGetAudit`.
+- Covered static guards, solution build, packaged Debug build, 462 tests,
+  Release x64 build, signed dev MSIX creation, and MSIX inspection.
+- Output package: `native\artifacts\packages\Waller-dev-x64.msix`
+  (`78,730,478` bytes).
+- Dev certificate is not trusted on this machine; trust remains a separate
+  elevated step before installing the MSIX.
+- 2026-06-14: Pass with packaged surface, Settings roundtrip, and Apply smoke.
+- Command: `scripts\Verify.ps1 -SurfaceSmoke -SettingsRoundTrip -ApplySmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, modal/shell/code/
+  JSON/local-data/error/MVP/package/signing guards, package diagnostic behavior,
+  solution build, tests, packaged launch smoke, packaged UI Automation surface
+  smoke, Settings JSON roundtrip, and restore-safe packaged Apply.
+- Tests: Passed 462 / Failed 0 / Skipped 0.
+- Launch smoke: process `39560`, title `Waller`, `Responding=True`.
+- Surface smoke: process `10568`; Shell 9/9 controls, Settings 5/5 controls,
+  Save As 3/3 controls, Manage Presets 6/6 controls; Settings roundtrip
+  persisted `Theme=1` and `Language=es`.
+- Apply smoke: process `51956`; status `Aplicar terminado. 3 OK, 0 fallaron.`,
+  3 rendered PNGs under `%USERPROFILE%\.waller\rendered`, 3 changed wallpaper
+  paths, and 3 restored monitors.
+- 2026-06-14: `scripts\SmokeApply.ps1 -DisableNuGetAudit` passed after moving
+  rendered PNG output out of package-local AppData virtualization and into
+  `%USERPROFILE%\.waller\rendered`.
+- Covered packaged build/launch, UI Automation `ApplyAllButton`, status
+  `Aplicar terminado. 3 OK, 0 fallaron.`, 3 rendered PNGs, 3 changed wallpaper
+  paths, and restoration for 3 monitors.
 - 2026-06-12: Pass after adding packaged Settings roundtrip smoke and updating
   local-data docs/guards to the packaged `LocalCache\Local\Waller` runtime
   contract.
@@ -2142,8 +2181,8 @@ Verify:
 - Unexpected Apply failure clears progress and shows a friendly localized
   status without raw exception text.
 - Save state does not change only because Apply ran.
-- Rendered PNG output lands under the Waller local-data root
-  (`LocalCache\Local\Waller\rendered` when packaged).
+- Rendered PNG output lands under `%USERPROFILE%\.waller\rendered` when
+  packaged, outside package-local AppData virtualization.
 - Desktop wallpaper apply requests Windows `Fill` position for rendered PNGs.
 - Desktop wallpaper writer cancellation propagates as cancellation, not as a
   row-level Apply failure.
