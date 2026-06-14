@@ -1,4 +1,5 @@
 using Waller.Native.Core.Models;
+using Waller.Native.Core.Presets;
 
 namespace Waller.Native.App.ViewModels;
 
@@ -15,8 +16,13 @@ internal static class ActivePresetSession
             renamed.Name);
     }
 
-    public static bool IsBasedOn(ActiveSession session, Guid presetId) =>
-        session.BasedOnPreset?.Id == presetId;
+    public static bool IsBasedOn(ActiveSession session, Guid presetId)
+    {
+        ArgumentNullException.ThrowIfNull(session);
+        var validPresetId = PresetIds.RequireValid(presetId, nameof(presetId));
+
+        return session.BasedOnPreset?.Id == validPresetId;
+    }
 
     public static ActiveSession MarkSaved(ActiveSession session, Preset preset)
     {
@@ -67,11 +73,10 @@ internal sealed record ActivePresetRename
     {
         ArgumentNullException.ThrowIfNull(Session);
         ArgumentNullException.ThrowIfNull(SelectedPresetRecord);
-        ArgumentException.ThrowIfNullOrWhiteSpace(PresetNameDraft);
 
         this.Session = Session;
         this.SelectedPresetRecord = SelectedPresetRecord;
-        this.PresetNameDraft = PresetNameDraft;
+        this.PresetNameDraft = PresetNames.Validate(PresetNameDraft, nameof(PresetNameDraft));
     }
 
     public ActiveSession Session { get; }

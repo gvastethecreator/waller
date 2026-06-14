@@ -30,17 +30,21 @@ public sealed partial record LocalizedText
         };
     }
 
-    public string SourceKind(WallpaperSourceKind source) => source switch
-    {
-        WallpaperSourceKind.Empty => EmptySource,
-        WallpaperSourceKind.Image => ImageSource,
-        WallpaperSourceKind.SolidColor => ColorSource,
-        _ => CheckValue,
-    };
+    public string SourceKind(WallpaperSourceKind source) =>
+        DefinedEnumValue.Require(source, nameof(source), "Unknown localized source kind.") switch
+        {
+            WallpaperSourceKind.Empty => EmptySource,
+            WallpaperSourceKind.Image => ImageSource,
+            WallpaperSourceKind.SolidColor => ColorSource,
+            _ => InvalidSourceKind(source),
+        };
 
     public string FitMode(WallpaperFitMode fit) =>
         PlacementText.FitMode(fit, this);
 
     public string AnchorLabel(WallpaperAnchor anchor) =>
         PlacementText.AnchorLabel(anchor, this);
+
+    private static string InvalidSourceKind(WallpaperSourceKind source) =>
+        throw new ArgumentOutOfRangeException(nameof(source), source, "Unknown localized source kind.");
 }

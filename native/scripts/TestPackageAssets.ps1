@@ -78,6 +78,12 @@ if ($manifest.Package.Identity.Publisher -ne "CN=Waller") {
     Add-Error "Package Publisher must be CN=Waller."
 }
 
+foreach ($namespace in @("uap10", "rescap")) {
+    if ($manifest.Package.IgnorableNamespaces -notmatch "(^|\s)$namespace(\s|$)") {
+        Add-Error "Package IgnorableNamespaces must include $namespace."
+    }
+}
+
 if (-not (Test-WallerMsixVersion -Value $manifest.Package.Identity.Version)) {
     Add-Error "Package Identity Version must use four numeric parts between 0 and 65535."
 }
@@ -151,6 +157,13 @@ $appIconReferences += [regex]::Matches($mainWindowXaml, "Assets[/\\]AppIcon\.ico
 $appIconReferences += [regex]::Matches($mainWindowCode, "Assets[/\\]AppIcon\.ico") | ForEach-Object { $_.Value }
 if ($appIconReferences.Count -lt 2) {
     Add-Error "MainWindow must use Assets\AppIcon.ico in both XAML TitleBar and AppWindow.SetIcon."
+}
+
+$runFullTrustCapability = $manifest.SelectNodes("//*[local-name()='Capability']") |
+    Where-Object { $_.GetAttribute("Name") -eq "runFullTrust" } |
+    Select-Object -First 1
+if (-not $runFullTrustCapability) {
+    Add-Error "Package manifest must declare rescap:Capability Name='runFullTrust'."
 }
 
 Test-AssetReference "Assets\AppIcon.ico"

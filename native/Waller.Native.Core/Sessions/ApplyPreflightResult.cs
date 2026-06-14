@@ -58,7 +58,7 @@ public sealed record ApplyPreflightResult
     {
         foreach (var readyMonitorKey in readyMonitorKeys)
         {
-            if (skippedMonitorKeys.Contains(readyMonitorKey))
+            if (MonitorKeys.Contains(skippedMonitorKeys, readyMonitorKey))
             {
                 throw new ArgumentException(
                     "Apply preflight cannot mark a monitor as both ready and skipped.",

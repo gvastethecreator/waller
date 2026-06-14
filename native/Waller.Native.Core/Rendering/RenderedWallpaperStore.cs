@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using Waller.Native.Core.Models;
 using Waller.Native.Core.Storage;
 
 namespace Waller.Native.Core.Rendering;
@@ -33,8 +34,9 @@ public sealed class RenderedWallpaperStore(string rootDirectory)
 
     public string CreatePath(string monitorKey)
     {
+        var fileName = RenderedWallpaperFileNames.Create(monitorKey, DateTimeOffset.UtcNow);
         EnsureRenderedDirectory();
-        return Path.Combine(RenderedDirectory, RenderedWallpaperFileNames.Create(monitorKey, DateTimeOffset.UtcNow));
+        return Path.Combine(RenderedDirectory, fileName);
     }
 
     public RenderedCacheClearResult Clear()
@@ -60,26 +62,17 @@ public sealed class RenderedWallpaperStore(string rootDirectory)
         {
             foreach (var file in files.Where(RenderedWallpaperFileNames.IsCacheFile))
             {
-                try
+                if (LocalDataFile.TryDeleteIfExists(file))
                 {
-                    File.Delete(file);
                     deleted++;
                 }
-                catch (IOException)
-                {
-                    failed++;
-                }
-                catch (UnauthorizedAccessException)
+                else
                 {
                     failed++;
                 }
             }
         }
-        catch (IOException)
-        {
-            failed++;
-        }
-        catch (UnauthorizedAccessException)
+        catch (Exception error) when (LocalDataFileSystemErrors.IsRecoverable(error))
         {
             failed++;
         }
@@ -88,7 +81,6 @@ public sealed class RenderedWallpaperStore(string rootDirectory)
     }
 
     private void EnsureRenderedDirectory() => Directory.CreateDirectory(RenderedDirectory);
-
 }
 
 internal static class RenderedWallpaperFileNames
@@ -98,7 +90,7 @@ internal static class RenderedWallpaperFileNames
 
     public static string Create(string monitorKey, DateTimeOffset createdAt)
     {
-        var key = monitorKey ?? string.Empty;
+        var key = MonitorKeys.Require(monitorKey, nameof(monitorKey));
         var safePrefix = SafePrefix(key);
         var hash = ShortHash(key);
         return $"{safePrefix}_{hash}_{createdAt:yyyyMMddHHmmssfff}.png";

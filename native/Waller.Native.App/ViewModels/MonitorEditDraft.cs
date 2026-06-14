@@ -16,41 +16,25 @@ internal sealed record MonitorEditDraft
         double OffsetXPercent = 0,
         double OffsetYPercent = 0)
     {
-        if (!Enum.IsDefined(SourceKind))
-        {
-            throw new ArgumentOutOfRangeException(nameof(SourceKind), SourceKind, "Unknown editor source kind.");
-        }
-
-        if (!Enum.IsDefined(FitMode))
-        {
-            throw new ArgumentOutOfRangeException(nameof(FitMode), FitMode, "Unknown editor fit mode.");
-        }
-
-        if (!Enum.IsDefined(Anchor))
-        {
-            throw new ArgumentOutOfRangeException(nameof(Anchor), Anchor, "Unknown editor anchor.");
-        }
-
-        if (!double.IsFinite(OffsetXPercent))
-        {
-            throw new ArgumentOutOfRangeException(nameof(OffsetXPercent), OffsetXPercent, "Editor X offset must be finite.");
-        }
-
-        if (!double.IsFinite(OffsetYPercent))
-        {
-            throw new ArgumentOutOfRangeException(nameof(OffsetYPercent), OffsetYPercent, "Editor Y offset must be finite.");
-        }
-
-        this.SourceKind = SourceKind;
+        this.SourceKind = DefinedEnumValue.Require(
+            SourceKind,
+            nameof(SourceKind),
+            "Unknown editor source kind.");
         this.ImagePath = ImagePath ?? string.Empty;
         this.ColorHex = SourceKind == WallpaperSourceKind.SolidColor
             ? global::Waller.Native.Core.Models.ColorHexValue.Normalize(ColorHex ?? string.Empty)
             : ColorHex ?? "#000000";
         this.Color = Color;
-        this.FitMode = FitMode;
-        this.Anchor = Anchor;
-        this.OffsetXPercent = OffsetXPercent;
-        this.OffsetYPercent = OffsetYPercent;
+        this.FitMode = DefinedEnumValue.Require(
+            FitMode,
+            nameof(FitMode),
+            "Unknown editor fit mode.");
+        this.Anchor = DefinedEnumValue.Require(
+            Anchor,
+            nameof(Anchor),
+            "Unknown editor anchor.");
+        this.OffsetXPercent = EditorOffsetPercent.NormalizeX(OffsetXPercent);
+        this.OffsetYPercent = EditorOffsetPercent.NormalizeY(OffsetYPercent);
     }
 
     public WallpaperSourceKind SourceKind { get; }
@@ -115,9 +99,7 @@ internal sealed record MonitorEditDraft
         string monitorKey) =>
         (editor ?? throw new ArgumentNullException(nameof(editor))).UpdateAssignment(
             session ?? throw new ArgumentNullException(nameof(session)),
-            string.IsNullOrWhiteSpace(monitorKey)
-                ? throw new ArgumentException("Monitor key is required.", nameof(monitorKey))
-                : monitorKey,
+            MonitorKeys.Require(monitorKey, nameof(monitorKey)),
             ToSource(),
             ToPlacement());
 
@@ -130,23 +112,25 @@ internal sealed record MonitorEditDraft
 
         return SourceKind switch
         {
+            WallpaperSourceKind.Empty => WallpaperSource.Empty,
             WallpaperSourceKind.Image => WallpaperSource.FromImage(ImagePath),
             WallpaperSourceKind.SolidColor => WallpaperSource.FromSolidColor(ColorHex),
-            _ => WallpaperSource.Empty,
+            _ => InvalidSourceKind(SourceKind),
         };
     }
 
     public WallpaperPlacement ToPlacement() => new(
         FitMode,
         Anchor,
-        RoundedOffset(OffsetXPercent),
-        RoundedOffset(OffsetYPercent));
+        EditorOffsetPercent.ToPlacementOffsetX(OffsetXPercent),
+        EditorOffsetPercent.ToPlacementOffsetY(OffsetYPercent));
 
     private static Color ColorHexValue(string colorHex) =>
         global::Waller.Native.App.ViewModels.ColorHex.TryToColor(colorHex, out var color)
             ? color
             : Color.FromArgb(255, 0, 0, 0);
 
-    private static int RoundedOffset(double offset) =>
-        WallpaperPlacement.ClampOffset((int)Math.Round(offset, MidpointRounding.AwayFromZero));
+    private static WallpaperSource InvalidSourceKind(WallpaperSourceKind sourceKind) =>
+        throw new ArgumentOutOfRangeException(nameof(sourceKind), sourceKind, "Unknown editor source kind.");
+
 }

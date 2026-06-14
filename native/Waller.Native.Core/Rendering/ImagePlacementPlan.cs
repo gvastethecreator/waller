@@ -59,7 +59,11 @@ internal sealed record ImagePlacementPlan
         ValidatePositiveDimension(targetWidth, nameof(targetWidth));
         ValidatePositiveDimension(targetHeight, nameof(targetHeight));
 
-        if (placement.FitMode == WallpaperFitMode.Tile)
+        var fitMode = DefinedEnumValue.Require(
+            placement.FitMode,
+            nameof(placement.FitMode),
+            "Unknown image placement fit mode.");
+        if (fitMode == WallpaperFitMode.Tile)
         {
             return new ImagePlacementPlan(
                 IsTile: true,
@@ -69,12 +73,13 @@ internal sealed record ImagePlacementPlan
                 DrawHeight: sourceHeight);
         }
 
-        var scale = placement.FitMode switch
+        var scale = fitMode switch
         {
+            WallpaperFitMode.Cover => GetUniformScale(sourceWidth, sourceHeight, targetWidth, targetHeight, useMax: true),
             WallpaperFitMode.Stretch => (ScaleX: targetWidth / (double)sourceWidth, ScaleY: targetHeight / (double)sourceHeight),
             WallpaperFitMode.Contain => GetUniformScale(sourceWidth, sourceHeight, targetWidth, targetHeight, useMax: false),
             WallpaperFitMode.Center => (ScaleX: 1d, ScaleY: 1d),
-            _ => GetUniformScale(sourceWidth, sourceHeight, targetWidth, targetHeight, useMax: true),
+            _ => InvalidFitMode(fitMode),
         };
 
         var drawWidth = Math.Max(1, (int)Math.Round(sourceWidth * scale.ScaleX));
@@ -84,7 +89,10 @@ internal sealed record ImagePlacementPlan
             targetHeight,
             drawWidth,
             drawHeight,
-            placement.Anchor,
+            DefinedEnumValue.Require(
+                placement.Anchor,
+                nameof(placement.Anchor),
+                "Unknown image placement anchor."),
             placement.OffsetXPercent,
             placement.OffsetYPercent);
 
@@ -109,6 +117,9 @@ internal sealed record ImagePlacementPlan
         return (scale, scale);
     }
 
+    private static (double ScaleX, double ScaleY) InvalidFitMode(WallpaperFitMode fitMode) =>
+        throw new ArgumentOutOfRangeException(nameof(fitMode), fitMode, "Unknown image placement fit mode.");
+
     private static void ValidatePositiveDimension(int value, string paramName)
     {
         if (value <= 0)
@@ -129,21 +140,29 @@ internal sealed record ImagePlacementPlan
         var x = anchor switch
         {
             WallpaperAnchor.TopLeft or WallpaperAnchor.Left or WallpaperAnchor.BottomLeft => 0,
+            WallpaperAnchor.Top or WallpaperAnchor.Center or WallpaperAnchor.Bottom => (targetWidth - drawWidth) / 2,
             WallpaperAnchor.TopRight or WallpaperAnchor.Right or WallpaperAnchor.BottomRight => targetWidth - drawWidth,
-            _ => (targetWidth - drawWidth) / 2,
+            _ => InvalidAnchorX(anchor),
         };
 
         var y = anchor switch
         {
             WallpaperAnchor.TopLeft or WallpaperAnchor.Top or WallpaperAnchor.TopRight => 0,
+            WallpaperAnchor.Left or WallpaperAnchor.Center or WallpaperAnchor.Right => (targetHeight - drawHeight) / 2,
             WallpaperAnchor.BottomLeft or WallpaperAnchor.Bottom or WallpaperAnchor.BottomRight => targetHeight - drawHeight,
-            _ => (targetHeight - drawHeight) / 2,
+            _ => InvalidAnchorY(anchor),
         };
 
         return (
             ApplyOffset(x, targetWidth, drawWidth, offsetXPercent),
             ApplyOffset(y, targetHeight, drawHeight, offsetYPercent));
     }
+
+    private static int InvalidAnchorX(WallpaperAnchor anchor) =>
+        throw new ArgumentOutOfRangeException(nameof(anchor), anchor, "Unknown image placement anchor.");
+
+    private static int InvalidAnchorY(WallpaperAnchor anchor) =>
+        throw new ArgumentOutOfRangeException(nameof(anchor), anchor, "Unknown image placement anchor.");
 
     private static int ApplyOffset(
         int anchoredOrigin,

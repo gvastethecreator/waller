@@ -1,4 +1,5 @@
 using Waller.Native.Core.Settings;
+using Waller.Native.Core.Models;
 
 namespace Waller.Native.App.ViewModels;
 
@@ -9,15 +10,13 @@ internal sealed record SettingsPreferenceDraft
         string Language,
         Guid? LastSelectedPresetId)
     {
-        if (!Enum.IsDefined(Theme))
-        {
-            throw new ArgumentOutOfRangeException(nameof(Theme), Theme, "Unknown Settings theme preference.");
-        }
-
-        this.Theme = Theme;
+        this.Theme = DefinedEnumValue.Require(
+            Theme,
+            nameof(Theme),
+            "Unknown Settings theme preference.");
         this.Language = AppLanguages.Normalize(Language)
             ?? throw new ArgumentException("Settings language must be supported.", nameof(Language));
-        this.LastSelectedPresetId = LastSelectedPresetId;
+        this.LastSelectedPresetId = PresetIds.NormalizeOptional(LastSelectedPresetId);
     }
 
     public AppThemePreference Theme { get; }

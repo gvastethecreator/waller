@@ -61,11 +61,11 @@ internal static class PresetSessionSave
     {
         ArgumentNullException.ThrowIfNull(presetStore);
         ArgumentNullException.ThrowIfNull(session);
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        var presetName = PresetNames.Validate(name, nameof(name));
 
         return await SaveAsync(
             presetStore,
-            PresetFactory.CreateFromSession(session, name));
+            PresetFactory.CreateFromSession(session, presetName));
     }
 
     private static async Task<PresetSessionSaveResult> SaveAsync(

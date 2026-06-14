@@ -8,9 +8,13 @@ internal static class MonitorRowSelection
         IReadOnlyList<MonitorRowViewModel> monitors,
         MonitorRowViewModel? selectedMonitor)
     {
+        ArgumentNullException.ThrowIfNull(monitors);
+
         foreach (var monitor in monitors)
         {
-            monitor.IsSelected = ReferenceEquals(monitor, selectedMonitor);
+            (monitor ?? throw new ArgumentException(
+                "Monitor row selection cannot include null items.",
+                nameof(monitors))).IsSelected = ReferenceEquals(monitor, selectedMonitor);
         }
 
         return selectedMonitor?.Session.DesiredAssignment;

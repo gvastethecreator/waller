@@ -70,10 +70,13 @@ internal sealed class ApplyRunTracker
     public ApplySessionResult ToResult(ActiveSession session, IReadOnlyList<MonitorSession> monitors)
     {
         ArgumentNullException.ThrowIfNull(session);
-        ArgumentNullException.ThrowIfNull(monitors);
+        var resultMonitors = RequiredList.Copy(
+            monitors,
+            nameof(monitors),
+            "Apply result monitor list cannot include null items.");
 
         return new ApplySessionResult(
-            session with { Monitors = monitors.ToList() },
+            session with { Monitors = resultMonitors },
             Succeeded,
             Failed);
     }
@@ -83,7 +86,10 @@ internal sealed class ApplyRunTracker
         IReadOnlyList<MonitorSession> monitors)
     {
         ArgumentNullException.ThrowIfNull(session);
-        ArgumentNullException.ThrowIfNull(monitors);
+        RequiredList.ValidateItems(
+            monitors,
+            nameof(monitors),
+            "Apply result monitor list cannot include null items.");
 
         return new ApplyCanceledException(ToResult(session, monitors));
     }

@@ -1,4 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
+using Waller.Native.Core.Models;
 
 namespace Waller.Native.App.ViewModels;
 
@@ -8,12 +9,7 @@ internal sealed record ManagedPresetCommandInput
         Guid Id,
         string NameDraft)
     {
-        if (Id == Guid.Empty)
-        {
-            throw new ArgumentException("Managed Preset command id is required.", nameof(Id));
-        }
-
-        this.Id = Id;
+        this.Id = PresetIds.RequireValid(Id, nameof(Id));
         this.NameDraft = NameDraft ?? string.Empty;
     }
 
@@ -92,12 +88,14 @@ internal sealed record ManagedPresetCommandInput
         out Guid id,
         out string statusText)
     {
-        if (ManagedPresetSelection.TryGetId(selectedPreset, out id))
+        if (ManagedPresetSelection.SelectedId(selectedPreset) is Guid selectedId)
         {
+            id = selectedId;
             statusText = string.Empty;
             return true;
         }
 
+        id = default;
         statusText = missingSelectionStatus;
         return false;
     }

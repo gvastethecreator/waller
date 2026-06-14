@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Waller.Native.Core.Models;
 using Waller.Native.Core.Presets;
 
 namespace Waller.Native.App.ViewModels;
@@ -11,18 +12,15 @@ internal sealed record PresetMenuRefreshResult
         bool RequestedPresetMissing)
     {
         ArgumentNullException.ThrowIfNull(SelectedPreset);
-        if (LastSelectedPresetId == Guid.Empty)
-        {
-            throw new ArgumentException("Last selected Preset id cannot be empty.", nameof(LastSelectedPresetId));
-        }
+        var normalizedLastSelectedPresetId = PresetIds.NormalizeOptional(LastSelectedPresetId);
 
-        if (RequestedPresetMissing && LastSelectedPresetId is not null)
+        if (RequestedPresetMissing && normalizedLastSelectedPresetId is not null)
         {
             throw new ArgumentException("Missing requested Preset refresh results cannot keep visual-memory id.", nameof(LastSelectedPresetId));
         }
 
         this.SelectedPreset = SelectedPreset;
-        this.LastSelectedPresetId = LastSelectedPresetId;
+        this.LastSelectedPresetId = normalizedLastSelectedPresetId;
         this.RequestedPresetMissing = RequestedPresetMissing;
     }
 
@@ -43,16 +41,15 @@ internal static class PresetMenuRefresh
     {
         ArgumentNullException.ThrowIfNull(presetStore);
         ArgumentNullException.ThrowIfNull(items);
-        ArgumentException.ThrowIfNullOrWhiteSpace(currentSetupName);
-        if (selectPresetId == Guid.Empty)
-        {
-            throw new ArgumentException("Preset menu refresh selection id cannot be empty.", nameof(selectPresetId));
-        }
+        var normalizedCurrentSetupName = PresetMenuDisplayName.Normalize(
+            currentSetupName,
+            nameof(currentSetupName));
+        var normalizedSelectPresetId = PresetIds.NormalizeOptional(selectPresetId);
 
         var presets = await presetStore.ListAsync();
-        PresetMenuLists.ReplaceMain(items, presets, currentSetupName);
-        var selected = PresetMenuLists.Select(items, selectPresetId);
-        var requestedPresetMissing = selectPresetId is not null && selected?.Id != selectPresetId;
+        PresetMenuLists.ReplaceMain(items, presets, normalizedCurrentSetupName);
+        var selected = PresetMenuLists.Select(items, normalizedSelectPresetId);
+        var requestedPresetMissing = normalizedSelectPresetId is not null && selected?.Id != normalizedSelectPresetId;
         return new PresetMenuRefreshResult(
             selected ?? throw new InvalidOperationException("Preset menu refresh did not produce a selected item."),
             requestedPresetMissing ? null : selected.Id,

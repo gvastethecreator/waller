@@ -44,6 +44,11 @@ public readonly record struct ColorHexValue(byte Red, byte Green, byte Blue)
 
     public static string Normalize(string colorHex)
     {
+        if (string.IsNullOrWhiteSpace(colorHex))
+        {
+            throw new ArgumentException("Color must be #RRGGBB.", nameof(colorHex));
+        }
+
         var value = colorHex.Trim();
         if (!value.StartsWith('#'))
         {

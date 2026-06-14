@@ -33,7 +33,7 @@ public sealed class PresetMatcher
 
         foreach (var assignment in assignmentIndex.UniqueAssignments)
         {
-            if (!usedAssignmentKeys.Contains(assignment.SavedMonitor.MonitorKey))
+            if (!MonitorKeys.Contains(usedAssignmentKeys, assignment.SavedMonitor.MonitorKey))
             {
                 unmatchedAssignments.Add(assignment);
             }
@@ -64,11 +64,11 @@ public sealed class PresetMatcher
     private static PresetAssignment? FindFallbackMatch(
         MonitorIdentity monitor,
         IReadOnlyList<PresetAssignment> assignments,
-        ISet<string> usedAssignmentKeys)
+        IReadOnlySet<string> usedAssignmentKeys)
     {
         return assignments
             .Where(assignment =>
-                !usedAssignmentKeys.Contains(assignment.SavedMonitor.MonitorKey)
+                !MonitorKeys.Contains(usedAssignmentKeys, assignment.SavedMonitor.MonitorKey)
                 && MonitorIdentityMatcher.IsFallbackCandidate(assignment.SavedMonitor, monitor))
             .OrderBy(assignment => MonitorIdentityMatcher.FallbackDistance(assignment.SavedMonitor, monitor))
             .ThenBy(assignment => assignment.SavedMonitor.DisplayIndex)

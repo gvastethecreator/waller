@@ -1,3 +1,5 @@
+using Waller.Native.Core.Presets;
+
 namespace Waller.Native.Core.Models;
 
 public sealed record PresetIdentity
@@ -6,21 +8,24 @@ public sealed record PresetIdentity
 
     public PresetIdentity(Guid Id, string Name)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(Name);
-
-        this.Id = Id;
-        this.Name = Name;
+        this.Id = PresetIds.RequireValid(Id, nameof(Id));
+        this.Name = PresetNames.Validate(Name, nameof(Name));
     }
 
-    public Guid Id { get; init; }
+    private Guid id;
+
+    public Guid Id
+    {
+        get => id;
+        init => id = PresetIds.RequireValid(value, nameof(value));
+    }
 
     public string Name
     {
         get => name;
         init
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(value);
-            name = value;
+            name = PresetNames.Validate(value, nameof(value));
         }
     }
 }
@@ -38,11 +43,9 @@ public sealed record Preset
         DateTimeOffset CreatedAt,
         DateTimeOffset UpdatedAt)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(Name);
-
         this.SchemaVersion = SchemaVersion;
-        this.Id = Id;
-        this.Name = Name;
+        this.Id = PresetIds.RequireValid(Id, nameof(Id));
+        this.Name = PresetNames.Validate(Name, nameof(Name));
         assignments = RequiredList.Copy(
             Assignments,
             nameof(Assignments),
@@ -55,15 +58,20 @@ public sealed record Preset
 
     public int SchemaVersion { get; init; }
 
-    public Guid Id { get; init; }
+    private Guid id;
+
+    public Guid Id
+    {
+        get => id;
+        init => id = PresetIds.RequireValid(value, nameof(value));
+    }
 
     public string Name
     {
         get => name;
         init
         {
-            ArgumentException.ThrowIfNullOrWhiteSpace(value);
-            name = value;
+            name = PresetNames.Validate(value, nameof(value));
         }
     }
 

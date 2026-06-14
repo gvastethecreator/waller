@@ -9,10 +9,8 @@ internal sealed record DisconnectedMonitorEditResult
         ActiveSession? Session,
         string StatusText)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(StatusText);
-
         this.Session = Session;
-        this.StatusText = StatusText;
+        this.StatusText = WorkflowStatusText.Require(StatusText, nameof(StatusText));
     }
 
     public ActiveSession? Session { get; }

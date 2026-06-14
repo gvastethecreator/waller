@@ -9,11 +9,10 @@ public sealed record MonitorSnapshot
         WallpaperPlacement? currentPlacement = null)
     {
         ArgumentNullException.ThrowIfNull(identity);
-        ArgumentException.ThrowIfNullOrWhiteSpace(displayName);
         ArgumentNullException.ThrowIfNull(currentSource);
 
         Identity = identity;
-        DisplayName = displayName;
+        DisplayName = MonitorDisplayName.Normalize(displayName, nameof(displayName));
         CurrentSource = currentSource;
         CurrentPlacement = currentPlacement;
     }

@@ -13,10 +13,11 @@ public sealed partial class MonitorRowViewModel(
     double topologyWidth = 96,
     double topologyHeight = 54) : ObservableObject
 {
-    private LocalizedText text = text;
+    private LocalizedText text = text ?? throw new ArgumentNullException(nameof(text));
 
     [ObservableProperty]
-    public partial MonitorSession Session { get; set; } = session;
+    public partial MonitorSession Session { get; set; } =
+        session ?? throw new ArgumentNullException(nameof(session));
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TopologyOpacity))]
@@ -86,19 +87,21 @@ public sealed partial class MonitorRowViewModel(
 
     public void ReplaceText(LocalizedText text)
     {
+        ArgumentNullException.ThrowIfNull(text);
         this.text = text;
         NotifyPropertiesChanged(MonitorRowNotificationGroups.CurrentMonitorText);
     }
 
     public void ReplaceSession(MonitorSession session)
     {
+        ArgumentNullException.ThrowIfNull(session);
         Session = session;
         NotifyPropertiesChanged(MonitorRowNotificationGroups.CurrentMonitorSession);
     }
 
     private void NotifyPropertiesChanged(IEnumerable<string> propertyNames)
     {
-        foreach (var propertyName in propertyNames)
+        foreach (var propertyName in ViewModelNotificationGroups.Require(propertyNames))
         {
             OnPropertyChanged(propertyName);
         }

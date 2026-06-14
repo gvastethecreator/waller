@@ -19,9 +19,9 @@ internal sealed record SelectedPresetSession
 
         this.Session = Session;
         this.SelectedPresetRecord = SelectedPresetRecord;
-        this.LastSelectedPresetId = LastSelectedPresetId;
+        this.LastSelectedPresetId = PresetIds.NormalizeOptional(LastSelectedPresetId);
         this.PresetNameDraft = PresetNameDraft;
-        this.PersistPresetId = PersistPresetId;
+        this.PersistPresetId = PresetIds.NormalizeOptional(PersistPresetId);
         this.PersistVisualMemory = PersistVisualMemory;
         this.SelectFirst = SelectFirst;
     }

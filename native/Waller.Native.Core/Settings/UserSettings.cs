@@ -1,3 +1,5 @@
+using Waller.Native.Core.Models;
+
 namespace Waller.Native.Core.Settings;
 
 public enum AppThemePreference
@@ -10,6 +12,7 @@ public enum AppThemePreference
 public sealed record UserSettings
 {
     private string language = string.Empty;
+    private Guid? lastSelectedPresetId;
 
     public UserSettings(
         AppThemePreference Theme,
@@ -26,7 +29,7 @@ public sealed record UserSettings
         this.WindowHeight = WindowHeight;
         this.WindowX = WindowX;
         this.WindowY = WindowY;
-        this.LastSelectedPresetId = LastSelectedPresetId;
+        this.LastSelectedPresetId = PresetIds.NormalizeOptional(LastSelectedPresetId);
     }
 
     public static UserSettings Default { get; } =
@@ -55,7 +58,11 @@ public sealed record UserSettings
 
     public int? WindowY { get; init; }
 
-    public Guid? LastSelectedPresetId { get; init; }
+    public Guid? LastSelectedPresetId
+    {
+        get => lastSelectedPresetId;
+        init => lastSelectedPresetId = PresetIds.NormalizeOptional(value);
+    }
 
     public UserSettings WithWindowPlacement(int width, int height, int x, int y) =>
         this with
@@ -71,10 +78,7 @@ public sealed record UserSettings
         string language,
         Guid? lastSelectedPresetId)
     {
-        if (!Enum.IsDefined(theme))
-        {
-            throw new ArgumentOutOfRangeException(nameof(theme), theme, "Theme preference is not supported.");
-        }
+        DefinedEnumValue.Require(theme, nameof(theme), "Theme preference is not supported.");
 
         var normalizedLanguage = AppLanguages.Normalize(language)
             ?? throw new ArgumentException("Settings language is not supported.", nameof(language));
@@ -83,13 +87,13 @@ public sealed record UserSettings
         {
             Theme = theme,
             Language = normalizedLanguage,
-            LastSelectedPresetId = lastSelectedPresetId,
+            LastSelectedPresetId = PresetIds.NormalizeOptional(lastSelectedPresetId),
         };
     }
 
     public UserSettings WithLastSelectedPreset(Guid? lastSelectedPresetId) =>
         this with
         {
-            LastSelectedPresetId = lastSelectedPresetId,
+            LastSelectedPresetId = PresetIds.NormalizeOptional(lastSelectedPresetId),
         };
 }

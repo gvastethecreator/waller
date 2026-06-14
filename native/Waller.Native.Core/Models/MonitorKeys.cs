@@ -16,7 +16,7 @@ public static class MonitorKeys
 
     public static HashSet<string> CreateSet(string monitorKey)
     {
-        return new HashSet<string>(Comparer) { RequiredMonitorKey(monitorKey, nameof(monitorKey)) };
+        return new HashSet<string>(Comparer) { Require(monitorKey, nameof(monitorKey)) };
     }
 
     public static HashSet<string> CreateSet(IEnumerable<string> monitorKeys)
@@ -26,13 +26,21 @@ public static class MonitorKeys
         var set = CreateSet();
         foreach (var monitorKey in monitorKeys)
         {
-            set.Add(RequiredMonitorKey(monitorKey, nameof(monitorKeys)));
+            set.Add(Require(monitorKey, nameof(monitorKeys)));
         }
 
         return set;
     }
 
-    private static string RequiredMonitorKey(string monitorKey, string parameterName)
+    public static bool Contains(IReadOnlySet<string> monitorKeys, string monitorKey)
+    {
+        ArgumentNullException.ThrowIfNull(monitorKeys);
+        monitorKey = Require(monitorKey, nameof(monitorKey));
+
+        return monitorKeys.Any(candidate => Equals(candidate, monitorKey));
+    }
+
+    public static string Require(string monitorKey, string parameterName)
     {
         if (string.IsNullOrWhiteSpace(monitorKey))
         {

@@ -23,10 +23,15 @@ internal sealed record MonitorApplyStepResult
         return new(monitor.WithAppliedAssignment(), Succeeded: true);
     }
 
-    public static MonitorApplyStepResult Failure(MonitorSession monitor, string? errorCode)
+    public static MonitorApplyStepResult Failure(
+        MonitorSession monitor,
+        string? errorCode,
+        string? errorMessage = null)
     {
         ArgumentNullException.ThrowIfNull(monitor);
 
-        return new(monitor.WithApplyError(ApplyErrorCodes.Normalize(errorCode)), Succeeded: false);
+        return new(
+            monitor.WithApplyError(ApplyErrorCodes.Normalize(errorCode), errorMessage),
+            Succeeded: false);
     }
 }

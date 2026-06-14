@@ -39,6 +39,18 @@ if ($appDataPathsText -notmatch 'Environment\.GetFolderPath\s*\(\s*Environment\.
     $errors += "Default app-data root must start from Environment.SpecialFolder.LocalApplicationData."
 }
 
+if ($appDataPathsText -notmatch 'RenderedRoot\s*\{\s*get;\s*\}\s*=\s*RootFor\s*\(\s*UserVisibleLocalApplicationData\s*\(\s*\)\s*\)' -or
+    $appDataPathsText -notmatch 'WindowsIdentity\.GetCurrent\s*\(\s*\)\.User' -or
+    $appDataPathsText -notmatch 'ProfileList' -or
+    $appDataPathsText -notmatch 'ProfileImagePath' -or
+    $appDataPathsText -notmatch 'Environment\.ExpandEnvironmentVariables' -or
+    $appDataPathsText -notmatch 'Environment\.GetEnvironmentVariable\s*\(\s*"USERPROFILE"\s*\)' -or
+    $appDataPathsText -notmatch 'Environment\.SpecialFolder\.UserProfile' -or
+    $appDataPathsText -notmatch 'Path\.Combine\s*\(\s*userProfileEnvironment\s*,\s*"AppData"\s*,\s*"Local"\s*\)' -or
+    $appDataPathsText -notmatch 'Path\.Combine\s*\(\s*userProfile\s*,\s*"AppData"\s*,\s*"Local"\s*\)') {
+    $errors += "Rendered wallpaper root must use a user-visible Local AppData path so Windows shell can read rendered PNGs."
+}
+
 if ($appDataPathsText -notmatch 'Path\.Combine\s*\(\s*localApplicationDataPath\s*,\s*AppFolderName\s*\)') {
     $errors += "RootFor must compose local app-data root with AppFolderName only."
 }
@@ -47,14 +59,18 @@ if ($appDataPathsText -match 'Package\.Current|ApplicationData\.Current') {
     $errors += "App-data root must not depend on package identity APIs."
 }
 
-if ($storesText -notmatch 'CreateDefault\s*\(\)\s*=>\s*\r?\n\s*Create\s*\(\s*WallerAppDataPaths\.Root\s*\)') {
-    $errors += "WallerLocalDataStores.CreateDefault must use WallerAppDataPaths.Root."
+if ($storesText -notmatch 'CreateDefault\s*\(\)\s*=>\s*\r?\n\s*Create\s*\(\s*\r?\n\s*WallerAppDataPaths\.Root\s*,\s*\r?\n\s*WallerAppDataPaths\.RenderedRoot\s*\)') {
+    $errors += "WallerLocalDataStores.CreateDefault must use WallerAppDataPaths.Root for app-managed JSON and RenderedRoot for rendered wallpapers."
 }
 
-foreach ($store in @("PresetStore", "UserSettingsStore", "RenderedWallpaperStore")) {
+foreach ($store in @("PresetStore", "UserSettingsStore")) {
     if ($storesText -notmatch "new\s+$store\s*\(\s*rootDirectory\s*\)") {
         $errors += "WallerLocalDataStores.Create must pass the same rootDirectory to $store."
     }
+}
+
+if ($storesText -notmatch "new\s+RenderedWallpaperStore\s*\(\s*renderedRootDirectory\s*\)") {
+    $errors += "WallerLocalDataStores.Create must pass renderedRootDirectory to RenderedWallpaperStore."
 }
 
 if ($servicesText -notmatch 'WallerLocalDataStores\.CreateDefault\s*\(\s*\)') {

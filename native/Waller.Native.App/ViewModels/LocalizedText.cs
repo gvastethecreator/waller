@@ -132,11 +132,16 @@ public sealed partial record LocalizedText(
     string UnsupportedValue,
     string OffsetSummaryFormat)
 {
-    public string Format(string format, params object[] args) =>
-        string.Format(
+    public string Format(string format, params object[] args)
+    {
+        ArgumentNullException.ThrowIfNull(format);
+        ArgumentNullException.ThrowIfNull(args);
+
+        return string.Format(
             AppLanguages.CultureFor(IsSpanish ? AppLanguages.Spanish : AppLanguages.English),
             format,
             args);
+    }
 
     internal bool IsSpanish => ReferenceEquals(this, Spanish);
 }

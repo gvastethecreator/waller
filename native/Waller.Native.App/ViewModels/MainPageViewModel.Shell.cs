@@ -113,7 +113,7 @@ public sealed partial class MainPageViewModel
 
     private void NotifyPropertiesChanged(IEnumerable<string> propertyNames)
     {
-        foreach (var propertyName in propertyNames)
+        foreach (var propertyName in ViewModelNotificationGroups.Require(propertyNames))
         {
             OnPropertyChanged(propertyName);
         }

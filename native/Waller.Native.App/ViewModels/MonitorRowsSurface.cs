@@ -4,12 +4,24 @@ namespace Waller.Native.App.ViewModels;
 
 internal static class MonitorRowsSurface
 {
-    public static Visibility NoMonitorsVisibility(IReadOnlyCollection<MonitorRowViewModel> monitors) =>
-        VisibilityStates.When(monitors.Count == 0);
+    public static Visibility NoMonitorsVisibility(IReadOnlyCollection<MonitorRowViewModel> monitors)
+    {
+        ArgumentNullException.ThrowIfNull(monitors);
 
-    public static Visibility TopologyVisibility(IReadOnlyCollection<MonitorRowViewModel> monitors) =>
-        VisibilityStates.Unless(monitors.Count == 0);
+        return VisibilityStates.When(monitors.Count == 0);
+    }
 
-    public static Visibility MissingMonitorsVisibility(IReadOnlyCollection<MissingMonitorRowViewModel> missingMonitors) =>
-        VisibilityStates.Unless(missingMonitors.Count == 0);
+    public static Visibility TopologyVisibility(IReadOnlyCollection<MonitorRowViewModel> monitors)
+    {
+        ArgumentNullException.ThrowIfNull(monitors);
+
+        return VisibilityStates.Unless(monitors.Count == 0);
+    }
+
+    public static Visibility MissingMonitorsVisibility(IReadOnlyCollection<MissingMonitorRowViewModel> missingMonitors)
+    {
+        ArgumentNullException.ThrowIfNull(missingMonitors);
+
+        return VisibilityStates.Unless(missingMonitors.Count == 0);
+    }
 }

@@ -19,7 +19,7 @@ internal sealed class ApplyTargetPlan
 
     public static ApplyTargetPlan Monitor(string monitorKey)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(monitorKey);
+        monitorKey = MonitorKeys.Require(monitorKey, nameof(monitorKey));
 
         return new ApplyTargetPlan(
             monitor => MonitorKeys.Equals(monitor.Monitor.Identity.MonitorKey, monitorKey));
@@ -36,7 +36,7 @@ internal sealed class ApplyTargetPlan
         }
 
         return new ApplyTargetPlan(
-            monitor => keys.Contains(monitor.Monitor.Identity.MonitorKey));
+            monitor => MonitorKeys.Contains(keys, monitor.Monitor.Identity.MonitorKey));
     }
 
     public static ApplyTargetPlan Matching(Func<MonitorSession, bool> shouldApply)

@@ -57,6 +57,6 @@ public static class PresetAssignments
         assignment?.SavedMonitor is { IsValidForPresetAssignment: true }
         && source is not null
         && assignment.Placement is not null
-        && Enum.IsDefined(assignment.Placement.FitMode)
-        && Enum.IsDefined(assignment.Placement.Anchor);
+        && DefinedEnumValue.IsDefined(assignment.Placement.FitMode)
+        && DefinedEnumValue.IsDefined(assignment.Placement.Anchor);
 }

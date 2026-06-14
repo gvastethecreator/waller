@@ -1,18 +1,13 @@
+using Waller.Native.Core.Models;
+
 namespace Waller.Native.App.ViewModels;
 
 internal sealed record PresetDeleteConfirmation
 {
     public PresetDeleteConfirmation(Guid Id, string Name)
     {
-        if (Id == Guid.Empty)
-        {
-            throw new ArgumentException("Preset delete confirmation id is required.", nameof(Id));
-        }
-
-        ArgumentException.ThrowIfNullOrWhiteSpace(Name);
-
-        this.Id = Id;
-        this.Name = Name;
+        this.Id = PresetIds.RequireValid(Id, nameof(Id));
+        this.Name = PresetMenuDisplayName.Normalize(Name, nameof(Name));
     }
 
     public Guid Id { get; }

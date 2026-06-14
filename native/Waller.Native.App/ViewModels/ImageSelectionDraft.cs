@@ -10,8 +10,7 @@ internal sealed record ImageSelectionDraft
     public ImageSelectionDraft(string ImagePath, string DisplayFileName)
     {
         imagePath = WallpaperSourcePath.NormalizeImagePath(ImagePath);
-        ArgumentException.ThrowIfNullOrWhiteSpace(DisplayFileName);
-        displayFileName = DisplayFileName;
+        displayFileName = ImageDisplayName.Normalize(DisplayFileName, nameof(DisplayFileName));
     }
 
     public string ImagePath
@@ -23,11 +22,7 @@ internal sealed record ImageSelectionDraft
     public string DisplayFileName
     {
         get => displayFileName;
-        init
-        {
-            ArgumentException.ThrowIfNullOrWhiteSpace(value);
-            displayFileName = value;
-        }
+        init => displayFileName = ImageDisplayName.Normalize(value, nameof(value));
     }
 
     public static ImageSelectionDraft? FromPickerPath(

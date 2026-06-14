@@ -13,9 +13,10 @@ internal sealed record MonitorSourceSelection
         string? ImagePath,
         string? ColorHex)
     {
-        ValidateSourceKind(SourceKind, nameof(SourceKind));
-
-        sourceKind = SourceKind;
+        sourceKind = DefinedEnumValue.Require(
+            SourceKind,
+            nameof(SourceKind),
+            "Unknown source kind.");
         imagePath = SourceKind == WallpaperSourceKind.Image
             ? WallpaperSourcePath.NormalizeImagePath(ImagePath ?? string.Empty)
             : null;
@@ -30,13 +31,6 @@ internal sealed record MonitorSourceSelection
 
     public string? ColorHex => colorHex;
 
-    private static void ValidateSourceKind(WallpaperSourceKind sourceKind, string parameterName)
-    {
-        if (!Enum.IsDefined(sourceKind))
-        {
-            throw new ArgumentOutOfRangeException(parameterName, sourceKind, "Unknown source kind.");
-        }
-    }
 }
 
 internal sealed record ImageSourceSelectionResult
@@ -45,10 +39,8 @@ internal sealed record ImageSourceSelectionResult
         MonitorSourceSelection? Selection,
         string StatusText)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(StatusText);
-
         this.Selection = Selection;
-        this.StatusText = StatusText;
+        this.StatusText = WorkflowStatusText.Require(StatusText, nameof(StatusText));
     }
 
     public MonitorSourceSelection? Selection { get; }

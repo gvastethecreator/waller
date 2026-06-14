@@ -1,3 +1,5 @@
+using Waller.Native.Core.Models;
+
 namespace Waller.Native.App.ViewModels;
 
 public sealed record PresetMenuItem
@@ -7,13 +9,8 @@ public sealed record PresetMenuItem
 
     public PresetMenuItem(Guid? Id, string Name)
     {
-        if (string.IsNullOrWhiteSpace(Name))
-        {
-            throw new ArgumentException("Preset menu name is required.", nameof(Name));
-        }
-
         this.Id = Id;
-        name = Name;
+        this.Name = PresetMenuDisplayName.Normalize(Name, nameof(Name));
     }
 
     public Guid? Id
@@ -21,12 +18,9 @@ public sealed record PresetMenuItem
         get => id;
         init
         {
-            if (value == Guid.Empty)
-            {
-                throw new ArgumentException("Preset menu id cannot be empty.", nameof(value));
-            }
-
-            id = value;
+            id = value is Guid presetId
+                ? PresetIds.RequireValid(presetId, nameof(value))
+                : null;
         }
     }
 
@@ -35,12 +29,7 @@ public sealed record PresetMenuItem
         get => name;
         init
         {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                throw new ArgumentException("Preset menu name is required.", nameof(value));
-            }
-
-            name = value;
+            name = PresetMenuDisplayName.Normalize(value, nameof(value));
         }
     }
 

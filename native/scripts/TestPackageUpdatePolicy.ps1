@@ -45,7 +45,7 @@ foreach ($assignment in @("Name", "Publisher")) {
 foreach ($term in @(
     "Update Policy",
     "SetPackageVersion.ps1 changes only Identity.Version",
-    "%LOCALAPPDATA%\Waller",
+    "LocalCache\Local\Waller",
     "package identity",
     "Presets/settings")) {
     if ($packagingDoc -notmatch [regex]::Escape($term)) {

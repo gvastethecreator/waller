@@ -12,10 +12,12 @@ internal static class PresetMenuLists
     {
         ArgumentNullException.ThrowIfNull(items);
         ArgumentNullException.ThrowIfNull(presets);
-        ArgumentException.ThrowIfNullOrWhiteSpace(currentSetupName);
+        var normalizedCurrentSetupName = PresetMenuDisplayName.Normalize(
+            currentSetupName,
+            nameof(currentSetupName));
 
         items.Clear();
-        items.Add(PresetMenuItem.CreateCurrentSetup(currentSetupName));
+        items.Add(PresetMenuItem.CreateCurrentSetup(normalizedCurrentSetupName));
         foreach (var preset in presets)
         {
             ArgumentNullException.ThrowIfNull(preset);
@@ -43,17 +45,17 @@ internal static class PresetMenuLists
         Guid? id)
     {
         ArgumentNullException.ThrowIfNull(items);
-        if (id == Guid.Empty)
+        var selectedId = id is Guid presetId
+            ? PresetIds.RequireValid(presetId, nameof(id))
+            : (Guid?)null;
+
+        if (selectedId is null)
         {
-            throw new ArgumentException("Preset menu selection id cannot be empty.", nameof(id));
+            return FirstOrDefault(items);
         }
 
-        if (id is null)
-        {
-            return items.FirstOrDefault();
-        }
-
-        return items.FirstOrDefault(item => item.Id == id) ?? items.FirstOrDefault();
+        return items.FirstOrDefault(item => Item(item, nameof(items)).Id == selectedId)
+            ?? FirstOrDefault(items);
     }
 
     public static PresetMenuItem? ReplaceCurrentSetupName(
@@ -62,16 +64,18 @@ internal static class PresetMenuLists
         string currentSetupName)
     {
         ArgumentNullException.ThrowIfNull(items);
-        ArgumentException.ThrowIfNullOrWhiteSpace(currentSetupName);
+        var normalizedCurrentSetupName = PresetMenuDisplayName.Normalize(
+            currentSetupName,
+            nameof(currentSetupName));
 
         for (var index = 0; index < items.Count; index++)
         {
-            if (!items[index].IsCurrentSetup)
+            if (!Item(items[index], nameof(items)).IsCurrentSetup)
             {
                 continue;
             }
 
-            items[index] = PresetMenuItem.CreateCurrentSetup(currentSetupName);
+            items[index] = PresetMenuItem.CreateCurrentSetup(normalizedCurrentSetupName);
             return selected?.IsCurrentSetup == true
                 ? items[index]
                 : selected;
@@ -79,4 +83,19 @@ internal static class PresetMenuLists
 
         return selected;
     }
+
+    private static PresetMenuItem? FirstOrDefault(IReadOnlyList<PresetMenuItem> items)
+    {
+        foreach (var item in items)
+        {
+            return Item(item, nameof(items));
+        }
+
+        return null;
+    }
+
+    private static PresetMenuItem Item(PresetMenuItem? item, string parameterName) =>
+        item ?? throw new ArgumentException(
+            "Preset menu collection cannot include null items.",
+            parameterName);
 }

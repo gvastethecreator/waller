@@ -42,6 +42,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke -Releas
 | `scripts\TestModalKeyboardContract.ps1` | Verifies modal Escape close and initial focus routing for Save As, Manage Presets, Settings, and delete confirmation. | No. |
 | `scripts\TestShellCommandContract.ps1` | Verifies top-shell command bindings, command gating, keyboard accelerators, and horizontal overflow handling. | No. |
 | `scripts\SmokeLaunch.ps1` | Builds, launches packaged app, verifies process/title, closes app. On registration conflict, runs the read-only package registration diagnostic automatically. | Registers debug package through `winapp run`. |
+| `scripts\SmokeSurface.ps1` | Builds, launches packaged app, verifies process/title/responding, checks shell and modal controls through UI Automation, optionally verifies Settings JSON roundtrip, closes app. | Registers debug package through `winapp run`; with `-SettingsRoundTrip`, temporarily writes and restores package-local `LocalCache\Local\Waller\settings.json`. |
 | `scripts\BuildRelease.ps1` | Builds Release without launching/signing. | No. |
 | `scripts\PrepareDevCertificate.ps1` | Generates local dev PFX/CER. | Writes ignored files under `artifacts\signing\`. |
 | `scripts\PackageDevMsix.ps1` | Builds Release and creates signed dev MSIX. | Writes ignored files under `artifacts\packages\`. |
@@ -55,7 +56,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke -Releas
 | `scripts\TestPackageAssets.ps1` | Verifies package identity/version text plus manifest/window asset references. | No. |
 | `scripts\TestLaunchContract.ps1` | Verifies stable AUMID suffix, Waller window title, and `winapp`-based smoke-launch contract. | No. |
 | `scripts\TestSigningPolicy.ps1` | Verifies signing docs, ignored cert patterns, and that local cert artifacts stay under `artifacts\signing\`. | No. |
-| `scripts\TestLocalDataPolicy.ps1` | Verifies Presets, Settings, and rendered cache share `%LOCALAPPDATA%\Waller` instead of package-identity storage. | No. |
+| `scripts\TestLocalDataPolicy.ps1` | Verifies Presets, Settings, and rendered cache share one Waller local-data root. In packaged runs, Windows resolves that root under package `LocalCache\Local`. | No. |
 | `scripts\TestPackageUpdatePolicy.ps1` | Verifies version updates do not change package identity and docs keep update behavior tied to stable local app data. | No. |
 | `scripts\TestPackageScriptGuards.ps1` | Blocks direct package manifest reads outside shared helpers, package registration lookups outside `PackageRegistration.ps1`, package installs outside `InstallDevMsix.ps1`, and package removal outside `UninstallDevPackage.ps1`. | No. |
 | `scripts\InstallDevMsix.ps1` | Inspects MSIX, checks current-user registration and cert trust; installs only with `-Install`. | Only with `-Install`. |
@@ -64,16 +65,23 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke -Releas
 
 ## Local App Data
 
-Waller keeps user data outside package-identity storage:
+Waller keeps user data under one local app-data root:
 
 ```text
-%LOCALAPPDATA%\Waller
+Waller
 ```
 
-That root contains Presets, Settings, and rendered wallpaper cache. Package name,
-publisher, signing certificate, version, install/update, and future Store/MSIX
-identity changes must not move this root. `TestLocalDataPolicy.ps1` guards the
-default app root and shared store construction before build/package gates.
+That root contains Presets, Settings, and rendered wallpaper cache. In packaged
+WinUI runs, Windows resolves `Environment.SpecialFolder.LocalApplicationData` to
+the package family `LocalCache\Local`, so the effective path is:
+
+```text
+%LOCALAPPDATA%\Packages\<package-family-name>\LocalCache\Local\Waller
+```
+
+Package version updates preserve this data as long as package name and publisher
+stay stable. `TestLocalDataPolicy.ps1` guards shared store construction before
+build/package gates.
 
 ## Launch Contract
 
@@ -85,6 +93,11 @@ Packaged launch must use package identity, not the generated `.exe` directly:
 - `SmokeLaunch.ps1` uses detached `winapp` JSON, verifies process
   `Waller.Native.App`, title `Waller`, `Responding=True`, and cleans up the
   launched process.
+- `Verify.ps1 -SurfaceSmoke` runs `SmokeSurface.ps1` after the default launch
+  smoke, keeping UI Automation surface coverage opt-in for slower local gates.
+- `Verify.ps1 -SurfaceSmoke -SettingsRoundTrip` additionally proves packaged
+  Settings persistence through UI Automation while restoring the previous
+  package-local Settings file after the smoke run.
 - `TestLaunchContract.ps1` guards these launch-contract assumptions before
   build/package gates. Real Start-menu launch smoke still requires a successful
   package registration.
@@ -96,10 +109,10 @@ data:
 
 - `SetPackageVersion.ps1 changes only Identity.Version`; package name and
   publisher stay stable.
-- Presets/settings live under `%LOCALAPPDATA%\Waller`, not package identity
-  storage.
-- Package identity, publisher, signing certificate, and version changes must not
-  move or delete Presets/settings.
+- Presets/settings live under package `LocalCache\Local\Waller` for packaged
+  runs.
+- Package name and publisher stay stable so version updates keep the same
+  package family local cache.
 - `TestPackageUpdatePolicy.ps1` guards the version-update script and this policy
   before build/package gates.
 

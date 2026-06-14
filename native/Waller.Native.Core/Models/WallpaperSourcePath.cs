@@ -55,24 +55,20 @@ public static class WallpaperSourcePath
 
     public static bool IsExistingImagePath(string? imagePath)
     {
-        return !string.IsNullOrWhiteSpace(imagePath)
-            && Path.IsPathFullyQualified(imagePath)
-            && WallpaperImageFileTypes.IsSupportedImagePath(imagePath)
-            && File.Exists(imagePath);
+        return TryNormalizeImagePath(imagePath, out var normalized)
+            && File.Exists(normalized);
     }
 
     public static bool IsMissingImagePath(string? imagePath)
     {
-        return !string.IsNullOrWhiteSpace(imagePath)
-            && Path.IsPathFullyQualified(imagePath)
-            && WallpaperImageFileTypes.IsSupportedImagePath(imagePath)
-            && !File.Exists(imagePath);
+        return TryNormalizeImagePath(imagePath, out var normalized)
+            && !File.Exists(normalized);
     }
 
     public static string? FileName(string? imagePath)
     {
-        return string.IsNullOrWhiteSpace(imagePath)
-            ? null
-            : Path.GetFileName(imagePath);
+        return TryNormalizeImagePath(imagePath, out var normalized)
+            ? Path.GetFileName(normalized)
+            : null;
     }
 }

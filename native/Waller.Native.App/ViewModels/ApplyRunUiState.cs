@@ -17,11 +17,10 @@ internal sealed record ApplyRunUiState
         }
 
         ArgumentNullException.ThrowIfNull(ProgressText);
-        ArgumentException.ThrowIfNullOrWhiteSpace(StatusText);
 
         this.Session = Session;
         this.ProgressText = ProgressText;
-        this.StatusText = StatusText;
+        this.StatusText = WorkflowStatusText.Require(StatusText, nameof(StatusText));
         this.Succeeded = Succeeded;
     }
 

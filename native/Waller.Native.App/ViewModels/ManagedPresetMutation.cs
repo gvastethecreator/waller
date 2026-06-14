@@ -67,10 +67,10 @@ internal static class ManagedPresetMutation
         string name)
     {
         ArgumentNullException.ThrowIfNull(presetStore);
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
+        var presetName = PresetNames.Validate(name, nameof(name));
 
         return await TryMutationAsync(
-            () => presetStore.RenameAsync(presetId, name),
+            () => presetStore.RenameAsync(presetId, presetName),
             ManagedPresetMutationResult<Preset>.Success);
     }
 
@@ -115,17 +115,18 @@ internal static class ManagedPresetMutation
         ArgumentNullException.ThrowIfNull(mutation);
         ArgumentNullException.ThrowIfNull(success);
 
-        try
-        {
-            return success(await mutation());
-        }
-        catch (FileNotFoundException)
-        {
-            return ManagedPresetMutationResult<T>.MissingPreset();
-        }
-        catch (Exception error) when (LocalDataWriteGuard.IsRecoverable(error))
-        {
-            return ManagedPresetMutationResult<T>.LocalWriteFailed();
-        }
+        return await LocalDataWriteGuard.TryAsync(
+            async () =>
+            {
+                try
+                {
+                    return success(await mutation());
+                }
+                catch (FileNotFoundException)
+                {
+                    return ManagedPresetMutationResult<T>.MissingPreset();
+                }
+            },
+            ManagedPresetMutationResult<T>.LocalWriteFailed());
     }
 }

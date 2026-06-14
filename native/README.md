@@ -26,6 +26,8 @@ Implemented now:
   mapping can be tested without querying Windows.
 - Current monitor display names include display index plus shortened Windows
   device id when available.
+- Core monitor display/progress names trim through one helper before row,
+  progress, and accessibility projection.
 - Invalid Windows wallpaper paths fall back to empty/black source instead of
   failing startup detection.
 - Empty monitor fallback when Windows detection fails.
@@ -41,6 +43,11 @@ Implemented now:
 - Apply monitor / Apply all path wired through render + Windows applier.
 - Windows apply COM writes stay behind an internal writer adapter so success and
   failure mapping can be tested without touching the desktop.
+- Windows apply adapter failures map to stable Apply error codes while
+  cancellation remains cancellation instead of a false per-monitor failure.
+- Windows desktop wallpaper position detection maps known positions explicitly
+  and rejects unknown successful enum values instead of silently treating them
+  as Cover.
 - Header Refresh command reloads current Windows monitor/wallpaper state without
   restarting the app.
 - Refresh is disabled while Apply runs to avoid replacing session state
@@ -76,13 +83,52 @@ Implemented now:
 - Apply cancellation token lifetime is isolated in a small view-model helper.
 - Apply status/progress/result text projection is isolated in a small
   view-model helper.
+- Workflow result status text validation goes through `WorkflowStatusText`, so
+  Apply, image-pick, and disconnected-monitor result DTOs share the same
+  non-blank status contract.
 - Preset save/load/manage status text projection is isolated in a small
   view-model helper.
+- Preset identities reject empty ids before local file paths, selection memory,
+  or management commands consume them.
+- App Preset menus and Manage Presets command DTOs use the shared Core
+  `PresetIds` policy for real Preset ids instead of local `Guid.Empty` checks.
+- Managed Preset selection returns nullable ids for Current setup or no
+  selection, avoiding `Guid.Empty` sentinel state in command prep.
+- Preset dropdown/list display names trim through one App helper, including the
+  localized Current setup item, before menu surfaces render them.
+- Delete-confirmation target names share that same Preset menu display-name
+  helper before modal copy formats them.
+- Selected-Preset load results and dropdown refresh labels share the same
+  Preset menu display-name helper before status/list projection.
+- Selected-Preset load status projection rejects missing presenters and unknown
+  load kinds instead of returning blank status text for impossible states.
+- Preset visual-memory ids normalize `Guid.Empty` to no remembered selection
+  before dropdown refresh, Settings draft/save, or selected-session projection
+  can keep impossible selected state.
+- Preset names trim through the shared Core name policy at construction and
+  `with` update time, so save/load/factory/model paths share one rule.
+- Preset Save As and Manage Presets rename entrypoints normalize names through
+  that same Core policy before reaching factories or local JSON mutation.
+- Preset save/rename completion DTOs normalize name drafts through the same
+  Core name policy before updating editable fields.
+- App enum option/state DTOs validate supported enum values through one helper
+  before Settings/editor/Preset-load projections mutate UI state.
+- Core enum-bearing models and Settings mutation use shared
+  `DefinedEnumValue`, keeping unsupported enum rejection consistent across
+  source, placement, monitor status, Apply progress, Preset assignment
+  normalization, and runtime Settings.
 - Editor/disconnected-monitor status text projection is isolated in a small
   view-model helper.
+- Selected-editor surface projection validates localized text and source-kind
+  values before image/color editor visibility or selected-source warnings reach
+  XAML.
+- Image picker display names trim through one App helper before source-selection
+  status text consumes them.
 - Editor source, placement, selection, assignment, option refresh, and
   disconnected-monitor command flow lives in focused
   `MainPageViewModel.Editor.*.cs` partials.
+- Editor draft source reconstruction rejects unsupported source-kind enum values
+  instead of turning invalid edit state into Empty.
 - Shell/session/settings/cache status text projection is isolated in a small
   view-model helper.
 - Apply Core preflight skips missing image sources for monitor/all commands,
@@ -90,6 +136,9 @@ Implemented now:
   ready monitors through explicit ready/skipped monitor-key sets.
 - Apply target selection is centralized in Core so all/monitor/ready/filtered
   apply paths share monitor-key handling.
+- Core/App monitor-key validation goes through `MonitorKeys.Require`, so App
+  editor updates, Core preflight, target planning, and key-set creation reject
+  blank keys with one message and case-insensitive policy.
 - Apply all with no current monitors is covered in Core and returns an empty
   result without rendering or touching Windows.
 - Apply ready-source paths short-circuit when preflight finds no ready monitors,
@@ -104,6 +153,8 @@ Implemented now:
   negative, and completed cannot exceed total.
 - Apply service keeps per-monitor render/apply failure mapping in a focused
   internal step, leaving the main apply loop to coordinate progress and cancel.
+- Desktop wallpaper writer cancellation propagates through the Apply pipeline
+  instead of being converted into `wallpaper-apply-failed`.
 - Apply result/progress contracts live in focused Core files instead of inside
   the service implementation.
 - Footer status and Apply progress controls use separate layout columns to
@@ -116,10 +167,14 @@ Implemented now:
 - Editor, monitor-row, and shell localized projections live in
   `LocalizedText.Editor.cs`, `LocalizedText.Monitor.cs`, and
   `LocalizedText.Shell.cs`.
+- Editor source-kind labels reject unsupported enum values before localized
+  option catalogs can render generic fallback copy.
 - Localized saved/unsaved and missing-source row labels.
 - Localized status/progress text for main Preset, Settings, and Apply flows.
 - Localized formatted status text uses the selected app language culture, not
   the OS current culture.
+- Localized text presenters share one validated text-source helper, so null
+  presenter providers fail before status/progress projection reaches commands.
 - Main view-model dependent-property groups are centralized in
   `ViewModelNotificationGroups` before further modal/editor splits.
 - Shell initialization, current-session refresh, row/session refresh, modal
@@ -180,9 +235,15 @@ Implemented now:
 - Initial focus moves into Manage Presets and Settings when those modals open.
 - Topology strip scales monitors from real bounds instead of showing equal
   placeholder tiles.
+- Monitor workspace visibility helpers reject missing row collections before
+  no-monitors/topology/missing-monitor surfaces read counts.
 - Monitor rows show lightweight source previews for image, color, empty, and
   missing-source states, with preview brush construction isolated from row state.
+- Source and placement preview helpers reject missing inputs and unsupported enum
+  values before fallback brushes/stretch/alignment can hide invalid state.
 - Current and disconnected monitor rows share source-summary projection.
+- Source-summary projection rejects missing source/text inputs and unsupported
+  source-kind enum values before row labels can show Empty by mistake.
 - Disconnected monitor rows also show compact source previews, using the same
   preview helpers as current monitor rows.
 - Source previews expose accessible names from their source summaries, with
@@ -201,12 +262,18 @@ Implemented now:
   until the core MVP is proven.
 - Settings dropdowns show localized labels for theme and language while
   preserving stored values.
+- Theme preference projection rejects unsupported enum values before WinUI theme
+  binding can silently fall back to default theme.
 - Settings preference writes preserve window placement while updating theme,
   language, and last selected Preset.
 - Edit panel dropdowns show localized source, fit, and anchor labels while
   preserving Core enum values.
+- Dropdown option display names trim through one App helper before Settings or
+  editor option collections render them.
 - Placement summary copy for monitor rows and disconnected rows uses the same
   localized fit/anchor/offset catalog strings as the edit panel.
+- Placement text projection rejects missing placement/text inputs and unsupported
+  fit/anchor enum values before row/dropdown copy can show generic fallback text.
 - Localized text catalogs are split by language so English/Spanish copy can
   evolve without bloating the selector file. Catalog values use named arguments
   so constructor-order changes stay reviewable.
@@ -215,11 +282,15 @@ Implemented now:
 - Window placement restore/save tolerates local Settings failures.
 - Last selected Preset visual memory persists during Preset actions and restores
   on startup without auto-loading it over current Windows state.
+- Empty/stale last-selected Preset ids in settings normalize to no remembered
+  selection before startup Preset refresh.
 - Last selected Preset updates preserve Settings preferences and window
   placement.
 - Defensive local data loading: corrupt, parseable-invalid, unsupported-schema,
   locked, or inaccessible Preset JSON is skipped and corrupt, locked,
   inaccessible, or unsupported Settings JSON falls back to safe defaults.
+- Cancelled Preset/Settings local-data operations throw before creating local
+  folders or temp files.
 - Loaded Preset assignment sources are normalized before use, so invalid image
   paths or colors do not reach render/apply.
 - Loaded Preset assignment monitor identities are validated before matching, so
@@ -232,6 +303,9 @@ Implemented now:
   Settings, and window-placement paths.
 - Core exposes the shared recoverable filesystem-error policy used by App/Core
   local-data paths.
+- Rendered cache clear uses that same recoverable filesystem-error policy, so
+  cache cleanup, Preset reads, Settings reads, and App local-data guards share
+  one IO/access failure vocabulary.
 - Preset/Settings saves use shared temp-file replacement so failed writes do not
   leave partial JSON behind.
 - Preset matching, creation, and saving share assignment normalization, so stale
@@ -239,14 +313,26 @@ Implemented now:
   app-managed cycles.
 - Active Session creation/editing normalizes placement offsets before storing
   desired assignments.
+- Edit-panel offset inputs normalize finite/clamped values through a focused
+  helper before creating placement payloads.
 - Core models for monitors, wallpaper sources, placement, presets, apply state,
   rendered files, and user settings.
+- Solid-color source normalization rejects missing/blank color payloads with a
+  stable validation error instead of leaking null-reference failures.
+- PNG rendering treats Empty as black but rejects unsupported source-kind enum
+  values instead of silently rendering black output.
+- Image placement math rejects unsupported fit/anchor enum values instead of
+  silently treating them as Cover/Center.
 - Core services for session creation/editing, preset matching/storage, rendered
   file paths, settings storage, monitor detection, and wallpaper apply seam.
 - Rendered output file names sanitize Windows monitor keys and include a short
   hash to avoid invalid paths and sanitized-name collisions.
+- Rendered output paths reject missing/blank monitor keys before creating the
+  rendered cache folder or hashing file names.
 - Rendered PNG writes use the same shared temp-file replacement helper as local
   JSON, so cancelled/failed writes do not expose partial final output.
+- Atomic temp-file naming is centralized and rejects target paths without a
+  file name before creating directories or writing partial temp output.
 - Applying rendered PNGs forces Windows wallpaper position to `Fill`, keeping
   Waller's prerendered fit/anchor/offset result from being reinterpreted by an
   older global Windows placement setting.

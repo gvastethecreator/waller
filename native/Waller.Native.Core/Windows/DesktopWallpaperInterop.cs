@@ -38,11 +38,16 @@ public static class DesktopWallpaperInterop
             DesktopWallpaperPosition.Tile => WallpaperFitMode.Tile,
             DesktopWallpaperPosition.Stretch => WallpaperFitMode.Stretch,
             DesktopWallpaperPosition.Fit => WallpaperFitMode.Contain,
-            _ => WallpaperFitMode.Cover,
+            DesktopWallpaperPosition.Fill => WallpaperFitMode.Cover,
+            DesktopWallpaperPosition.Span => WallpaperFitMode.Cover,
+            _ => InvalidDesktopWallpaperPosition(position),
         };
 
         return new WallpaperPlacement(fit, WallpaperAnchor.Center);
     }
+
+    private static WallpaperFitMode InvalidDesktopWallpaperPosition(DesktopWallpaperPosition position) =>
+        throw new ArgumentOutOfRangeException(nameof(position), position, "Unknown Windows desktop wallpaper position.");
 
     internal static WallpaperPlacement PositionResultToPlacement(
         int hresult,

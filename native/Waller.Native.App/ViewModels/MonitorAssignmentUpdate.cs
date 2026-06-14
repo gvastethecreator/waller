@@ -88,7 +88,7 @@ internal static class MonitorAssignmentUpdate
     {
         ArgumentNullException.ThrowIfNull(editor);
         ArgumentNullException.ThrowIfNull(session);
-        ArgumentException.ThrowIfNullOrWhiteSpace(monitorKey);
+        monitorKey = MonitorKeys.Require(monitorKey, nameof(monitorKey));
 
         try
         {

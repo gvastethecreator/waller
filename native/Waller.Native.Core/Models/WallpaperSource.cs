@@ -26,12 +26,10 @@ public sealed record WallpaperSource
         get => kind;
         init
         {
-            if (!Enum.IsDefined(value))
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), value, "Wallpaper source kind is not supported.");
-            }
-
-            kind = value;
+            kind = DefinedEnumValue.Require(
+                value,
+                nameof(value),
+                "Wallpaper source kind is not supported.");
         }
     }
 
@@ -54,7 +52,7 @@ public sealed record WallpaperSource
 
     public static WallpaperSource? TryNormalize(WallpaperSource? source)
     {
-        if (source is null || !Enum.IsDefined(source.Kind))
+        if (source is null || !DefinedEnumValue.IsDefined(source.Kind))
         {
             return null;
         }
