@@ -7,13 +7,33 @@ Date: 2026-06-04
 The native project now has a real solution structure and enough code to start
 moving in small slices.
 
-This is not a finished MVP. It is now the base architecture plus real Windows
-monitor/current-wallpaper detection, native image picking, PNG rendering,
-placement modes, real Apply command wiring, and a detailed manual smoke
-checklist for behavior that still depends on a real Windows session.
+The native MVP is close to stable: it has real Windows monitor/current-wallpaper
+detection, native image picking, PNG rendering, placement modes, real packaged
+Apply wiring, restore-safe Apply smoke coverage, and package/local-data guards.
 
 Latest verification:
 
+- 2026-06-14: `scripts\Verify.ps1 -SkipSmoke -Package -DisableNuGetAudit`
+  passed. Covered all static guards, solution build with 0 warnings, packaged
+  Debug build, 462 tests, Release x64 build, signed dev MSIX creation, and MSIX
+  inspection. Output package:
+  `native\artifacts\packages\Waller-dev-x64.msix` (`78,730,478` bytes). Dev
+  certificate trust remains a manual/elevated install step.
+- 2026-06-14: `scripts\Verify.ps1 -SurfaceSmoke -SettingsRoundTrip -ApplySmoke -DisableNuGetAudit`
+  passed. Covered XAML/accessibility/localization guards, modal/shell/code/JSON/
+  local-data/error/MVP/package/signing diagnostics, solution build with 0
+  warnings, 462 tests, packaged launch smoke process `39560`, packaged surface
+  smoke process `10568` with Shell 9/9, Settings 5/5, Save As 3/3, Manage
+  Presets 6/6, Settings roundtrip `Theme=1` and `Language=es`, and packaged
+  Apply smoke process `51956` with status `Aplicar terminado. 3 OK, 0
+  fallaron.`, 3 rendered PNGs, 3 changed wallpaper paths, and 3 restored
+  monitors.
+- 2026-06-14: `scripts\SmokeApply.ps1 -DisableNuGetAudit` passed after moving
+  rendered wallpaper output to `%USERPROFILE%\.waller\rendered` so
+  `IDesktopWallpaper` can read files outside package-local AppData
+  virtualization. Covered packaged build/launch, UI Automation Apply all,
+  status `Aplicar terminado. 3 OK, 0 fallaron.`, 3 rendered PNGs, 3 changed
+  wallpaper paths, and restore verification for 3 monitors.
 - 2026-06-12: `scripts\Verify.ps1 -SurfaceSmoke -SettingsRoundTrip -DisableNuGetAudit`
   passed after adding the packaged Settings roundtrip smoke and correcting the
   local-data contract to package `LocalCache\Local\Waller` for packaged runs.
@@ -1341,8 +1361,8 @@ Commands are wired:
   bindable state/surface projections stay out of `MainPageViewModel.cs`, and
   domain-specific localized projection methods stay out of `LocalizedText.cs`.
 - It also blocks direct `LocalApplicationData`/`LOCALAPPDATA` usage outside
-  `WallerAppDataPaths`, keeping Presets, Settings, and rendered-cache paths on
-  one update-safe app-data root.
+  `WallerAppDataPaths`, keeping Presets/Settings on the update-safe
+  package-local root and rendered PNGs on the shell-readable `.waller` cache.
 - `scripts\TestJsonCodeGuards.ps1` blocks direct `JsonSerializer` persistence
   calls outside `LocalJsonFile`, so Preset/Settings local data stays on
   `WallerJsonContext` source-generated metadata and avoids Release trim drift.
@@ -2479,9 +2499,9 @@ fallbacks in `LocalizedText.Apply.cs`. `Verify.ps1 -SkipSmoke
 -DisableNuGetAudit` passed after this change with 259 tests.
 
 2026-06-09 Local app-data policy guard:
-`scripts\TestLocalDataPolicy.ps1` now verifies that default local data uses
-`%LOCALAPPDATA%\Waller`, avoids package-identity storage APIs, and passes the
-same root directory into Presets, Settings, and rendered wallpaper stores.
+`scripts\TestLocalDataPolicy.ps1` now verifies that default app-managed data
+uses `%LOCALAPPDATA%\Waller`, avoids package-identity storage APIs, and keeps
+rendered wallpaper files on the shell-readable `.waller` cache.
 `Verify.ps1` runs this guard before error/package gates, and Slice 9 now marks
 the app-data path acceptance as covered by `WallerAppDataPaths`,
 `WallerLocalDataStores`, and the guard. `Verify.ps1 -SkipSmoke

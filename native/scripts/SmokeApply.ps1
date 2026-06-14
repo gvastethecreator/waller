@@ -292,21 +292,54 @@ function Get-WallerElementNameByAutomationId {
     return $element.Current.Name
 }
 
+function Get-WallerApplyFailureDetails {
+    param([System.Windows.Automation.AutomationElement]$Root)
+
+    $elements = $Root.FindAll(
+        [System.Windows.Automation.TreeScope]::Descendants,
+        [System.Windows.Automation.Condition]::TrueCondition)
+    $details = [System.Collections.Generic.List[string]]::new()
+
+    foreach ($element in $elements) {
+        try {
+            $name = $element.Current.Name
+            if ([string]::IsNullOrWhiteSpace($name)) {
+                continue
+            }
+
+            if ($name -match "(?i)(error|failed|fallo|fallaron|wallpaper|interop|com|hresult|denied|access|exception|no pudo)") {
+                if (-not $details.Contains($name)) {
+                    $details.Add($name)
+                }
+            }
+        }
+        catch {
+        }
+    }
+
+    if ($details.Count -eq 0) {
+        return ""
+    }
+
+    return ($details | Select-Object -First 12) -join " | "
+}
+
 function Set-WallerLocalDataRootFromLaunch {
     param([string]$Aumid)
 
     $userProfile = [Environment]::GetFolderPath("UserProfile")
     if (-not [string]::IsNullOrWhiteSpace($userProfile)) {
-        $script:localDataRoot = Join-Path $userProfile "AppData\Local\Waller"
+        $script:localDataRoot = Join-Path $userProfile ".waller"
         return
     }
 
-    $localApplicationData = [Environment]::GetEnvironmentVariable("LOCALAPPDATA")
-    if ([string]::IsNullOrWhiteSpace($localApplicationData)) {
-        $localApplicationData = [Environment]::GetFolderPath("LocalApplicationData")
+    $userProfileEnvironment = [Environment]::GetEnvironmentVariable("USERPROFILE")
+    if (-not [string]::IsNullOrWhiteSpace($userProfileEnvironment)) {
+        $script:localDataRoot = Join-Path $userProfileEnvironment ".waller"
+        return
     }
 
-    $script:localDataRoot = Join-Path $localApplicationData "Waller"
+    $script:localDataRoot = Join-Path ([Environment]::GetFolderPath("ApplicationData")) ".waller"
 }
 
 function Assert-RestorableWallpaperBackup {
@@ -371,7 +404,12 @@ function Wait-WallerApplySuccess {
 
         if ($lastStatus -match "(?i)(failed|fallaron)" -and
             $lastStatus -notmatch "(?i)(0 failed|0 fallaron)") {
-            throw "Apply smoke observed failed Apply status: $lastStatus"
+            $details = Get-WallerApplyFailureDetails -Root $Root
+            if ([string]::IsNullOrWhiteSpace($details)) {
+                throw "Apply smoke observed failed Apply status: $lastStatus"
+            }
+
+            throw "Apply smoke observed failed Apply status: $lastStatus Details: $details"
         }
 
         Start-Sleep -Milliseconds 250
@@ -388,10 +426,11 @@ function Count-WallerRenderedWallpaperPaths {
         $backupPaths[$monitor.MonitorId] = $monitor.WallpaperPath
     }
 
+    $renderedRootPrefix = (Join-Path $localDataRoot "rendered").TrimEnd("\") + "\"
     $current = [SmokeDesktopWallpaperInterop]::Capture()
     $count = 0
     foreach ($monitor in $current.Monitors) {
-        if ($monitor.WallpaperPath -match "\\Waller\\rendered\\" -and
+        if ($monitor.WallpaperPath.StartsWith($renderedRootPrefix, [StringComparison]::OrdinalIgnoreCase) -and
             $backupPaths.ContainsKey($monitor.MonitorId) -and
             -not [string]::Equals($backupPaths[$monitor.MonitorId], $monitor.WallpaperPath, [StringComparison]::OrdinalIgnoreCase)) {
             $count++
@@ -498,6 +537,9 @@ try {
     $status = Wait-WallerApplySuccess -Root $window -TimeoutSeconds $ApplyTimeoutSeconds
     $renderedFiles = Wait-WallerRenderedFiles -Since $applyStartedAt -TimeoutSeconds $ApplyTimeoutSeconds
     $changedWallpaperPaths = Count-WallerRenderedWallpaperPaths -Backup $wallpaperBackup
+    if ($changedWallpaperPaths -ne $wallpaperBackup.Monitors.Count) {
+        throw "Apply smoke expected $($wallpaperBackup.Monitors.Count) wallpaper paths to change under $localDataRoot\rendered, got $changedWallpaperPaths."
+    }
 
     [pscustomobject]@{
         ProcessId = $appProcessId

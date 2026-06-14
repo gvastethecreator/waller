@@ -949,14 +949,17 @@ Local app-data root construction belongs in `WallerAppDataPaths`; Presets,
 Settings, and rendered-cache stores should receive paths through
 `WallerLocalDataStores`. In packaged WinUI runs, Windows resolves
 `Environment.SpecialFolder.LocalApplicationData` to package
-`LocalCache\Local`, so Waller data lives under the package family cache. The
-WinUI code guard blocks direct `LocalApplicationData` lookups elsewhere and
+`LocalCache\Local`, so app-managed JSON lives under the package family cache.
+Rendered PNGs are different: Windows `IDesktopWallpaper` reads outside the
+package virtualization boundary, so `RenderedRoot` uses
+`%USERPROFILE%\.waller` and the rendered store writes to `.waller\rendered`.
+The WinUI code guard blocks direct `LocalApplicationData` lookups elsewhere and
 keeps `RootFor(...)` validating blank local app-data paths before composing the
 app folder.
 `scripts\TestLocalDataPolicy.ps1` guards the update-stable local-data shape:
 default root comes from `Environment.SpecialFolder.LocalApplicationData`, the
-app folder remains `Waller`, and Presets, Settings, and rendered wallpapers all
-receive the same root directory through `WallerLocalDataStores`.
+app folder remains `Waller`, Presets/Settings receive the package-local root,
+and rendered wallpapers receive the shell-readable user-profile cache root.
 `WallerAppServices`, `WallerLocalDataStores`, and the internal
 `MainPageViewModel` service constructor reject missing dependencies before
 startup composition reaches initialization, Apply, Presets, Settings, or
@@ -986,6 +989,11 @@ through UI Automation, waits for the `LocalCache\Local\Waller\settings.json`
 write, and restores the prior file in `finally`. Keep any future local-data UI
 smoke on the same backup/restore pattern so current-user Presets or Settings are
 not left mutated by tests.
+`SmokeApply.ps1` is the restore-safe packaged Apply gate: it captures current
+wallpaper paths, invokes `ApplyAllButton`, requires successful Apply status,
+requires rendered PNGs under `%USERPROFILE%\.waller\rendered`, verifies the
+current wallpaper paths changed to those rendered files, and restores the
+previous wallpapers in `finally`.
 
 Action button icon/text content belongs in `Controls/IconText.xaml`; icon sizing
 and icon/text spacing belong in shared XAML resources

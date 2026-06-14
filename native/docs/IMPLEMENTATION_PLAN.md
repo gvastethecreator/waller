@@ -806,17 +806,18 @@ Tasks:
 - install/uninstall behavior - initial guarded scripts done; package installs
   stay isolated in `InstallDevMsix.ps1` and removals stay isolated in
   `UninstallDevPackage.ps1`
-- keep Presets/settings/rendered cache under one update-stable local app-data
-  root - done through `WallerAppDataPaths` plus code guard
+- keep Presets/settings under one update-stable package-local app-data root and
+  rendered PNGs under a shell-readable user-profile cache - done through
+  `WallerAppDataPaths` plus code guard
 - reject blank App-side local-data roots before composing the Waller app folder -
   done through `WallerAppDataPaths.RootFor(...)` plus WinUI code guard
 - reject missing App-side services/stores before composing startup view-model
   flows - done through `WallerAppServices`, `WallerLocalDataStores`, and
   `MainPageViewModel`/`MainPageLocalState` constructor guards plus WinUI code
   guard
-- guard app-data path policy so Presets/settings/rendered cache stay under one
-  Waller local-data root; packaged runs resolve it under package
-  `LocalCache\Local\Waller` - done
+- guard app-data path policy so Presets/settings stay under package
+  `LocalCache\Local\Waller` while rendered output stays under
+  `%USERPROFILE%\.waller\rendered` for Windows shell Apply - done
 - guard launch contract so AUMID suffix, window title, and smoke launch stay
   aligned with package identity - done
 - keep current-session detection/fallback policy out of App view-model files -
@@ -833,6 +834,8 @@ Tasks:
 - centralize package-registration conflict guidance so `0x80073D19` smoke
   blockers print the same read-only diagnostics and intentional-cleanup warning
   from smoke, registration preflight, and uninstall preflight - done
+- add restore-safe packaged Apply smoke that verifies successful status,
+  rendered PNGs, wallpaper path changes, and wallpaper restoration - done
 - smoke test on clean Windows user profile
 
 Acceptance:

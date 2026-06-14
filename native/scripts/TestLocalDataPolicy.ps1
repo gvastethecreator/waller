@@ -39,16 +39,18 @@ if ($appDataPathsText -notmatch 'Environment\.GetFolderPath\s*\(\s*Environment\.
     $errors += "Default app-data root must start from Environment.SpecialFolder.LocalApplicationData."
 }
 
-if ($appDataPathsText -notmatch 'RenderedRoot\s*\{\s*get;\s*\}\s*=\s*RootFor\s*\(\s*UserVisibleLocalApplicationData\s*\(\s*\)\s*\)' -or
+if ($appDataPathsText -notmatch 'RenderedRoot\s*\{\s*get;\s*\}\s*=\s*Path\.Combine\s*\(\s*UserVisibleProfileDirectory\s*\(\s*\)\s*,\s*"\.waller"\s*\)' -or
     $appDataPathsText -notmatch 'WindowsIdentity\.GetCurrent\s*\(\s*\)\.User' -or
     $appDataPathsText -notmatch 'ProfileList' -or
     $appDataPathsText -notmatch 'ProfileImagePath' -or
     $appDataPathsText -notmatch 'Environment\.ExpandEnvironmentVariables' -or
+    $appDataPathsText -notmatch 'UserProfileFromPackageLocalApplicationData' -or
+    $appDataPathsText -notmatch 'LocalCache' -or
+    $appDataPathsText -notmatch 'Packages' -or
     $appDataPathsText -notmatch 'Environment\.GetEnvironmentVariable\s*\(\s*"USERPROFILE"\s*\)' -or
     $appDataPathsText -notmatch 'Environment\.SpecialFolder\.UserProfile' -or
-    $appDataPathsText -notmatch 'Path\.Combine\s*\(\s*userProfileEnvironment\s*,\s*"AppData"\s*,\s*"Local"\s*\)' -or
-    $appDataPathsText -notmatch 'Path\.Combine\s*\(\s*userProfile\s*,\s*"AppData"\s*,\s*"Local"\s*\)') {
-    $errors += "Rendered wallpaper root must use a user-visible Local AppData path so Windows shell can read rendered PNGs."
+    $appDataPathsText -notmatch 'Environment\.SpecialFolder\.ApplicationData') {
+    $errors += "Rendered wallpaper root must use a user-profile .waller cache so Windows shell can read rendered PNGs outside package-local AppData virtualization."
 }
 
 if ($appDataPathsText -notmatch 'Path\.Combine\s*\(\s*localApplicationDataPath\s*,\s*AppFolderName\s*\)') {
