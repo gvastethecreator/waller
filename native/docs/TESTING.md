@@ -29,6 +29,27 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -DisableNuGetAudit
 Runs the same build, tests, and packaged launch smoke steps. The audit override
 is also passed through the nested smoke-launch build.
 
+Full local verification with packaged UI Automation surface smoke:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SurfaceSmoke -DisableNuGetAudit
+```
+
+Runs the default launch smoke and then the UI Automation surface smoke for the
+shell and primary modals. `-SkipSmoke` disables both launch and surface smoke.
+
+Full local verification with packaged UI Automation surface smoke and Settings
+roundtrip:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SurfaceSmoke -SettingsRoundTrip -DisableNuGetAudit
+```
+
+Runs the default launch smoke, then the UI Automation surface smoke, then saves
+Settings through the packaged app and verifies the package-local
+`LocalCache\Local\Waller\settings.json` resolved from the launch AUMID. The
+smoke backs up and restores the previous Settings file before exit.
+
 Full local verification without launch smoke:
 
 ```powershell
@@ -43,6 +64,19 @@ Restricted-network/offline version without NuGet audit warnings:
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit
 ```
+
+Packaged UI Automation surface smoke:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\SmokeSurface.ps1 -DisableNuGetAudit
+```
+
+Builds and launches the packaged app, verifies process/title/responding, then
+checks the core shell controls and Settings/Save As/Manage Presets modal
+surfaces by AutomationId before closing the app.
+
+Add `-SettingsRoundTrip` to verify packaged Settings persistence while
+preserving the current package-local `settings.json`.
 
 Verification including Release build:
 
@@ -72,8 +106,583 @@ This writes a signed development MSIX under `artifacts\packages\` and inspects
 manifest identity/signature. If restricted sandbox networking blocks Release
 restore with `NU1301`, rerun the same command outside the restricted sandbox.
 
+Latest full local result:
+
+- 2026-06-12: Pass after adding packaged Settings roundtrip smoke and updating
+  local-data docs/guards to the packaged `LocalCache\Local\Waller` runtime
+  contract.
+- Command: `scripts\Verify.ps1 -SurfaceSmoke -SettingsRoundTrip -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core code
+  guards, local-data policy guard, package guards, solution build, tests,
+  packaged launch smoke, packaged UI Automation surface smoke, and package-local
+  Settings JSON roundtrip.
+- Tests: Passed 460 / Failed 0 / Skipped 0.
+- Launch smoke: process `51164`, title `Waller`, `Responding=True`.
+- Surface smoke: process `55040`; Shell 9/9 controls, Settings 5/5 controls,
+  Save As 3/3 controls, Manage Presets 6/6 controls; Settings roundtrip
+  persisted `Theme=1` and `Language=es` before restoring package-local
+  `settings.json`.
+- 2026-06-12: Pass after adding the opt-in packaged surface smoke gate.
+- Command: `scripts\Verify.ps1 -SurfaceSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core code
+  guards, local-data policy guard, package guards, solution build, tests,
+  packaged launch smoke, and packaged UI Automation surface smoke.
+- Tests: Passed 460 / Failed 0 / Skipped 0.
+- Launch smoke: process `58376`, title `Waller`, `Responding=True`.
+- Surface smoke: process `55256`; Shell 9/9 controls, Settings 5/5 controls,
+  Save As 3/3 controls, Manage Presets 6/6 controls.
+- 2026-06-12: Pass after current-user packaged launch smoke succeeded again in
+  the full verification gate.
+- Command: `scripts\Verify.ps1 -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core code
+  guards, local-data policy guard, package guards, solution build, tests, and
+  packaged launch smoke.
+- Tests: Passed 452 / Failed 0 / Skipped 0.
+- Smoke: `SMOKE LAUNCH PASSED`; AUMID
+  `1EB1FFC3-B778-402F-85FA-F6C6BF1EA9A4_yq0fg95n1tr90!App`, process
+  `Waller.Native.App`, title `Waller`, `Responding=True`.
+
 Latest no-smoke local result:
 
+- 2026-06-12: Pass after extending `SmokeSurface.ps1` with reusable UI
+  Automation wait/assert/invoke helpers and modal surface checks.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 460 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after adding reusable `SmokeSurface.ps1` and documenting the
+  UI Automation surface smoke path.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 460 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after moving editor placement offset X/Y parameter names and
+  finite-value messages into `EditorOffsetPercent.NormalizeX/Y` and
+  `ToPlacementOffsetX/Y`. The editor draft no longer duplicates offset
+  validation copy before NumberBox values mutate monitor assignment state.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 460 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after routing rendered-cache file deletion through
+  `LocalDataFile.TryDeleteIfExists`. Cache clear now counts deleted/failed
+  files from the shared local delete policy instead of duplicating per-file
+  delete/catch logic.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 460 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after routing atomic-write temp cleanup through shared
+  `LocalDataFile.DeleteRecoverableIfExists`. Local delete policy now covers
+  missing-file deletion and best-effort recoverable cleanup without private
+  writer cleanup branches.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 460 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after moving missing-file Preset deletion through shared
+  `LocalDataFile.DeleteIfExists`. Missing Preset files and missing Preset
+  directories are explicit no-ops after id/cancellation validation, without a
+  store-local existence branch.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 456 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after making missing Preset list/load/delete paths
+  side-effect free. Preset reads and missing deletes no longer create local
+  app-data directories; Save remains the Preset directory materialization point.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 456 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after routing missing Preset/settings JSON reads through
+  shared `LocalJsonFile.ReadRecoverableAsync` instead of per-store
+  `File.Exists` branches.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 455 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after routing restored monitor-row selection through
+  `MonitorKeys.Equals`, so refresh/reprojection keeps the selected monitor even
+  if Windows or stored session casing differs.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 453 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after routing Preset matcher used-assignment membership
+  through shared `MonitorKeys.Contains`, aligning Preset fallback/missing
+  assignment detection with Apply ready/skipped monitor-key matching.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 453 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after routing Apply preflight/target monitor-key membership
+  through shared `MonitorKeys.Contains`, so ready/skipped matching stays
+  case-insensitive even if future callers pass sets with a different comparer.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 453 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after hardening active-Preset identity checks and exposing
+  localized option catalogs as materialized read-only lists.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 452 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after hardening `ApplyRunTracker` result projection so final
+  and cancelled Apply results reject null monitor rows before publishing session
+  state.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 452 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after materializing SolidColor quick swatch catalog output
+  and hardening shared `RequiredList` validate-only paths so default swatches
+  and model collection contracts fail at helper boundaries.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 450 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after hardening localized option catalog, monitor-row
+  selection, and Manage Presets list refresh boundaries so direct option-list
+  construction rejects missing text, row selection rejects missing/null row
+  collections, and managed Preset refresh rejects missing store/list targets.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 450 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after hardening Apply run orchestration boundaries so
+  `RunApplyAsync` rejects missing Apply delegates and terminal Apply UI
+  presentation rejects missing `ApplyRunUiState`.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 450 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after hardening localized option catalog and monitor-row
+  selection boundaries so direct option-list construction rejects missing text
+  and selection rejects missing/null row collections.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 450 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after hardening grouped property-change notifications so
+  Main and row view models reject missing or blank notification names before
+  calling `OnPropertyChanged`.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 450 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after hardening localized surface and Preset menu list item
+  boundaries so language refresh and Preset selection/relabeling reject null row
+  or menu collection items before projection.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 450 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after hardening localized formatting so
+  `LocalizedText.Format` rejects missing format strings or argument arrays
+  before calling `string.Format`.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 450 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after hardening Preset and monitor-edit text presenters so
+  formatted status copy normalizes Preset names, selected image names, monitor
+  names, and edit validation errors at the presenter boundary.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 450 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after hardening Apply text projection so
+  `ApplyTextPresenter` rejects missing progress/result DTOs before localized
+  Apply summaries read them.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 450 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after hardening shell current-session status composition so
+  `ShellStatusTextPresenter` validates success status copy before appending
+  monitor counts.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 450 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after hardening status-aware Preset name validation so
+  `PresetNameInput` rejects missing localized text presenters before Save as or
+  Manage Presets rename/duplicate commands request required-name status text.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 450 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after hardening current and missing monitor row view-model
+  boundaries so row construction/replacement rejects missing
+  session/assignment/text inputs before XAML-bound row projections read them.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 450 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after hardening `MainPageLocalState` and
+  `RenderedCacheCleanup` dependency boundaries so local-state forwarding rejects
+  missing store groups before Settings/Preset/cache helpers run.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 450 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after routing managed Preset mutation recoverable filesystem
+  fallback through `LocalDataWriteGuard.TryAsync` while preserving missing
+  Preset files as missing-Preset results.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 450 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after hardening `ApplyRunRequest` so Apply target requests
+  reject missing service/session/monitor inputs and capture a validated monitor
+  key before the async Apply call starts.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 450 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after moving optional remembered Preset id normalization
+  into shared Core `PresetIds.NormalizeOptional`, used by Settings,
+  selected-session, and Preset dropdown refresh paths.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 450 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after guarding shell modal interaction state and top-modal
+  close dispatch. `ShellInteractionState` keeps modal/apply command permissions
+  and top-modal priority in one helper, while `ShellModalClose` treats `None`
+  as no-op and rejects unknown layers or missing selected close actions.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 450 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after routing image source existence/file-name helpers
+  through `WallpaperSourcePath.TryNormalizeImagePath`.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 450 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after removing the duplicate App `DefinedEnumValue` helper
+  and routing App enum boundaries through Core `DefinedEnumValue`.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 448 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after adding `DesktopMonitorDisplayName` boundary guards for
+  missing/blank monitor ids and non-positive display indices before Windows
+  detector row names are composed.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 448 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after routing `DesktopWallpaperSnapshot` monitor-id
+  validation through `MonitorKeys.Require`, rejecting null/blank ids before
+  Windows detector projection.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 442 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after routing rendered output path monitor-key validation
+  through `MonitorKeys.Require`, rejecting blank keys before cache directory
+  creation or fallback rendered file names.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 440 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after adding `MonitorDisplayName` and routing
+  `MonitorSnapshot`/`ApplyProgress` visible monitor names through it before
+  row/progress projection.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 434 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after `DesktopWallpaperInterop.PositionToPlacement` was
+  changed to reject unknown successful Windows wallpaper position enum values
+  instead of silently treating them as Cover.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 431 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after `ImagePlacementPlan` was changed to reject unsupported
+  fit/anchor enum values instead of silently treating invalid placement state as
+  Cover/Center.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 431 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after `BasicPngWallpaperRenderer` was changed to reject
+  unsupported source-kind enum values instead of silently rendering black output.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 431 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after `MonitorEditDraft.ToSource` was changed to reject
+  unsupported source-kind enum values instead of mutating invalid editor state
+  into Empty.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 431 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after adding `OptionDisplayName` and routing `OptionItem`
+  labels through it before Settings/editor dropdown collections render localized
+  options.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 431 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after App Save As and Manage Presets rename entrypoint names
+  were routed through shared Core `PresetNames` before factory/store mutation.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 431 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after `LocalizedText.Editor.SourceKind` was changed to
+  reject unsupported source-kind enum values before localized option catalogs
+  can show generic fallback copy.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 431 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after `MonitorSourceText` was changed to reject missing
+  inputs and unsupported source-kind enum values before row source summaries can
+  show invalid source state as Empty.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 431 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after `PlacementText` was changed to reject missing inputs
+  and unsupported fit/anchor enum values before row/dropdown placement copy can
+  show generic fallback text.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 431 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after `ThemePreferenceMapper` was changed to reject
+  unsupported theme enum values before WinUI theme projection can silently fall
+  back to default theme.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 431 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after MainPage text presenters were routed through
+  `LocalizedTextSource`, so null presenter providers fail before status/progress
+  projection reaches command handlers.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 431 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after source/placement preview helpers were changed to
+  reject missing inputs and unsupported source/fit/anchor enum values instead
+  of rendering invalid preview state as transparent/default brushes or
+  alignment.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 431 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after monitor workspace visibility helpers were changed to
+  reject missing row collections before no-monitor, topology, or missing-monitor
+  surfaces read counts.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 431 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after image picker selected-file display names were routed
+  through `ImageDisplayName` before source-selection status text consumes them.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 431 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after selected-editor surface projection was changed to
+  reject missing localized text and unknown source kinds before image/color
+  visibility or selected-source warning copy reaches XAML.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 431 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after selected-Preset load status projection was changed to
+  reject missing presenters and unknown load kinds instead of returning blank
+  status text.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 431 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after selected-Preset display-name policy sharing.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 431 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after workflow status text validation sharing.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 431 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after App editor monitor-key validation joined shared Core
+  `MonitorKeys.Require`.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 431 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after shared monitor-key boundary validation.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 431 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after Core enum boundary helper.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 428 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after desktop wallpaper writer cancellation boundary and
+  rendered cache-clear filesystem policy sharing.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 427 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after App enum boundary helper.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 426 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after App save/rename completion name-draft policy sharing.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 426 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after delete-confirmation display-name helper reuse.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 426 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after managed Preset selection nullable-id prefactor.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 426 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after App Preset menu display-name helper.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 426 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after sharing Core `PresetIds` with App Preset menu and
+  Manage Presets command DTOs.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 426 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after Preset model name-policy sharing.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 425 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after App-side Preset visual-memory id normalization and
+  loaded-Preset id policy sharing.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 420 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after last-selected Preset id normalization.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 420 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after local-data cancellation boundary prefactor.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 416 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after edit-panel offset normalization helper prefactor.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 409 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after Preset id invariant prefactor.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 409 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after color-hex missing-value validator prefactor.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 402 / Failed 0 / Skipped 0.
+- 2026-06-12: Pass after AtomicFileWriter temp-path validator prefactor.
+- Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
+- Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
+  code guards, local-data policy guard, package guards, solution build,
+  packaged build, and tests.
+- Tests: Passed 399 / Failed 0 / Skipped 0.
 - 2026-06-12: Pass after local-data root validator prefactor.
 - Command: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit`.
 - Covered XAML accessibility lint, XAML localization lint, WinUI/JSON/Core
@@ -822,6 +1431,8 @@ Coverage:
   crashing Settings
 - Rendered cache file names sanitize monitor keys, cap long names, and avoid
   sanitized-name collisions with a hash
+- Rendered output path creation rejects missing/blank monitor keys before
+  creating rendered cache folders or fallback file names
 - Pixel buffers copy input data and reject out-of-bounds pixel reads/writes with
   explicit argument errors before image placement/rendering can fail with raw
   index errors
@@ -846,12 +1457,18 @@ Coverage:
 - Apply service success path
 - Apply monitor key matching is case-insensitive
 - Apply monitor with an unknown monitor key does not render or touch Windows
+- App editor, Core preflight, target-plan, and key-set construction monitor-key
+  inputs use shared `MonitorKeys.Require` validation.
 - Apply service progress callback
 - Image source failure before Windows apply
+- Image source existence/file-name helpers normalize raw paths before missing or
+  existing-file checks
 - Apply service maps renderer/Windows failures through stable error codes to
   friendly monitor errors
 - Apply service maps unexpected renderer failures through the same friendly
   fallback without calling Windows apply
+- Apply/image-pick/disconnected-monitor result DTOs reject blank status copy
+  through shared `WorkflowStatusText`.
 - Image picker file type policy includes common wallpaper formats
 - Apply error codes are stable tokens, not user-facing prose strings
 - Apply error classifier preserves known render/applier codes and maps unknown
@@ -1026,6 +1643,41 @@ session.
 
 Latest packaged launch smoke:
 
+- 2026-06-12: `scripts\SmokeSurface.ps1 -DisableNuGetAudit` passed after adding
+  modal surface checks. Shell found 9/9 controls, Settings found 5/5 controls,
+  Save As found 3/3 controls, and Manage Presets found 6/6 controls. The smoke
+  opened and closed each modal through UI Automation and closed the launched
+  process.
+- Process: `54740`.
+- Main window title: `Waller`.
+- 2026-06-12: `scripts\SmokeSurface.ps1 -DisableNuGetAudit` passed after the
+  ad-hoc UI Automation surface smoke was promoted to a reusable script.
+- Process: `57428`.
+- Main window title: `Waller`.
+- Required shell controls: `9`.
+- Missing shell controls: `0`.
+- The smoke script closed the launched process after verification.
+- 2026-06-12: ad-hoc UI Automation surface smoke passed after packaged launch.
+  Build/launch returned process `50180`, title `Waller`, and UIA found 9/9
+  required shell controls: `PresetComboBox`, `SaveButton`, `SaveAsButton`,
+  `ManagePresetsButton`, `RefreshButton`, `SettingsButton`, `ApplyAllButton`,
+  `MonitorList`, and `StatusInfoBar`. The smoke closed the launched process.
+- 2026-06-12: `scripts\SmokeLaunch.ps1 -DisableNuGetAudit` passed after the
+  latest editor offset/local-data hardening work.
+- AUMID:
+  `1EB1FFC3-B778-402F-85FA-F6C6BF1EA9A4_yq0fg95n1tr90!App`.
+- Process: `12344`.
+- Main window title: `Waller`.
+- Responding: `True`.
+- The smoke script closed the launched process after verification.
+- 2026-06-12: `scripts\SmokeLaunch.ps1 -DisableNuGetAudit` passed on the current
+  Windows user after the latest native hardening work.
+- AUMID:
+  `1EB1FFC3-B778-402F-85FA-F6C6BF1EA9A4_yq0fg95n1tr90!App`.
+- Process: `43680`.
+- Main window title: `Waller`.
+- Responding: `True`.
+- The smoke script closed the launched process after verification.
 - 2026-06-08: `scripts\Verify.ps1 -DisableNuGetAudit` passed lints, solution
   build, and 160 tests, then blocked at packaged launch smoke with package
   registration conflict `0x80073D19`.
@@ -1171,11 +1823,15 @@ Verify with current Windows wallpaper already configured:
 
 - Connected monitors appear in list.
 - Monitor IDs/bounds are stable across app restart.
+- Windows desktop snapshots reject missing/blank monitor ids through
+  `MonitorKeys.Require` before detector projection.
 - Current image wallpaper path appears as Image source when Windows reports it.
 - Unknown/default Windows wallpaper appears as Empty, meaning black output if
   applied.
 - Monitor row names include display index plus shortened Windows device id when
   available.
+- Windows monitor display-name projection rejects missing/blank ids and
+  non-positive display indices before composing row names.
 - Startup does not apply or change wallpaper.
 - Friendly fallback text appears if Windows monitor detection fails.
 - Empty monitor state renders if detector returns no monitors.
@@ -1335,7 +1991,8 @@ Verify:
 - Preset saves use shared temp-file replacement; failed replacement should not
   leave partial JSON behind.
 - No manual JSON import/export is exposed in MVP.
-- App data stays under `%LOCALAPPDATA%\Waller\presets`.
+- App data stays under the Waller local-data root (`LocalCache\Local\Waller`
+  when packaged).
 
 Expected result:
 
@@ -1457,6 +2114,8 @@ Verify:
   the modal.
 - Header shell commands, Preset dropdown, and Choose image are disabled behind
   an open modal; modal-local Save/Close/Manage/Settings actions remain usable.
+- Modal/apply command permissions and top-modal priority flow through
+  `ShellInteractionState`.
 - Source, color, placement, and disconnected-monitor assignment controls are
   disabled behind an open modal and their command handlers ignore mutation until
   the modal closes.
@@ -1483,10 +2142,15 @@ Verify:
 - Unexpected Apply failure clears progress and shows a friendly localized
   status without raw exception text.
 - Save state does not change only because Apply ran.
-- Rendered PNG output lands under `%LOCALAPPDATA%\Waller\rendered`.
+- Rendered PNG output lands under the Waller local-data root
+  (`LocalCache\Local\Waller\rendered` when packaged).
 - Desktop wallpaper apply requests Windows `Fill` position for rendered PNGs.
+- Desktop wallpaper writer cancellation propagates as cancellation, not as a
+  row-level Apply failure.
 - Rendered PNG file names remain valid even when Windows monitor keys contain
   path separators or other invalid file-name characters.
+- Rendered PNG output path creation rejects missing/blank monitor keys before
+  creating cache directories or fallback file names.
 - Rendered PNG output uses the same shared temp-file replacement helper as local
   JSON, committing only after a complete temp-file write instead of exposing a
   partial final file during write.
@@ -1525,6 +2189,8 @@ Verify without mouse:
 - Escape closes modal where expected.
 - Escape closes delete confirmation before closing Manage Presets.
 - Escape is not swallowed when no modal is open.
+- Top-modal close dispatch flows through `ShellModalClose`; `None` is no-op,
+  and unknown modal layers or missing selected close actions fail explicitly.
 - Ctrl+S saves selected Preset or opens Save as when current setup has no saved
   Preset.
 - Ctrl+Shift+S opens Save as.

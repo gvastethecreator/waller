@@ -4,10 +4,8 @@ public sealed record OptionItem<T>
 {
     public OptionItem(T Value, string DisplayName)
     {
-        ArgumentException.ThrowIfNullOrWhiteSpace(DisplayName);
-
         this.Value = Value;
-        this.DisplayName = DisplayName;
+        this.DisplayName = OptionDisplayName.Normalize(DisplayName, nameof(DisplayName));
     }
 
     public T Value { get; }

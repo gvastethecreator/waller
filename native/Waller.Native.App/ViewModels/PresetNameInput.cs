@@ -29,6 +29,8 @@ internal static class PresetNameInput
         out string name,
         out string statusText)
     {
+        ArgumentNullException.ThrowIfNull(text);
+
         if (TryValidateRequired(draft, out name))
         {
             statusText = string.Empty;

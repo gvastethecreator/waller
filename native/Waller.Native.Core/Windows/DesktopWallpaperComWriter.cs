@@ -7,7 +7,10 @@ internal sealed class DesktopWallpaperComWriter : IDesktopWallpaperWriter
         string wallpaperPath,
         DesktopWallpaperPosition position)
     {
-        var desktopWallpaper = DesktopWallpaperInterop.CreateDesktopWallpaper();
-        DesktopWallpaperInterop.SetWallpaperThenPosition(desktopWallpaper, monitorId, wallpaperPath, position);
+        StaThreadRunner.Run(() =>
+        {
+            var desktopWallpaper = DesktopWallpaperInterop.CreateDesktopWallpaper();
+            DesktopWallpaperInterop.SetWallpaperThenPosition(desktopWallpaper, monitorId, wallpaperPath, position);
+        });
     }
 }

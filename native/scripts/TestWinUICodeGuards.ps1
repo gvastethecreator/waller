@@ -89,9 +89,14 @@ $workflowResultDtoWithoutValidation = @()
 $editorDtoWithoutValidation = @()
 $presetMenuDtoWithoutValidation = @()
 $surfaceProjectionDtoWithoutValidation = @()
+$appDefinedEnumHelperFiles = @()
+
+$appDefinedEnumHelperPath = Join-Path $resolvedPath "ViewModels\DefinedEnumValue.cs"
+if (Test-Path -LiteralPath $appDefinedEnumHelperPath) {
+    $appDefinedEnumHelperFiles += Get-NativeRelativePath $appDefinedEnumHelperPath
+}
 $localWriteRecoveryAllowList = @(
-    "Waller.Native.App\Platform\LocalDataWriteGuard.cs",
-    "Waller.Native.App\ViewModels\ManagedPresetMutation.cs"
+    "Waller.Native.App\Platform\LocalDataWriteGuard.cs"
 )
 $localAppDataPathAllowList = @(
     "Waller.Native.App\Platform\WallerAppDataPaths.cs"
@@ -133,9 +138,9 @@ if (-not (Test-Path -LiteralPath $presetMenuItemPath)) {
 }
 else {
     $presetMenuItemText = Get-Content -LiteralPath $presetMenuItemPath -Raw
-    if ($presetMenuItemText -notmatch 'string\.IsNullOrWhiteSpace\s*\(\s*Name\s*\)' -or
-        $presetMenuItemText -notmatch 'Preset menu id cannot be empty' -or
-        $presetMenuItemText -notmatch 'string\.IsNullOrWhiteSpace\s*\(\s*value\s*\)') {
+    if ($presetMenuItemText -notmatch 'PresetMenuDisplayName\.Normalize\s*\(\s*Name,\s*nameof\s*\(\s*Name\s*\)\s*\)' -or
+        $presetMenuItemText -notmatch 'PresetIds\.RequireValid\s*\(\s*presetId,\s*nameof\s*\(\s*value\s*\)\s*\)' -or
+        $presetMenuItemText -notmatch 'PresetMenuDisplayName\.Normalize\s*\(\s*value,\s*nameof\s*\(\s*value\s*\)\s*\)') {
         $presetMenuItemWithoutNameValidation += Get-NativeRelativePath $presetMenuItemPath
     }
 }
@@ -147,8 +152,22 @@ if (-not (Test-Path -LiteralPath $imageSelectionDraftPath)) {
 else {
     $imageSelectionDraftText = Get-Content -LiteralPath $imageSelectionDraftPath -Raw
     if ($imageSelectionDraftText -notmatch 'WallpaperSourcePath\.NormalizeImagePath\s*\(\s*ImagePath\s*\)' -or
-        $imageSelectionDraftText -notmatch 'ArgumentException\.ThrowIfNullOrWhiteSpace\s*\(\s*DisplayFileName\s*\)') {
+        $imageSelectionDraftText -notmatch 'ImageDisplayName\.Normalize\s*\(\s*DisplayFileName,\s*nameof\s*\(\s*DisplayFileName\s*\)\s*\)' -or
+        $imageSelectionDraftText -notmatch 'ImageDisplayName\.Normalize\s*\(\s*value,\s*nameof\s*\(\s*value\s*\)\s*\)') {
         $sourceSelectionDtoWithoutValidation += Get-NativeRelativePath $imageSelectionDraftPath
+    }
+}
+
+$imageDisplayNamePath = Join-Path $resolvedPath "ViewModels\ImageDisplayName.cs"
+if (-not (Test-Path -LiteralPath $imageDisplayNamePath)) {
+    $sourceSelectionDtoWithoutValidation += "Waller.Native.App\ViewModels\ImageDisplayName.cs: file missing"
+}
+else {
+    $imageDisplayNameText = Get-Content -LiteralPath $imageDisplayNamePath -Raw
+    if ($imageDisplayNameText -notmatch 'internal\s+static\s+class\s+ImageDisplayName' -or
+        $imageDisplayNameText -notmatch 'displayName\.Trim\(\)' -or
+        $imageDisplayNameText -notmatch 'Image display name is required\.') {
+        $sourceSelectionDtoWithoutValidation += Get-NativeRelativePath $imageDisplayNamePath
     }
 }
 
@@ -158,7 +177,7 @@ if (-not (Test-Path -LiteralPath $monitorSourceSelectionPath)) {
 }
 else {
     $monitorSourceSelectionText = Get-Content -LiteralPath $monitorSourceSelectionPath -Raw
-    if ($monitorSourceSelectionText -notmatch 'Enum\.IsDefined\s*\(\s*sourceKind\s*\)' -or
+    if ($monitorSourceSelectionText -notmatch 'DefinedEnumValue\.Require\s*\(' -or
         $monitorSourceSelectionText -notmatch 'WallpaperSourcePath\.NormalizeImagePath\s*\(' -or
         $monitorSourceSelectionText -notmatch 'ColorHexValue\.Normalize\s*\(' -or
         $monitorSourceSelectionText -match 'public\s+WallpaperSourceKind\s+SourceKind\s*\{[^}]*init') {
@@ -172,12 +191,25 @@ if (-not (Test-Path -LiteralPath $optionItemPath)) {
 }
 else {
     $optionItemText = Get-Content -LiteralPath $optionItemPath -Raw
-    if ($optionItemText -notmatch 'ArgumentException\.ThrowIfNullOrWhiteSpace\s*\(\s*DisplayName\s*\)' -or
+    if ($optionItemText -notmatch 'OptionDisplayName\.Normalize\s*\(\s*DisplayName,\s*nameof\s*\(\s*DisplayName\s*\)\s*\)' -or
         $optionItemText -notmatch 'ArgumentNullException\.ThrowIfNull\s*\(\s*target\s*\)' -or
         $optionItemText -notmatch 'ArgumentNullException\.ThrowIfNull\s*\(\s*options\s*\)' -or
         $optionItemText -notmatch 'Option collection cannot include null items' -or
         $optionItemText -match 'public\s+sealed\s+record\s+OptionItem<[^>]+>\s*\(') {
         $optionDtoWithoutValidation += Get-NativeRelativePath $optionItemPath
+    }
+}
+
+$optionDisplayNamePath = Join-Path $resolvedPath "ViewModels\OptionDisplayName.cs"
+if (-not (Test-Path -LiteralPath $optionDisplayNamePath)) {
+    $optionDtoWithoutValidation += "Waller.Native.App\ViewModels\OptionDisplayName.cs: file missing"
+}
+else {
+    $optionDisplayNameText = Get-Content -LiteralPath $optionDisplayNamePath -Raw
+    if ($optionDisplayNameText -notmatch 'internal\s+static\s+class\s+OptionDisplayName' -or
+        $optionDisplayNameText -notmatch 'displayName\.Trim\(\)' -or
+        $optionDisplayNameText -notmatch 'Option display name is required\.') {
+        $optionDtoWithoutValidation += Get-NativeRelativePath $optionDisplayNamePath
     }
 }
 
@@ -194,35 +226,47 @@ else {
     }
 }
 
+$colorSwatchCatalogPath = Join-Path $resolvedPath "ViewModels\ColorSwatchCatalog.cs"
+if (-not (Test-Path -LiteralPath $colorSwatchCatalogPath)) {
+    $optionDtoWithoutValidation += "Waller.Native.App\ViewModels\ColorSwatchCatalog.cs: file missing"
+}
+else {
+    $colorSwatchCatalogText = Get-Content -LiteralPath $colorSwatchCatalogPath -Raw
+    if ($colorSwatchCatalogText -notmatch 'public\s+static\s+IReadOnlyList<ColorSwatchOption>\s+Defaults\s*\(\s*\)' -or
+        $colorSwatchCatalogText -notmatch 'DefaultHexValues\s*\r?\n\s*\.Select\s*\(\s*ColorSwatchOption\.FromHex\s*\)\s*\r?\n\s*\.ToArray\s*\(\s*\)') {
+        $optionDtoWithoutValidation += Get-NativeRelativePath $colorSwatchCatalogPath
+    }
+}
+
 $presetSessionContracts = @(
     @{
         Path = "ViewModels\ActivePresetSession.cs"
-        Required = @("ArgumentNullException.ThrowIfNull(Session)", "ArgumentNullException.ThrowIfNull(SelectedPresetRecord)", "ArgumentException.ThrowIfNullOrWhiteSpace(PresetNameDraft)")
+        Required = @("PresetIds.RequireValid(presetId, nameof(presetId))", "ArgumentNullException.ThrowIfNull(Session)", "ArgumentNullException.ThrowIfNull(SelectedPresetRecord)", "PresetNames.Validate(PresetNameDraft, nameof(PresetNameDraft))")
         PositionalPattern = 'internal\s+sealed\s+record\s+ActivePresetRename\s*\('
     },
     @{
         Path = "ViewModels\PresetSessionSave.cs"
-        Required = @("Preset ?? throw new ArgumentNullException", "ArgumentNullException.ThrowIfNull(presetStore)", "ArgumentNullException.ThrowIfNull(session)", "ArgumentException.ThrowIfNullOrWhiteSpace(name)")
+        Required = @("Preset ?? throw new ArgumentNullException", "ArgumentNullException.ThrowIfNull(presetStore)", "ArgumentNullException.ThrowIfNull(session)", "PresetNames.Validate(name, nameof(name))", "PresetFactory.CreateFromSession(session, presetName)")
         PositionalPattern = 'internal\s+sealed\s+record\s+PresetSessionSaveResult\s*\('
     },
     @{
         Path = "ViewModels\PresetSaveCompletion.cs"
-        Required = @("ArgumentNullException.ThrowIfNull(SelectedPresetRecord)", "ArgumentException.ThrowIfNullOrWhiteSpace(PresetNameDraft)")
+        Required = @("ArgumentNullException.ThrowIfNull(SelectedPresetRecord)", "PresetNames.Validate(PresetNameDraft, nameof(PresetNameDraft))")
         PositionalPattern = 'internal\s+sealed\s+record\s+PresetSaveCompletion\s*\('
     },
     @{
         Path = "ViewModels\SelectedPresetSession.cs"
-        Required = @("ArgumentNullException.ThrowIfNull(Session)", "ArgumentNullException.ThrowIfNull(PresetNameDraft)", "ArgumentNullException.ThrowIfNull(matcher)")
+        Required = @("ArgumentNullException.ThrowIfNull(Session)", "ArgumentNullException.ThrowIfNull(PresetNameDraft)", "PresetIds.NormalizeOptional(LastSelectedPresetId)", "PresetIds.NormalizeOptional(PersistPresetId)", "ArgumentNullException.ThrowIfNull(matcher)")
         PositionalPattern = 'internal\s+sealed\s+record\s+SelectedPresetSession\s*\('
     },
     @{
         Path = "ViewModels\SelectedPresetSessionLoader.cs"
-        Required = @("Enum.IsDefined(Kind)", "Missing Preset load results cannot include a selection", "ArgumentNullException.ThrowIfNull(presetStore)", "ArgumentNullException.ThrowIfNull(presetMatcher)", "ArgumentNullException.ThrowIfNull(activeSession)", "ArgumentNullException.ThrowIfNull(item)")
+        Required = @("DefinedEnumValue.Require(", "PresetMenuDisplayName.Normalize(DisplayName, nameof(DisplayName))", "Missing Preset load results cannot include a selection", "ArgumentNullException.ThrowIfNull(text)", "InvalidStatusTextKind(Kind)", "throw new ArgumentOutOfRangeException(", "Unknown selected Preset load kind.", "ArgumentNullException.ThrowIfNull(presetStore)", "ArgumentNullException.ThrowIfNull(presetMatcher)", "ArgumentNullException.ThrowIfNull(activeSession)", "ArgumentNullException.ThrowIfNull(item)")
         PositionalPattern = 'internal\s+sealed\s+record\s+SelectedPresetLoadResult\s*\('
     },
     @{
         Path = "ViewModels\ManagedPresetMutation.cs"
-        Required = @("Managed Preset mutation result cannot be both missing and write-failed", "Value is null", "ArgumentNullException.ThrowIfNull(presetStore)", "ArgumentException.ThrowIfNullOrWhiteSpace(name)", "ArgumentNullException.ThrowIfNull(mutation)", "ArgumentNullException.ThrowIfNull(success)")
+        Required = @("Managed Preset mutation result cannot be both missing and write-failed", "Value is null", "ArgumentNullException.ThrowIfNull(presetStore)", "PresetNames.Validate(name, nameof(name))", "presetStore.RenameAsync(presetId, presetName)", "ArgumentNullException.ThrowIfNull(mutation)", "ArgumentNullException.ThrowIfNull(success)", "LocalDataWriteGuard.TryAsync(", "catch (FileNotFoundException)", "ManagedPresetMutationResult<T>.LocalWriteFailed()")
         PositionalPattern = 'internal\s+sealed\s+record\s+ManagedPresetMutationResult<[^>]+>\s*\('
     },
     @{
@@ -237,18 +281,28 @@ $presetSessionDtoWithoutValidation += Test-TextContracts $presetSessionContracts
 $settingsContracts = @(
     @{
         Path = "ViewModels\SettingsPreferenceDraft.cs"
-        Required = @("Enum.IsDefined(Theme)", "AppLanguages.Normalize(Language)", "Settings language must be supported", "ArgumentNullException(nameof(settings))")
+        Required = @("DefinedEnumValue.Require(", "AppLanguages.Normalize(Language)", "Settings language must be supported", "PresetIds.NormalizeOptional(LastSelectedPresetId)", "ArgumentNullException(nameof(settings))")
         PositionalPattern = 'internal\s+sealed\s+record\s+SettingsPreferenceDraft\s*\('
     },
     @{
         Path = "ViewModels\SettingsPreferenceStore.cs"
-        Required = @("Failed Settings save results cannot include last selected Preset", "ArgumentNullException.ThrowIfNull(settingsStore)", "ArgumentNullException.ThrowIfNull(request)", "ArgumentNullException.ThrowIfNull(shellText)")
+        Required = @("PresetIds.NormalizeOptional(LastSelectedPresetId)", "Failed Settings save results cannot include last selected Preset", "ArgumentNullException.ThrowIfNull(settingsStore)", "ArgumentNullException.ThrowIfNull(request)", "ArgumentNullException.ThrowIfNull(shellText)", "PresetIds.NormalizeOptional(presetId)")
         PositionalPattern = 'internal\s+sealed\s+record\s+SettingsPreferenceSaveResult\s*\('
     },
     @{
         Path = "ViewModels\SettingsSaveRequest.cs"
         Required = @("draft ?? throw new ArgumentNullException", "SettingsPreferenceDraft.FromSelection")
         PositionalPattern = 'internal\s+sealed\s+class\s+SettingsSaveRequest\s*\('
+    },
+    @{
+        Path = "ViewModels\MainPageLocalState.cs"
+        Required = @("private readonly WallerLocalDataStores stores", "ArgumentNullException.ThrowIfNull(stores)", "this.stores = stores", "RenderedCacheCleanup.Clear(stores.RenderedWallpapers)")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\RenderedCacheCleanup.cs"
+        Required = @("ArgumentNullException.ThrowIfNull(store)", "return store.Clear();")
+        PositionalPattern = $null
     }
 )
 
@@ -256,18 +310,23 @@ $settingsDtoWithoutValidation += Test-TextContracts $settingsContracts
 
 $managedPresetCommandContracts = @(
     @{
+        Path = "ViewModels\PresetNameInput.cs"
+        Required = @("PresetNames.Validate(draft)", "ArgumentNullException.ThrowIfNull(text)", "statusText = text.NameRequired")
+        PositionalPattern = $null
+    },
+    @{
         Path = "ViewModels\ManagedPresetCommandInput.cs"
-        Required = @("Managed Preset command id is required", "NameDraft ?? string.Empty", "ArgumentNullException.ThrowIfNull(text)", "[NotNullWhen(true)] out ManagedPresetCommandInput? input", "[NotNullWhen(true)] out PresetDeleteConfirmation? confirmation")
+        Required = @("PresetIds.RequireValid(Id, nameof(Id))", "NameDraft ?? string.Empty", "ArgumentNullException.ThrowIfNull(text)", "[NotNullWhen(true)] out ManagedPresetCommandInput? input", "[NotNullWhen(true)] out PresetDeleteConfirmation? confirmation")
         PositionalPattern = 'internal\s+sealed\s+record\s+ManagedPresetCommandInput\s*\('
     },
     @{
         Path = "ViewModels\PresetDeleteConfirmation.cs"
-        Required = @("Preset delete confirmation id is required", "ArgumentException.ThrowIfNullOrWhiteSpace(Name)", "ArgumentNullException(nameof(text))")
+        Required = @("PresetIds.RequireValid(Id, nameof(Id))", "PresetMenuDisplayName.Normalize(Name, nameof(Name))", "ArgumentNullException(nameof(text))")
         PositionalPattern = 'internal\s+sealed\s+record\s+PresetDeleteConfirmation\s*\('
     },
     @{
         Path = "ViewModels\ManagedPresetSelection.cs"
-        Required = @("selectedId != Guid.Empty", "ArgumentNullException(nameof(item))")
+        Required = @("public static Guid? SelectedId(PresetMenuItem? item)", "PresetIds.IsValid(selectedId)", "ArgumentNullException(nameof(item))")
         PositionalPattern = $null
     }
 )
@@ -276,13 +335,28 @@ $managedPresetCommandDtoWithoutValidation += Test-TextContracts $managedPresetCo
 
 $workflowResultContracts = @(
     @{
+        Path = "ViewModels\WorkflowStatusText.cs"
+        Required = @("internal static class WorkflowStatusText", "public static string Require(string statusText, string parameterName)", "ArgumentException.ThrowIfNullOrWhiteSpace(statusText, parameterName)", "return statusText;")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\ApplyRunRequest.cs"
+        Required = @("ArgumentNullException.ThrowIfNull(applyService)", "ArgumentNullException.ThrowIfNull(session)", "ArgumentNullException.ThrowIfNull(monitor)", "MonitorKeys.Require(monitor.MonitorKey, ""monitor.MonitorKey"")", "ApplyMonitorReadySourceAsync(")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\MainPageViewModel.Apply.cs"
+        Required = @("ArgumentNullException.ThrowIfNull(apply)", "ArgumentNullException.ThrowIfNull(state)", "ApplyRunUiState.Success(result, applyText)", "ApplyRunUiState.FromException(error, applyText)")
+        PositionalPattern = $null
+    },
+    @{
         Path = "ViewModels\ApplyRunUiState.cs"
-        Required = @("ArgumentNullException.ThrowIfNull(Session)", "ArgumentNullException.ThrowIfNull(ProgressText)", "ArgumentException.ThrowIfNullOrWhiteSpace(StatusText)", "ArgumentNullException(nameof(result))", "ArgumentNullException(nameof(text))", "ArgumentNullException(nameof(error))")
+        Required = @("ArgumentNullException.ThrowIfNull(Session)", "ArgumentNullException.ThrowIfNull(ProgressText)", "WorkflowStatusText.Require(StatusText, nameof(StatusText))", "ArgumentNullException(nameof(result))", "ArgumentNullException(nameof(text))", "ArgumentNullException(nameof(error))")
         PositionalPattern = 'internal\s+sealed\s+record\s+ApplyRunUiState\s*\('
     },
     @{
         Path = "ViewModels\MonitorAssignmentUpdate.cs"
-        Required = @("Successful monitor assignment updates cannot include validation failures", "Failed monitor assignment updates must include exactly one validation failure", "ArgumentNullException(nameof(session))", "ArgumentNullException(nameof(error))", "ArgumentNullException.ThrowIfNull(text)", "ArgumentNullException.ThrowIfNull(editor)", "ArgumentException.ThrowIfNullOrWhiteSpace(monitorKey)")
+        Required = @("Successful monitor assignment updates cannot include validation failures", "Failed monitor assignment updates must include exactly one validation failure", "ArgumentNullException(nameof(session))", "ArgumentNullException(nameof(error))", "ArgumentNullException.ThrowIfNull(text)", "ArgumentNullException.ThrowIfNull(editor)", "MonitorKeys.Require(monitorKey, nameof(monitorKey))")
         PositionalPattern = 'internal\s+sealed\s+record\s+MonitorAssignmentUpdateResult\s*\('
     }
 )
@@ -292,17 +366,22 @@ $workflowResultDtoWithoutValidation += Test-TextContracts $workflowResultContrac
 $editorContracts = @(
     @{
         Path = "ViewModels\MonitorEditDraft.cs"
-        Required = @("Enum.IsDefined(SourceKind)", "Enum.IsDefined(FitMode)", "Enum.IsDefined(Anchor)", "double.IsFinite(OffsetXPercent)", "double.IsFinite(OffsetYPercent)", "global::Waller.Native.Core.Models.ColorHexValue.Normalize", "ArgumentNullException.ThrowIfNull(assignment)", "Monitor key is required")
+        Required = @("DefinedEnumValue.Require(", "EditorOffsetPercent.NormalizeX", "EditorOffsetPercent.NormalizeY", "EditorOffsetPercent.ToPlacementOffsetX", "EditorOffsetPercent.ToPlacementOffsetY", "global::Waller.Native.Core.Models.ColorHexValue.Normalize", "ArgumentNullException.ThrowIfNull(assignment)", "MonitorKeys.Require(monitorKey, nameof(monitorKey))", "WallpaperSourceKind.Empty => WallpaperSource.Empty", "InvalidSourceKind(SourceKind)")
         PositionalPattern = 'internal\s+sealed\s+record\s+MonitorEditDraft\s*\('
     },
     @{
+        Path = "ViewModels\EditorOffsetPercent.cs"
+        Required = @("internal static class EditorOffsetPercent", "NormalizeX", "NormalizeY", "ToPlacementOffsetX", "ToPlacementOffsetY", "double.IsFinite(offsetPercent)", "Math.Clamp(offsetPercent, -100d, 100d)", "MidpointRounding.AwayFromZero", "WallpaperPlacement.ClampOffset")
+        PositionalPattern = $null
+    },
+    @{
         Path = "ViewModels\DisconnectedMonitorEdit.cs"
-        Required = @("ArgumentException.ThrowIfNullOrWhiteSpace(StatusText)", "ArgumentNullException(nameof(editor))", "ArgumentNullException(nameof(session))", "ArgumentNullException(nameof(monitor))", "ArgumentNullException(nameof(text))")
+        Required = @("WorkflowStatusText.Require(StatusText, nameof(StatusText))", "ArgumentNullException(nameof(editor))", "ArgumentNullException(nameof(session))", "ArgumentNullException(nameof(monitor))", "ArgumentNullException(nameof(text))")
         PositionalPattern = 'internal\s+sealed\s+record\s+DisconnectedMonitorEditResult\s*\('
     },
     @{
         Path = "ViewModels\MonitorSourceSelection.cs"
-        Required = @("ArgumentException.ThrowIfNullOrWhiteSpace(StatusText)", "ArgumentNullException.ThrowIfNull(text)", "ArgumentNullException(nameof(swatch))")
+        Required = @("WorkflowStatusText.Require(StatusText, nameof(StatusText))", "ArgumentNullException.ThrowIfNull(text)", "ArgumentNullException(nameof(swatch))")
         PositionalPattern = 'internal\s+sealed\s+record\s+ImageSourceSelectionResult\s*\('
     }
 )
@@ -311,18 +390,28 @@ $editorDtoWithoutValidation += Test-TextContracts $editorContracts
 
 $presetMenuContracts = @(
     @{
+        Path = "ViewModels\PresetMenuDisplayName.cs"
+        Required = @("internal static class PresetMenuDisplayName", "public static string Normalize(string name, string parameterName)", "throw new ArgumentNullException(parameterName)", 'throw new ArgumentException("Preset menu name is required.", parameterName)', "return trimmed;")
+        PositionalPattern = $null
+    },
+    @{
         Path = "ViewModels\PresetMenuLists.cs"
-        Required = @("ArgumentNullException.ThrowIfNull(items)", "ArgumentNullException.ThrowIfNull(presets)", "ArgumentException.ThrowIfNullOrWhiteSpace(currentSetupName)", "Preset menu selection id cannot be empty")
+        Required = @("ArgumentNullException.ThrowIfNull(items)", "ArgumentNullException.ThrowIfNull(presets)", "PresetMenuDisplayName.Normalize", "PresetIds.RequireValid(presetId, nameof(id))", "Preset menu collection cannot include null items.", "private static PresetMenuItem? FirstOrDefault", "private static PresetMenuItem Item")
         PositionalPattern = $null
     },
     @{
         Path = "ViewModels\PresetMenuRefresh.cs"
-        Required = @("ArgumentNullException.ThrowIfNull(SelectedPreset)", "Last selected Preset id cannot be empty", "Missing requested Preset refresh results cannot keep visual-memory id", "ArgumentNullException.ThrowIfNull(presetStore)", "Preset menu refresh selection id cannot be empty", "Preset menu refresh did not produce a selected item")
+        Required = @("ArgumentNullException.ThrowIfNull(SelectedPreset)", "PresetIds.NormalizeOptional(LastSelectedPresetId)", "Missing requested Preset refresh results cannot keep visual-memory id", "ArgumentNullException.ThrowIfNull(presetStore)", "PresetMenuDisplayName.Normalize", "PresetIds.NormalizeOptional(selectPresetId)", "Preset menu refresh did not produce a selected item")
         PositionalPattern = 'internal\s+sealed\s+record\s+PresetMenuRefreshResult\s*\('
     },
     @{
+        Path = "ViewModels\ManagedPresetList.cs"
+        Required = @("ArgumentNullException.ThrowIfNull(presetStore)", "ArgumentNullException.ThrowIfNull(items)", "PresetMenuLists.ReplaceManage(items, presets)", "PresetMenuLists.Select(items, selectPresetId)")
+        PositionalPattern = $null
+    },
+    @{
         Path = "ViewModels\LocalizedSurfaceRefresh.cs"
-        Required = @("internal sealed record LocalizedSurfaceRefreshResult", "public PresetMenuItem? SelectedPreset", "ArgumentNullException.ThrowIfNull(presets)", "ArgumentNullException.ThrowIfNull(monitors)", "ArgumentNullException.ThrowIfNull(missingMonitors)", "ArgumentNullException.ThrowIfNull(text)")
+        Required = @("internal sealed record LocalizedSurfaceRefreshResult", "public PresetMenuItem? SelectedPreset", "ArgumentNullException.ThrowIfNull(presets)", "ArgumentNullException.ThrowIfNull(monitors)", "ArgumentNullException.ThrowIfNull(missingMonitors)", "ArgumentNullException.ThrowIfNull(text)", "Monitor collection cannot include null items.", "Missing monitor collection cannot include null items.")
         PositionalPattern = 'internal\s+sealed\s+record\s+LocalizedSurfaceRefreshResult\s*\('
     }
 )
@@ -331,14 +420,129 @@ $presetMenuDtoWithoutValidation += Test-TextContracts $presetMenuContracts
 
 $surfaceProjectionContracts = @(
     @{
+        Path = "ViewModels\LocalizedText.cs"
+        Required = @("public string Format(string format, params object[] args)", "ArgumentNullException.ThrowIfNull(format)", "ArgumentNullException.ThrowIfNull(args)", "AppLanguages.CultureFor")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\LocalizedTextSource.cs"
+        Required = @("internal static class LocalizedTextSource", "public static Func<LocalizedText> Require(Func<LocalizedText> text)", "ArgumentNullException.ThrowIfNull(text)", "Localized text source returned null.")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\MainPageTextPresenters.cs"
+        Required = @("var source = LocalizedTextSource.Require(text)", "Apply = new ApplyTextPresenter(source)", "Preset = new PresetTextPresenter(source)", "MonitorEdit = new MonitorEditTextPresenter(source)", "Shell = new ShellStatusTextPresenter(source)")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\ViewModelNotificationGroups.cs"
+        Required = @("public static IEnumerable<string> Require(IEnumerable<string> propertyNames)", "ArgumentNullException.ThrowIfNull(propertyNames)", "Property name collection cannot include blank items.")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\ShellInteractionState.cs"
+        Required = @("public ShellModalLayer TopModal", "IsDeleteConfirmationOpen ? ShellModalLayer.DeleteConfirmation", "public bool CanUseShellCommands => !IsApplying && !IsAnyModalOpen", "public bool CanUseModalActions => !IsApplying")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\ShellModalClose.cs"
+        Required = @("case ShellModalLayer.None:", "Invoke(closeDeleteConfirmation, nameof(closeDeleteConfirmation))", "Invoke(closeManagePresets, nameof(closeManagePresets))", "Invoke(closeSaveAs, nameof(closeSaveAs))", "Invoke(closeSettings, nameof(closeSettings))", "Unknown shell modal layer.")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\ApplyTextPresenter.cs"
+        Required = @("private readonly Func<LocalizedText> text", "this.text = LocalizedTextSource.Require(text)", "ArgumentNullException.ThrowIfNull(progress)", "ArgumentNullException.ThrowIfNull(result)")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\PresetTextPresenter.cs"
+        Required = @("private readonly Func<LocalizedText> text", "this.text = LocalizedTextSource.Require(text)", "PresetNames.Validate(name, nameof(name))")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\MonitorEditTextPresenter.cs"
+        Required = @("private readonly Func<LocalizedText> text", "this.text = LocalizedTextSource.Require(text)", "ImageDisplayName.Normalize(fileName, nameof(fileName))", "NormalizeMonitorName(monitorName, nameof(monitorName))", "NormalizeMonitorName(targetName, nameof(targetName))", "ArgumentNullException.ThrowIfNull(error)")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\ShellStatusTextPresenter.cs"
+        Required = @("private readonly Func<LocalizedText> text", "this.text = LocalizedTextSource.Require(text)", "WorkflowStatusText.Require(successStatus, nameof(successStatus))")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\ThemePreferenceMapper.cs"
+        Required = @("DefinedEnumValue.Require(", "Unknown theme preference.", "AppThemePreference.System => ElementTheme.Default", "InvalidThemePreference(preference)")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\LocalizedOptionCatalog.cs"
+        Required = @("public static IReadOnlyList<OptionItem<AppThemePreference>> ThemeOptions", "private static LocalizedText RequireText(LocalizedText text)", "ArgumentNullException.ThrowIfNull(text)", "var localizedText = RequireText(text)", "localizedText.ThemeSystem", "localizedText.SourceKind(source)", ".ToArray()")
+        PositionalPattern = $null
+    },
+    @{
         Path = "ViewModels\LocalizedOptionSelections.cs"
-        Required = @("internal sealed record SettingsOptionSelection", "internal sealed record EditorOptionSelection", "ArgumentNullException.ThrowIfNull(themeOptions)", "ArgumentNullException.ThrowIfNull(text)", "Enum.IsDefined(selectedTheme)", "ValidateEditorSelection", "Enum.IsDefined(selectedSource)", "public OptionItem<AppThemePreference>? Theme", "public OptionItem<WallpaperSourceKind>? Source")
+        Required = @("internal sealed record SettingsOptionSelection", "internal sealed record EditorOptionSelection", "ArgumentNullException.ThrowIfNull(themeOptions)", "ArgumentNullException.ThrowIfNull(text)", "DefinedEnumValue.Require(", "ValidateEditorSelection", "public OptionItem<AppThemePreference>? Theme", "public OptionItem<WallpaperSourceKind>? Source")
         PositionalPattern = 'internal\s+sealed\s+record\s+(SettingsOptionSelection|EditorOptionSelection)\s*\('
     },
     @{
+        Path = "ViewModels\MonitorRowSelection.cs"
+        Required = @("ArgumentNullException.ThrowIfNull(monitors)", "Monitor row selection cannot include null items.", "ReferenceEquals(monitor, selectedMonitor)")
+        PositionalPattern = $null
+    },
+    @{
         Path = "ViewModels\MonitorRowsProjector.cs"
-        Required = @("ArgumentNullException.ThrowIfNull(monitors)", "ArgumentNullException.ThrowIfNull(missingMonitors)", "ArgumentNullException.ThrowIfNull(session)", "ArgumentNullException.ThrowIfNull(text)", "Topology width must be positive and finite", "Topology height must be positive and finite")
+        Required = @("ArgumentNullException.ThrowIfNull(monitors)", "ArgumentNullException.ThrowIfNull(missingMonitors)", "ArgumentNullException.ThrowIfNull(session)", "ArgumentNullException.ThrowIfNull(text)", "MonitorKeys.Equals(monitor.MonitorKey, selectedMonitorKey)", "Topology width must be positive and finite", "Topology height must be positive and finite")
         PositionalPattern = 'internal\s+sealed\s+record\s+MonitorRowsProjection\s*\('
+    },
+    @{
+        Path = "ViewModels\MonitorRowViewModel.cs"
+        Required = @("text ?? throw new ArgumentNullException(nameof(text))", "session ?? throw new ArgumentNullException(nameof(session))", "ArgumentNullException.ThrowIfNull(text)", "ArgumentNullException.ThrowIfNull(session)", "MonitorRowNotificationGroups.CurrentMonitorText", "MonitorRowNotificationGroups.CurrentMonitorSession", "ViewModelNotificationGroups.Require(propertyNames)")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\MissingMonitorRowViewModel.cs"
+        Required = @("text ?? throw new ArgumentNullException(nameof(text))", "assignment ?? throw new ArgumentNullException(nameof(assignment))", "ArgumentNullException.ThrowIfNull(text)", "MonitorRowNotificationGroups.MissingMonitorText", "ViewModelNotificationGroups.Require(propertyNames)")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\MonitorRowsSurface.cs"
+        Required = @("ArgumentNullException.ThrowIfNull(monitors)", "ArgumentNullException.ThrowIfNull(missingMonitors)", "VisibilityStates.When(monitors.Count == 0)", "VisibilityStates.Unless(monitors.Count == 0)", "VisibilityStates.Unless(missingMonitors.Count == 0)")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\LocalizedText.Editor.cs"
+        Required = @("DefinedEnumValue.Require(", "Unknown localized source kind.", "WallpaperSourceKind.Empty => EmptySource", "InvalidSourceKind(source)")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\MonitorEditorSurface.cs"
+        Required = @("ArgumentNullException.ThrowIfNull(text)", "DefinedEnumValue.Require(", "Unknown editor source kind.", "VisibilityStates.When(sourceKind == WallpaperSourceKind.Image)", "VisibilityStates.When(sourceKind == WallpaperSourceKind.SolidColor)", "text.SelectedSourceWarning(source)")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\MonitorSourcePreview.cs"
+        Required = @("ArgumentNullException.ThrowIfNull(source)", "ArgumentNullException.ThrowIfNull(placement)", "DefinedEnumValue.Require(", "Unknown preview source kind.", "InvalidSourceKind(source.Kind)", "PlacementPreview.StretchFor(placement)", "PlacementPreview.AlignmentXFor(placement)", "PlacementPreview.AlignmentYFor(placement)")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\MonitorSourceText.cs"
+        Required = @("ArgumentNullException.ThrowIfNull(source)", "ArgumentNullException.ThrowIfNull(text)", "DefinedEnumValue.Require(", "Unknown monitor source kind.", "WallpaperSourceKind.Empty => text.EmptySource", "InvalidSourceKind(source.Kind)")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\PlacementPreview.cs"
+        Required = @("ArgumentNullException.ThrowIfNull(placement)", "DefinedEnumValue.Require(", "Unknown preview fit mode.", "Unknown preview anchor.", "WallpaperFitMode.Cover => Stretch.UniformToFill", "InvalidFitMode(placement.FitMode)", "InvalidAlignmentXAnchor(placement.Anchor)", "InvalidAlignmentYAnchor(placement.Anchor)")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\PlacementText.cs"
+        Required = @("ArgumentNullException.ThrowIfNull(placement)", "ArgumentNullException.ThrowIfNull(text)", "DefinedEnumValue.Require(", "PlacementTextErrors.UnknownFitMode", "PlacementTextErrors.UnknownAnchor", "WallpaperFitMode.Cover => text.FitCover", "WallpaperAnchor.BottomRight => text.AnchorBottomRight", "InvalidFitMode(fit)", "InvalidAnchor(anchor)")
+        PositionalPattern = $null
+    },
+    @{
+        Path = "ViewModels\PlacementTextErrors.cs"
+        Required = @("internal static class PlacementTextErrors", "public const string UnknownFitMode = ""Unknown placement fit mode.""", "public const string UnknownAnchor = ""Unknown placement anchor.""")
+        PositionalPattern = $null
     }
 )
 
@@ -739,6 +943,15 @@ if ($presetMenuDtoWithoutValidation.Count -gt 0) {
 if ($surfaceProjectionDtoWithoutValidation.Count -gt 0) {
     Write-Host "Surface projection DTO validation missing; keep option and monitor-row projections explicit before view-model splits:" -ForegroundColor Red
     foreach ($file in $surfaceProjectionDtoWithoutValidation) {
+        Write-Host " - $file" -ForegroundColor Red
+    }
+
+    exit 1
+}
+
+if ($appDefinedEnumHelperFiles.Count -gt 0) {
+    Write-Host "Duplicate App enum helper found; use Waller.Native.Core.Models.DefinedEnumValue for App and Core enum boundaries:" -ForegroundColor Red
+    foreach ($file in $appDefinedEnumHelperFiles) {
         Write-Host " - $file" -ForegroundColor Red
     }
 

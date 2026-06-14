@@ -5,28 +5,60 @@ namespace Waller.Native.App.ViewModels;
 
 internal static class LocalizedOptionCatalog
 {
-    public static IEnumerable<OptionItem<AppThemePreference>> ThemeOptions(LocalizedText text) =>
-    [
-        new(AppThemePreference.System, text.ThemeSystem),
-        new(AppThemePreference.Light, text.ThemeLight),
-        new(AppThemePreference.Dark, text.ThemeDark),
-    ];
+    public static IReadOnlyList<OptionItem<AppThemePreference>> ThemeOptions(LocalizedText text)
+    {
+        var localizedText = RequireText(text);
 
-    public static IEnumerable<OptionItem<string>> LanguageOptions(LocalizedText text) =>
-    [
-        new(AppLanguages.English, text.LanguageEnglish),
-        new(AppLanguages.Spanish, text.LanguageSpanish),
-    ];
+        return
+        [
+            new(AppThemePreference.System, localizedText.ThemeSystem),
+            new(AppThemePreference.Light, localizedText.ThemeLight),
+            new(AppThemePreference.Dark, localizedText.ThemeDark),
+        ];
+    }
 
-    public static IEnumerable<OptionItem<WallpaperSourceKind>> SourceOptions(LocalizedText text) =>
-        Enum.GetValues<WallpaperSourceKind>()
-            .Select(source => new OptionItem<WallpaperSourceKind>(source, text.SourceKind(source)));
+    public static IReadOnlyList<OptionItem<string>> LanguageOptions(LocalizedText text)
+    {
+        var localizedText = RequireText(text);
 
-    public static IEnumerable<OptionItem<WallpaperFitMode>> FitOptions(LocalizedText text) =>
-        Enum.GetValues<WallpaperFitMode>()
-            .Select(fit => new OptionItem<WallpaperFitMode>(fit, text.FitMode(fit)));
+        return
+        [
+            new(AppLanguages.English, localizedText.LanguageEnglish),
+            new(AppLanguages.Spanish, localizedText.LanguageSpanish),
+        ];
+    }
 
-    public static IEnumerable<OptionItem<WallpaperAnchor>> AnchorOptions(LocalizedText text) =>
-        Enum.GetValues<WallpaperAnchor>()
-            .Select(anchor => new OptionItem<WallpaperAnchor>(anchor, text.AnchorLabel(anchor)));
+    public static IReadOnlyList<OptionItem<WallpaperSourceKind>> SourceOptions(LocalizedText text)
+    {
+        var localizedText = RequireText(text);
+
+        return Enum.GetValues<WallpaperSourceKind>()
+            .Select(source => new OptionItem<WallpaperSourceKind>(source, localizedText.SourceKind(source)))
+            .ToArray();
+    }
+
+    public static IReadOnlyList<OptionItem<WallpaperFitMode>> FitOptions(LocalizedText text)
+    {
+        var localizedText = RequireText(text);
+
+        return Enum.GetValues<WallpaperFitMode>()
+            .Select(fit => new OptionItem<WallpaperFitMode>(fit, localizedText.FitMode(fit)))
+            .ToArray();
+    }
+
+    public static IReadOnlyList<OptionItem<WallpaperAnchor>> AnchorOptions(LocalizedText text)
+    {
+        var localizedText = RequireText(text);
+
+        return Enum.GetValues<WallpaperAnchor>()
+            .Select(anchor => new OptionItem<WallpaperAnchor>(anchor, localizedText.AnchorLabel(anchor)))
+            .ToArray();
+    }
+
+    private static LocalizedText RequireText(LocalizedText text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+
+        return text;
+    }
 }

@@ -139,7 +139,8 @@ public sealed class WallpaperApplyService
             {
                 tracker.RecordFailure();
                 monitors[index] = monitor.WithApplyError(
-                    ApplyErrorClassifier.FriendlyErrorCode(error));
+                    ApplyErrorClassifier.FriendlyErrorCode(error),
+                    error.Message);
             }
 
             tracker.ReportCompleted(monitors[index]);
@@ -163,7 +164,8 @@ public sealed class WallpaperApplyService
                 ? MonitorApplyStepResult.Success(monitor)
                 : MonitorApplyStepResult.Failure(
                     monitor,
-                    ApplyErrorClassifier.FriendlyErrorCode(result.ErrorCode));
+                    ApplyErrorClassifier.FriendlyErrorCode(result.ErrorCode),
+                    result.ErrorMessage);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -173,7 +175,8 @@ public sealed class WallpaperApplyService
         {
             return MonitorApplyStepResult.Failure(
                 monitor,
-                ApplyErrorClassifier.FriendlyErrorCode(error));
+                ApplyErrorClassifier.FriendlyErrorCode(error),
+                error.Message);
         }
     }
 }

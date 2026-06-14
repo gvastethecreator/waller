@@ -1,5 +1,8 @@
 param(
     [switch]$SkipSmoke,
+    [switch]$SurfaceSmoke,
+    [switch]$SettingsRoundTrip,
+    [switch]$ApplySmoke,
     [switch]$Release,
     [switch]$Package,
     [switch]$DisableNuGetAudit,
@@ -127,6 +130,23 @@ try {
             $stepArgs = @("-ProjectPath", $projectPath)
             if ($DisableNuGetAudit) { $stepArgs += "-DisableNuGetAudit" }
             powershell -ExecutionPolicy Bypass -File .\scripts\SmokeLaunch.ps1 @stepArgs
+        }
+
+        if ($SurfaceSmoke) {
+            Invoke-Step "Packaged surface smoke" {
+                $stepArgs = @("-ProjectPath", $projectPath)
+                if ($DisableNuGetAudit) { $stepArgs += "-DisableNuGetAudit" }
+                if ($SettingsRoundTrip) { $stepArgs += "-SettingsRoundTrip" }
+                powershell -ExecutionPolicy Bypass -File .\scripts\SmokeSurface.ps1 @stepArgs
+            }
+        }
+
+        if ($ApplySmoke) {
+            Invoke-Step "Packaged Apply smoke" {
+                $stepArgs = @("-ProjectPath", $projectPath)
+                if ($DisableNuGetAudit) { $stepArgs += "-DisableNuGetAudit" }
+                powershell -ExecutionPolicy Bypass -File .\scripts\SmokeApply.ps1 @stepArgs
+            }
         }
     }
 

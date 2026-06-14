@@ -33,12 +33,16 @@ internal static class LocalizedSurfaceRefresh
 
         foreach (var monitor in monitors)
         {
-            monitor.ReplaceText(text);
+            (monitor ?? throw new ArgumentException(
+                "Monitor collection cannot include null items.",
+                nameof(monitors))).ReplaceText(text);
         }
 
         foreach (var monitor in missingMonitors)
         {
-            monitor.ReplaceText(text);
+            (monitor ?? throw new ArgumentException(
+                "Missing monitor collection cannot include null items.",
+                nameof(missingMonitors))).ReplaceText(text);
         }
 
         return new(refreshedSelectedPreset);

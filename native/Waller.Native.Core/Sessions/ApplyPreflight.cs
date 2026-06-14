@@ -14,7 +14,7 @@ public static class ApplyPreflight
             .ToMonitorKeySet();
 
         var readyKeys = session.Monitors
-            .Where(monitor => !skippedKeys.Contains(monitor.Monitor.Identity.MonitorKey))
+            .Where(monitor => !MonitorKeys.Contains(skippedKeys, monitor.Monitor.Identity.MonitorKey))
             .Select(monitor => monitor.Monitor.Identity.MonitorKey)
             .ToMonitorKeySet();
 
@@ -24,7 +24,7 @@ public static class ApplyPreflight
     public static ApplyPreflightResult SkipMissingImageSource(ActiveSession session, string monitorKey)
     {
         ArgumentNullException.ThrowIfNull(session);
-        ArgumentException.ThrowIfNullOrWhiteSpace(monitorKey);
+        monitorKey = MonitorKeys.Require(monitorKey, nameof(monitorKey));
 
         var target = session.Monitors.FirstOrDefault(monitor =>
             MonitorKeys.Equals(monitor.Monitor.Identity.MonitorKey, monitorKey));
@@ -55,7 +55,7 @@ public static class ApplyPreflight
         var nextSession = session with
         {
             Monitors = session.Monitors.Select(monitor =>
-                skippedKeys.Contains(monitor.Monitor.Identity.MonitorKey)
+                MonitorKeys.Contains(result.SkippedMonitorKeys, monitor.Monitor.Identity.MonitorKey)
                     ? monitor.WithApplyError(ApplyErrorCodes.MissingImageSource)
                     : monitor).ToList(),
         };

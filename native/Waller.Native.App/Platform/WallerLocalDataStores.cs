@@ -27,11 +27,18 @@ internal sealed record WallerLocalDataStores
     public RenderedWallpaperStore RenderedWallpapers { get; }
 
     public static WallerLocalDataStores CreateDefault() =>
-        Create(WallerAppDataPaths.Root);
+        Create(
+            WallerAppDataPaths.Root,
+            WallerAppDataPaths.RenderedRoot);
 
     public static WallerLocalDataStores Create(string rootDirectory) =>
+        Create(rootDirectory, rootDirectory);
+
+    private static WallerLocalDataStores Create(
+        string rootDirectory,
+        string renderedRootDirectory) =>
         new(
             new PresetStore(rootDirectory),
             new UserSettingsStore(rootDirectory),
-            new RenderedWallpaperStore(rootDirectory));
+            new RenderedWallpaperStore(renderedRootDirectory));
 }

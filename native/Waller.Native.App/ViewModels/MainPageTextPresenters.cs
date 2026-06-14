@@ -1,12 +1,22 @@
 namespace Waller.Native.App.ViewModels;
 
-internal sealed class MainPageTextPresenters(Func<LocalizedText> text)
+internal sealed class MainPageTextPresenters
 {
-    public ApplyTextPresenter Apply { get; } = new(text);
+    public MainPageTextPresenters(Func<LocalizedText> text)
+    {
+        var source = LocalizedTextSource.Require(text);
 
-    public PresetTextPresenter Preset { get; } = new(text);
+        Apply = new ApplyTextPresenter(source);
+        Preset = new PresetTextPresenter(source);
+        MonitorEdit = new MonitorEditTextPresenter(source);
+        Shell = new ShellStatusTextPresenter(source);
+    }
 
-    public MonitorEditTextPresenter MonitorEdit { get; } = new(text);
+    public ApplyTextPresenter Apply { get; }
 
-    public ShellStatusTextPresenter Shell { get; } = new(text);
+    public PresetTextPresenter Preset { get; }
+
+    public MonitorEditTextPresenter MonitorEdit { get; }
+
+    public ShellStatusTextPresenter Shell { get; }
 }

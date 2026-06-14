@@ -1,4 +1,5 @@
 using Waller.Native.App.Platform;
+using Waller.Native.Core.Models;
 using Waller.Native.Core.Settings;
 
 namespace Waller.Native.App.ViewModels;
@@ -9,12 +10,13 @@ internal sealed record SettingsPreferenceSaveResult
         Guid? LastSelectedPresetId,
         bool WriteFailed)
     {
-        if (WriteFailed && LastSelectedPresetId is not null)
+        var normalizedLastSelectedPresetId = PresetIds.NormalizeOptional(LastSelectedPresetId);
+        if (WriteFailed && normalizedLastSelectedPresetId is not null)
         {
             throw new ArgumentException("Failed Settings save results cannot include last selected Preset.", nameof(LastSelectedPresetId));
         }
 
-        this.LastSelectedPresetId = LastSelectedPresetId;
+        this.LastSelectedPresetId = normalizedLastSelectedPresetId;
         this.WriteFailed = WriteFailed;
     }
 
@@ -75,13 +77,14 @@ internal static class SettingsPreferenceStore
         Guid? presetId)
     {
         ArgumentNullException.ThrowIfNull(settingsStore);
+        var normalizedPresetId = PresetIds.NormalizeOptional(presetId);
 
         return await LocalDataWriteGuard.TryAsync<Guid?>(
             async () =>
             {
                 var settings = await settingsStore.LoadAsync();
-                await settingsStore.SaveAsync(settings.WithLastSelectedPreset(presetId));
-                return presetId;
+                await settingsStore.SaveAsync(settings.WithLastSelectedPreset(normalizedPresetId));
+                return normalizedPresetId;
             },
             fallback: null);
     }

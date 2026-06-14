@@ -2,8 +2,15 @@ using Waller.Native.Core.Rendering;
 
 namespace Waller.Native.App.ViewModels;
 
-internal sealed class ShellStatusTextPresenter(Func<LocalizedText> text)
+internal sealed class ShellStatusTextPresenter
 {
+    private readonly Func<LocalizedText> text;
+
+    public ShellStatusTextPresenter(Func<LocalizedText> text)
+    {
+        this.text = LocalizedTextSource.Require(text);
+    }
+
     public string LoadedCurrentSetup => text().LoadedCurrentSetup;
 
     public string CurrentSetupRefreshed => text().CurrentSetupRefreshed;
@@ -22,5 +29,5 @@ internal sealed class ShellStatusTextPresenter(Func<LocalizedText> text)
     public string CurrentSessionLoadResult(bool usedFallback, string successStatus, int monitorCount) =>
         usedFallback
             ? text().WindowsDetectionFallback
-            : $"{successStatus} {text().Format(text().MonitorCountFormat, monitorCount)}";
+            : $"{WorkflowStatusText.Require(successStatus, nameof(successStatus))} {text().Format(text().MonitorCountFormat, monitorCount)}";
 }

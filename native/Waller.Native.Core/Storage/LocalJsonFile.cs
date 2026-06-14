@@ -10,6 +10,8 @@ internal static class LocalJsonFile
         JsonTypeInfo<T> jsonTypeInfo,
         CancellationToken cancellationToken)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         await using var stream = File.OpenRead(path);
         return await JsonSerializer.DeserializeAsync(
             stream,

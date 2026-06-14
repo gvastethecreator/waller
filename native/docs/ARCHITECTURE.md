@@ -131,6 +131,10 @@ Contains:
 - current placement when Windows exposes wallpaper position; default placement
   is used when detectors cannot provide it
 
+`MonitorSnapshot` display names normalize through `MonitorDisplayName`, so
+detected monitor names trim and reject blank values before row/progress/
+accessibility projection.
+
 Bounds must support:
 
 - negative X/Y
@@ -157,9 +161,20 @@ construction out of `MainPageViewModel`.
 `MonitorRowsProjector` rejects missing row collections/session/text, and
 `MonitorRowsProjection` requires positive finite topology dimensions before the
 monitor workspace consumes projection output.
+Restored row selection must compare monitor keys through `MonitorKeys` instead
+of raw string equality so refresh/reprojection keeps selected monitor state
+case-insensitively.
+Shared model collection contracts should go through `RequiredList`; both copy
+and validate-only paths reject missing collections and null items before model
+state is stored.
+`MonitorRowViewModel` and `MissingMonitorRowViewModel` reject missing
+session/assignment/text inputs at construction and during replacement updates,
+so row rendering, source preview, placement summary, and accessible-name
+projection fail at the row boundary instead of inside XAML bindings.
 Monitor selected-row flag updates go through `MonitorRowSelection`, so topology
 tile selection, row selection, and editor assignment refresh can move together
-when the monitor list is split out.
+when the monitor list is split out. `MonitorRowSelection` rejects missing row
+collections and null row items before toggling selection state.
 Monitor and disconnected-monitor row item roots should expose display-name
 automation names so screen-reader context survives before individual row action
 buttons receive focus.
@@ -189,6 +204,9 @@ Matching order:
 
 Monitor-key comparisons must use `MonitorKeys` so matching remains
 case-insensitive across Presets, editing, missing-source preflight, and Apply.
+Monitor-key boundary validation should use `MonitorKeys.Require`; keep blank-key
+messages and parameter names there instead of scattering
+`ThrowIfNullOrWhiteSpace` in App editor or Core preflight/target-plan code.
 Fallback identity comparisons must use `MonitorIdentityMatcher` so the position
 tolerance and distance ordering stay consistent.
 
@@ -217,6 +235,8 @@ typing stays bounded before Core validation maps the error to localized status.
 Editor quick swatches should come from `ColorSwatchCatalog`, not inline
 view-model literals, so future editor palette changes stay local to the editor
 projection layer.
+`ColorSwatchCatalog.Defaults` returns a materialized read-only list, so the edit
+surface consumes one validated swatch catalog instead of a deferred projection.
 `ColorSwatchOption` normalizes hex values and rejects missing brushes so swatch
 DTOs cannot carry invalid color state into editor source selection. The WinUI
 code guard blocks returning it to a positional record without validation.
@@ -225,7 +245,9 @@ Image source path normalization, full-path validation, and supported file-type
 validation go through `WallpaperSourcePath`. Image source file existence and
 display file-name extraction go through `WallpaperSourceFiles`. UI code should
 not hand-roll separate missing-image rules or resolve relative paths against its
-working directory.
+working directory. Existence checks and file-name extraction must first run
+through `WallpaperSourcePath.TryNormalizeImagePath`, so raw or legacy image
+source values follow the same trim/full-path/extension policy as picker input.
 `WallpaperSourceFiles` rejects missing `WallpaperSource` inputs at the helper
 boundary, so selected-row warnings, row previews, disconnected rows, and Core
 Apply preflight all fail consistently if caller state is invalid.
@@ -240,12 +262,14 @@ source update and then overwrite the error status with "selected".
 Editor source changes from file picker and color swatches should go through
 `MonitorSourceSelectionFactory`, so source-kind and field updates stay in one
 place before a future `MonitorEditViewModel` split.
-`ImageSelectionDraft` normalizes picker paths and rejects blank display names at
-construction time. `MonitorSourceSelection` validates source kind, normalizes
-image paths/colors for the active source kind, and exposes immutable fields so
-partial `with` updates cannot desynchronize source kind from payload. The WinUI
-code guard blocks removing those DTO checks while App view-model DTOs remain
-outside Core tests.
+`ImageSelectionDraft` normalizes picker paths and routes selected-file display
+names through `ImageDisplayName`, so picker display copy trims and rejects blank
+values in one place before source-selection status text consumes it.
+`MonitorSourceSelection` validates source kind, normalizes image paths/colors
+for the active source kind, and exposes immutable fields so partial `with`
+updates cannot desynchronize source kind from payload. The WinUI code guard
+blocks removing those DTO checks while App view-model DTOs remain outside Core
+tests.
 Native file picker image extensions go through `WallpaperImageFileTypes`, and
 manual image paths must pass the same extension policy. Keep picker format
 policy near image-source domain rules so the app does not silently diverge from
@@ -298,6 +322,9 @@ Responsibilities:
 Windows placement detection is best-effort. `IDesktopWallpaper.GetPosition`
 failure must fall back to `WallpaperPlacement.Default` without discarding
 monitor/source detection.
+When `GetPosition` succeeds, `DesktopWallpaperInterop.PositionToPlacement` must
+map each known Windows position explicitly. Unknown successful enum values
+should fail fast instead of being silently treated as Cover.
 Windows background-color detection is also best-effort. `GetBackgroundColor`
 failure must keep empty source fallback instead of failing monitor detection.
 Windows wallpaper path mapping should use `WallpaperSourcePath.TryNormalizeImagePath`.
@@ -352,6 +379,9 @@ The matcher does not save files and does not touch Windows.
 `PresetMatcher` builds a private assignment index after normalization. That index
 rejects missing normalized assignment lists or lookup dictionaries before exact
 key and fallback matching consume them.
+Used-assignment membership must route through `MonitorKeys.Contains` rather than
+raw set membership so fallback and missing-assignment projection stay aligned
+with Apply preflight/target monitor-key matching.
 
 `WallpaperPlacement` includes fit, anchor, and optional X/Y percent offsets.
 Offsets default to `0,0` so older Preset JSON remains valid. Rendering clamps
@@ -366,12 +396,20 @@ separate -100..100 policies.
 `WallpaperPlacement` rejects invalid fit/anchor enum values at construction and
 `with` update time, so renderer and Preset matching code never need to handle
 undefined placement modes after model creation.
+Core and App enum-bearing boundaries should use
+`Waller.Native.Core.Models.DefinedEnumValue`. Keep direct `Enum.IsDefined`
+checks inside that helper so source, placement, monitor/apply status,
+Preset-assignment normalization, runtime Settings validation, and App option
+projection stay aligned.
 Monitor-row thumbnails are a lightweight UI preview only: `MonitorSourcePreview`
 owns preview brush/image-brush creation, while `PlacementPreview` maps
 `WallpaperPlacement` to WinUI `ImageBrush` stretch/alignment. Fit and anchor are
 reflected directly; non-zero offsets nudge alignment coarsely toward the side of
 the crop the final renderer will show. Final wallpaper pixels still come from
 Core rendering. Do not move final placement behavior into the view model.
+Preview helpers must reject missing source/placement inputs and unsupported
+source/fit/anchor enum values. Do not add visual fallbacks that render invalid
+preview state as transparent brushes or default stretch/alignment.
 
 ### PresetStore
 
@@ -416,6 +454,14 @@ duplicate suffix rules out of WinUI command handlers. When a command needs
 required-name validation, use the `PresetNameInput` overload that also returns
 localized status text instead of setting name-required status inside the view
 model.
+That overload owns the `PresetTextPresenter` dependency boundary, so missing
+localized text wiring fails before command handlers mutate Presets.
+`Preset` and `PresetIdentity` also normalize names through `PresetNames` during
+construction and `with` updates, so Core model instances cannot preserve
+untrimmed names before save/load/factory policy runs.
+App Save As and Manage Presets rename entrypoints should also normalize through
+`PresetNames` before calling factories or stores, so local JSON mutation sees
+the same trimmed/required-name policy as Core models and completion DTOs.
 
 Preset assignment cleanup goes through `PresetAssignments.Normalize`.
 `PresetMatcher`, `PresetFactory`, and `PresetStore` must share this policy so
@@ -460,7 +506,10 @@ Responsibilities:
 Rendered file names must sanitize Windows monitor keys, cap the readable prefix,
 and include a short hash. Windows monitor device paths can contain file-name
 invalid characters or be very long; the hash keeps distinct monitor keys from
-colliding after sanitization.
+colliding after sanitization. Rendered file naming must validate monitor keys
+through `MonitorKeys.Require` before the store creates the rendered directory,
+so missing/blank keys cannot create cache folders or fallback `monitor_...`
+paths.
 Rendered output directory creation should go through `EnsureRenderedDirectory`
 inside `RenderedWallpaperStore`, so future rendered-output maintenance reuses
 one folder policy. `RenderedWallpaperStore` rejects blank local-data roots before
@@ -495,7 +544,7 @@ direct rendered-cache store calls out of modal command handlers.
 Root:
 
 ```text
-%LOCALAPPDATA%\Waller\rendered
+<Waller local-data root>\rendered
 ```
 
 ### IWallpaperRenderer
@@ -514,9 +563,15 @@ This interface should not call Windows wallpaper APIs.
 is calculated by `ImagePlacementPlan` and consumed by `ImagePlacementRenderer`;
 pixel storage, image decoding, RGB conversion, and PNG writing live in separate
 internal helpers so future decoder/writer/placement changes stay isolated.
+`BasicPngWallpaperRenderer` should render black only for a valid Empty source.
+Unsupported source-kind enum values must fail before PNG writing so invalid
+session state does not look like a deliberate black wallpaper.
 `ImagePlacementPlan` validates source and target dimensions before fit/anchor
 math, so scaling bugs fail with clear parameter errors instead of divide-by-zero
 or nonsensical origins.
+`ImagePlacementPlan` must also handle Cover/Center explicitly and reject
+unsupported fit/anchor enum values instead of silently mapping invalid placement
+state to Cover/Center math.
 `ImagePlacementPlan` also rejects non-positive direct-construction and `with`
 draw dimensions; render placement origins may still be negative for valid crop
 or offset placement.
@@ -568,12 +623,14 @@ Responsibilities:
 `IDesktopWallpaperReader` adapter. The detector maps snapshots into stable
 `MonitorSnapshot` values and owns app fallback policy such as empty wallpaper
 path -> background source.
-`DesktopWallpaperSnapshot` rejects blank monitor ids and missing bounds at
-construction and `with` update time, keeping COM adapter bugs from becoming
-anonymous monitor rows.
+`DesktopWallpaperSnapshot` validates monitor ids through `MonitorKeys.Require`
+and rejects missing bounds at construction and `with` update time, keeping COM
+adapter bugs from becoming anonymous monitor rows.
 Windows detector display names should go through `DesktopMonitorDisplayName` so
 rows include display index plus shortened device id while `MonitorIdentity`
-keeps the full monitor key for matching/persistence.
+keeps the full monitor key for matching/persistence. The helper validates
+monitor ids through `MonitorKeys.Require` and rejects non-positive display
+indices before row/accessibility copy is composed.
 `EmptyMonitorDetector` exists for product fallback when Windows detection fails.
 
 ## App Layer
@@ -615,17 +672,30 @@ replacement, selection fallback, and selected-Preset visual-memory ids. Keep
 those mechanics out of command handlers so future focused Preset view models can
 move menu surfaces without rediscovering menu-list rules.
 `PresetMenuLists` rejects missing collections, blank Current setup labels, and
-empty selection ids. `PresetMenuRefreshResult` requires a selected item and
-rejects stale visual-memory ids when a requested Preset is missing, so dropdown
-refresh cannot persist an impossible selection result.
+empty real selection ids through the shared Core `PresetIds` policy. Optional
+persisted visual-memory ids go through `PresetIds.NormalizeOptional`, where
+`Guid.Empty` means no remembered Preset.
+Preset menu list selection/relabeling rejects null menu items before reading
+ids or Current setup state, keeping dropdown list corruption from surfacing as
+late XAML binding failures.
+`PresetMenuRefreshResult` requires a selected item and rejects stale
+visual-memory ids when a requested Preset is missing, so dropdown refresh cannot
+persist an impossible selection result.
+`ManagedPresetList` rejects missing stores and target collections before
+refreshing the Manage Presets modal list, matching the main dropdown refresh
+boundary.
 `PresetMenuItem` rejects blank names during construction and `with` updates, so
 Preset picker/list surfaces cannot carry invisible choices while Preset surface
 helpers are split. `TestWinUICodeGuards.ps1` blocks removing that blank-name
-validation while App view-model DTOs remain outside Core tests.
+validation while App view-model DTOs remain outside Core tests. Menu display
+names, including the localized Current setup item, normalize through
+`PresetMenuDisplayName` before dropdown/list surfaces render them.
 Manage Presets command guards for selected preset id and required names should
-go through `ManagedPresetCommandInput`, which composes `ManagedPresetSelection`
-and `PresetNameInput`, so rename, duplicate, and delete do not drift in
-validation/status behavior.
+go through `ManagedPresetCommandInput`, which composes
+`ManagedPresetSelection`, shared Core `PresetIds`, and `PresetNameInput`, so
+rename, duplicate, and delete do not drift in validation/status behavior.
+`ManagedPresetSelection.SelectedId` returns `null` for Current setup or missing
+selections; do not use `Guid.Empty` as an App-side no-selection sentinel.
 Manage Presets mutations that can hit stale files or recoverable local-data
 failures should return explicit `ManagedPresetMutationResult` values, keeping
 exception mapping out of command handlers.
@@ -642,6 +712,8 @@ point after one failed rename, duplicate, or delete attempt.
 Delete confirmation target capture goes through `PresetDeleteConfirmation`.
 Keep the modal target id/name together so confirmation text and final delete
 cannot drift when Manage Presets selection changes behind the modal.
+`PresetDeleteConfirmation` uses `PresetMenuDisplayName` for target names, so
+delete-confirmation copy shares the same menu display-name policy as the list.
 Confirmed delete goes through `ManagedPresetDelete`, which combines the store
 delete result with the replacement selection needed when the deleted Preset was
 the active session base. Keep that active-Preset decision out of the command
@@ -658,14 +730,18 @@ Settings and editor dropdown option replacement/selection goes through
 property-change handlers. Use `ReplaceAndSelect` when refreshing a whole
 localized option list so replacement and selected-value restoration stay one
 operation.
-`OptionItem<T>` rejects blank display names so localized dropdowns cannot render
-invisible choices. The WinUI code guard blocks returning it to a positional
-record without display-name validation.
+`OptionItem<T>` routes labels through `OptionDisplayName`, so localized
+dropdowns trim display names and reject blank labels before Settings/editor
+option collections render invisible choices. The WinUI code guard blocks
+returning it to a positional record without display-name validation.
 Localized option projection for Settings and editor dropdowns goes through
 `LocalizedOptionCatalog`; full localized refreshes should go through
 `LocalizedOptionSelections`, so Settings and editor split work can reuse one
 option-refresh contract. The main view model should request option lists, not
 construct enum/language menu items inline.
+`LocalizedOptionCatalog` returns materialized read-only option lists and rejects
+missing localized text at method entry, so option surfaces do not depend on
+deferred enumeration timing.
 `LocalizedOptionSelections` validates option collections, localized text, and
 selected enum values before projecting Settings/editor option selections.
 
@@ -675,8 +751,9 @@ and `CanUseModalActions` should flow through `ShellInteractionState`.
 `CanEditPlacement` can add placement-specific checks on top of that shared
 state. Top modal ordering for Escape/close behavior should also flow through
 `ShellInteractionState.TopModal`, and top-modal close dispatch should go through
-`ShellModalClose`, not open-coded modal priority chains. Refresh those derived
-properties through the shared command-state
+`ShellModalClose`, not open-coded modal priority chains. `ShellModalClose`
+should treat `None` as no-op but reject unknown modal layers and missing selected
+close actions. Refresh those derived properties through the shared command-state
 notification helper, not hand-notified one by one from new modal/apply state
 changes. Keep main-surface assignment edits behind `CanEditMonitorAssignment`
 so source/color/placement/disconnected-monitor commands cannot mutate the active
@@ -688,10 +765,15 @@ apply-run helpers. Pass the `CancellationToken` into Core services explicitly;
 do not reach back into nullable view-model fields from apply lambdas.
 Apply command target construction should go through `ApplyRunRequest`, so
 `MainPageViewModel` chooses all vs one monitor without embedding
-ready-source-service lambdas inline.
+ready-source-service lambdas inline. `ApplyRunRequest` should reject missing
+service/session/monitor inputs and capture a validated monitor key before the
+async Apply call starts, not read row state later from inside the lambda.
 `ApplyRunState` owns `CancellationTokenSource` lifetime for the view model; keep
 begin/cancel/dispose mechanics there instead of adding CTS fields back to
 `MainPageViewModel`.
+`MainPageViewModel.RunApplyAsync` rejects missing Apply delegates and terminal
+UI state before starting/presenting runs, keeping future Apply-controller
+extraction from inheriting nullable command seams.
 Repeated dependent-property notifications should use `ViewModelNotificationGroups`,
 the shared multi-property notification helper, or a focused semantic helper such
 as selected-source warning notification, not open-coded `OnPropertyChanged`
@@ -741,6 +823,10 @@ row topology/status/placement text belongs in `LocalizedText.Monitor.cs`; shell
 session/cache summaries belong in `LocalizedText.Shell.cs`. Keep
 `LocalizedText.cs` limited to record shape, culture-aware formatting, and the
 language helper.
+`LocalizedText.Editor.SourceKind` must validate `WallpaperSourceKind` through
+`DefinedEnumValue` before localized option catalogs render source labels, so
+invalid enum state fails as a contract error instead of falling back to generic
+copy.
 Use `ApplySessionResult.HasAppliedOutcome` when deciding whether an
 apply-finished summary should mention succeeded/failed monitor counts. Use
 `HasAnyOutcome` only when skipped-only results should still count as an Apply
@@ -756,7 +842,8 @@ Apply progress copy should follow the same rule: pass `ApplyProgress` to
 `LocalizedText` rather than formatting monitor/status counters inline in apply
 orchestration.
 `ApplyProgress` must always carry a non-empty monitor display name; Core rejects
-blank names so footer/live-region copy never announces anonymous monitor work.
+blank names and trims valid names through `MonitorDisplayName` so footer/live-
+region copy never announces anonymous monitor work.
 Unknown Apply error codes should use `LocalizedText.UnknownApplyError`, not raw
 error codes and not the generic validation `CheckValue` copy. The error-text
 guard blocks generic/raw Apply error fallbacks in `LocalizedText.Apply.cs`.
@@ -770,15 +857,23 @@ blocks. Exception-to-UI-state mapping also belongs in `ApplyRunUiState`, not in
 `ApplyRunUiState` rejects successful results without an updated session and
 requires final status copy, so command handlers cannot present impossible Apply
 completion states.
+Workflow result DTOs with user-facing status copy should validate through
+`WorkflowStatusText`; keep blank-status policy there instead of repeating
+`ThrowIfNullOrWhiteSpace` in Apply, image-pick, or disconnected-monitor result
+records.
 Apply command methods, progress updates, cancellation, and run-state projection
 currently live in `MainPageViewModel.Apply.cs`. Keep Apply-only UI
 orchestration there while the code moves toward a focused Apply surface.
+`ApplyTextPresenter` owns Apply progress/result text projection and rejects
+missing progress/result DTOs before localization methods read them.
 When apply returns a replacement `ActiveSession`, present it through the shared
 session-surface refresh helper so monitor rows, selected monitor state, and
 session summary notifications stay together.
 `PresetTextPresenter` is the equivalent adapter for preset save/load/manage
 status text; keep preset-specific prompt/result projection there while the
-Manage Presets commands still live in `MainPageViewModel`.
+Manage Presets commands still live in `MainPageViewModel`. Preset names passed
+to presenter format methods normalize through `PresetNames`, so status copy
+cannot preserve blank or untrimmed Preset names.
 Preset save/load/selection commands and helper flow live in focused
 `MainPageViewModel.Presets.*.cs` partials: `.Save.cs` owns save/save-as,
 `.Load.cs` owns selected-Preset load/refresh/persisted visual memory, and
@@ -808,7 +903,9 @@ parameter names or source-path error codes in command handlers.
 `MonitorEditTextPresenter` owns editor and disconnected-monitor status text
 projection for image selection, missing image paths, validation failures,
 pending changes, forget, and reassign actions. Keep those calls there while the
-editor still lives inside `MainPageViewModel`.
+editor still lives inside `MainPageViewModel`. It validates selected-image names,
+monitor names, and edit validation errors before formatting status copy, keeping
+command handlers free of display-string cleanup.
 Editor, source-selection, placement, selected-assignment, option-refresh, and
 disconnected-monitor command flow lives in focused
 `MainPageViewModel.Editor.*.cs` partials. Keep editor-only orchestration in that
@@ -817,12 +914,18 @@ file family while the code moves toward a focused editor surface.
 load/refresh, Settings open/save, local-data write failures, and rendered-cache
 clear summaries. Keep broad shell/status messages there so a future
 `SettingsViewModel` can move without copying localization rules.
+Shell current-session status composition validates incoming success copy through
+`WorkflowStatusText` before appending monitor counts, so startup/refresh cannot
+surface blank status text.
 Settings command, load, and option-refresh methods currently live in
 `MainPageViewModel.Settings.cs`. Keep additional Settings-only orchestration in
 that partial until the surface is ready to become a focused `SettingsViewModel`.
 `MainPageTextPresenters` is the construction point for MainPage presenter
 instances; keep shared `LocalizedText` provider wiring there while command and
 surface responsibilities continue splitting out of `MainPageViewModel`.
+Presenter provider validation goes through `LocalizedTextSource`: null delegates
+and null localized-text results should fail at presenter construction/source
+read time, not inside individual status/progress command projections.
 `MainPageViewModel` should hold that presenter group as one dependency; private
 aliases can preserve existing command readability while deeper command extraction
 continues.
@@ -844,26 +947,45 @@ Repeated textual DTO/boundary contract checks in that script should go through
 positional-pattern, and required-snippet loops.
 Local app-data root construction belongs in `WallerAppDataPaths`; Presets,
 Settings, and rendered-cache stores should receive paths through
-`WallerLocalDataStores`. The WinUI code guard blocks direct
-`LocalApplicationData` lookups elsewhere and keeps `RootFor(...)` validating
-blank local app-data paths before composing the app folder.
+`WallerLocalDataStores`. In packaged WinUI runs, Windows resolves
+`Environment.SpecialFolder.LocalApplicationData` to package
+`LocalCache\Local`, so Waller data lives under the package family cache. The
+WinUI code guard blocks direct `LocalApplicationData` lookups elsewhere and
+keeps `RootFor(...)` validating blank local app-data paths before composing the
+app folder.
 `scripts\TestLocalDataPolicy.ps1` guards the update-stable local-data shape:
-default root comes from `%LOCALAPPDATA%`, the app folder remains `Waller`, and
-Presets, Settings, and rendered wallpapers all receive the same root directory
-through `WallerLocalDataStores`.
+default root comes from `Environment.SpecialFolder.LocalApplicationData`, the
+app folder remains `Waller`, and Presets, Settings, and rendered wallpapers all
+receive the same root directory through `WallerLocalDataStores`.
 `WallerAppServices`, `WallerLocalDataStores`, and the internal
 `MainPageViewModel` service constructor reject missing dependencies before
 startup composition reaches initialization, Apply, Presets, Settings, or
-local-data flows. `scripts\TestWinUICodeGuards.ps1` guards those
-app-composition boundary checks.
+local-data flows. `MainPageLocalState` also rejects missing local store groups
+before forwarding calls to Settings/Preset/cache helpers, and
+`RenderedCacheCleanup` rejects missing stores before cache clearing.
+`scripts\TestWinUICodeGuards.ps1` guards those app-composition boundary checks.
 `scripts\TestPackageUpdatePolicy.ps1` guards the package-update side of that
-contract: version bumps change only `Identity.Version`, while package identity
-and publisher remain stable and Presets/settings stay under `%LOCALAPPDATA%\Waller`.
+contract: version bumps change only `Identity.Version`, while package name and
+publisher remain stable so Presets/settings stay under the same package
+`LocalCache\Local\Waller` root.
 `scripts\TestLaunchContract.ps1` guards the package launch side: manifest
 `Application Id` remains `App`, the main window title remains `Waller`, and
 `SmokeLaunch.ps1` keeps using `BuildAndRun.ps1`/`winapp` detached JSON plus
 process/title/responding checks instead of treating the generated `.exe` as the
 supported launch path.
+`SmokeSurface.ps1` builds on the same packaged launch path and adds a UI
+Automation check for the core shell controls and primary modal surfaces. Keep
+that smoke focused on stable AutomationIds rather than text content so it
+remains useful across localization changes.
+`Verify.ps1 -SurfaceSmoke` remains opt-in: it runs after the default packaged
+launch smoke and gives a slower packaged UI Automation gate without making the
+normal full verify path more brittle.
+`SmokeSurface.ps1 -SettingsRoundTrip` is a deeper opt-in check: it resolves the
+package-local Settings file from the launch AUMID, backs it up, changes Settings
+through UI Automation, waits for the `LocalCache\Local\Waller\settings.json`
+write, and restores the prior file in `finally`. Keep any future local-data UI
+smoke on the same backup/restore pattern so current-user Presets or Settings are
+not left mutated by tests.
 
 Action button icon/text content belongs in `Controls/IconText.xaml`; icon sizing
 and icon/text spacing belong in shared XAML resources
@@ -998,13 +1120,27 @@ through `MonitorSourceText`. Row view models should not assemble those strings
 inline. The WinUI code guard blocks hard-coded placement labels in
 `PlacementText.cs`; new fit/anchor/offset copy belongs in
 `LocalizedText.Catalog.cs`.
+`PlacementText` must reject missing placement/text inputs and unsupported
+fit/anchor enum values before row summaries or dropdown labels can show generic
+fallback copy for invalid runtime state.
+`MonitorSourceText` must reject missing source/text inputs and unsupported
+source-kind enum values before current or disconnected monitor rows can show
+invalid source state as Empty.
+Editor source-kind option labels follow the same fail-fast rule through
+`LocalizedText.Editor.SourceKind`.
 Runtime language refresh for row text and the Current setup Preset label goes
 through `LocalizedSurfaceRefresh`, so future Settings/localization splits do
 not need to rediscover every surface that caches localized display text.
 `LocalizedSurfaceRefresh` rejects missing Preset/monitor collections and missing
-localized text before replacing cached labels.
+localized text before replacing cached labels. It also rejects null monitor-row
+items before calling row text replacement, so language refresh fails at the
+surface boundary instead of inside row bindings.
 Its refresh result is an explicit result object, not a positional record, so
 future localization splits keep selected-Preset projection reviewable.
+Grouped property-change notifications should flow through
+`ViewModelNotificationGroups.Require` before `OnPropertyChanged`, so null or
+blank property names fail at the shared notification boundary instead of being
+ignored or broadcast accidentally.
 
 `LocalizedText.Catalog.cs` owns language selection only. Concrete English and
 Spanish values live in `LocalizedText.Catalog.English.cs` and
@@ -1020,11 +1156,16 @@ inline.
 Active Preset session transitions should go through `ActivePresetSession`:
 save, rename-active, delete-active, and Current setup selection must share the
 same `BasedOnPreset`, dirty-state, and missing-assignment policy.
+`ActivePresetSession.IsBasedOn` rejects missing sessions and empty Preset ids
+before rename/delete-active checks, matching the shared `PresetIds` policy used
+by menu and store commands.
 Renaming the active Preset should use `ActivePresetSession.RenameActive`, which
 returns the updated session plus selected-Preset record/name draft projection.
 `ActivePresetRename` rejects missing sessions, missing selected Preset records,
 and blank name drafts so active-rename projection cannot half-update Preset UI
-state during the future Preset view-model split.
+state during the future Preset view-model split. It normalizes name drafts
+through `PresetNames`, matching Core model/factory policy before editable fields
+are updated.
 Preset dropdown selection state should go through `SelectedPresetSessionLoader`
 and `SelectedPresetSessionFactory` before mutating `MainPageViewModel`, so
 Current setup selection, loaded Preset selection, missing-Preset refresh, and
@@ -1035,15 +1176,19 @@ switch on result kind to pick copy, nullable session state, or stale-list cleanu
 `SelectedPresetSession` rejects missing sessions and null name-draft values, and
 `SelectedPresetSessionFactory.FromPreset` rejects missing matcher/preset inputs
 before applying a Preset to the active session.
-`SelectedPresetLoadResult` rejects unknown load kinds, missing selections for
-loaded/current branches, selections on missing-Preset branches, and blank loaded
-Preset names. `SelectedPresetSessionLoader` rejects missing store/matcher/session
-/item inputs before async load work starts.
+`SelectedPresetLoadResult` rejects unknown load kinds through `DefinedEnumValue`,
+missing selections for loaded/current branches, selections on missing-Preset
+branches, and normalizes loaded/missing Preset display names through
+`PresetMenuDisplayName`. `SelectedPresetSessionLoader` rejects missing
+store/matcher/session/item inputs before async load work starts.
 Preset dropdown async loads must be versioned by the view model so slower stale
 loads cannot overwrite a newer user selection or programmatic menu refresh.
 Fire-and-forget Preset dropdown loads must catch unexpected loader failures and
 surface localized `PresetTextPresenter` status text; do not leave unobserved
 task exceptions behind the combo box.
+`SelectedPresetLoadResult.StatusText` must reject missing presenters and throw
+for unknown load kinds; an impossible Preset-load state should fail at the
+projection boundary instead of surfacing as blank status text.
 After a Preset save succeeds, use the shared post-save helper in
 `MainPageViewModel` to mark the active session saved, refresh the Preset menu,
 persist visual selection memory, and refresh the session surface together.
@@ -1052,7 +1197,9 @@ Save vs Save as selected-record/name-draft projection should go through
 updated after each save mode.
 `PresetSaveCompletion` rejects missing selected Preset records and blank
 post-save name drafts, keeping Save and Save As completion state complete before
-the menu/session refresh runs.
+the menu/session refresh runs. Non-null post-save name drafts normalize through
+`PresetNames`, matching Core model/factory policy before editable fields are
+updated.
 Preset save and Save as construction should go through `PresetSessionSave`, so
 `PresetFactory`, `PresetStore.SaveAsync`, and recoverable write-failure mapping
 stay out of shell command handlers.
@@ -1061,14 +1208,18 @@ Save command handlers should consume saved Presets through
 result DTO.
 `PresetSessionSaveResult` enforces success-with-Preset/failure-without-Preset,
 and `PresetSessionSave` rejects missing store/session/preset/name inputs before
-local JSON writes begin. `TestWinUICodeGuards.ps1` blocks removing these App DTO
-guards while the tests remain Core-focused.
+local JSON writes begin. Save As names normalize through `PresetNames` before
+`PresetFactory.CreateFromSession` runs. `TestWinUICodeGuards.ps1` blocks
+removing these App DTO guards while the tests remain Core-focused.
 Manage Presets command inputs go through `ManagedPresetCommandInput`,
 `ManagedPresetSelection`, and `PresetDeleteConfirmation`. These App DTO/helpers
 reject empty Preset ids, invalid delete targets, missing command text presenters,
 and empty menu-item ids before rename/duplicate/delete commands reach local
 Preset mutation. Failed `Try*` command paths return null command DTOs instead of
 constructing placeholder invalid records.
+Manage Presets rename names normalize through `PresetNames` before store
+mutation. Duplicate keeps the intentional `PresetNames.DuplicateName` rule:
+blank draft duplicates from the source name, non-blank draft trims/validates.
 
 Editor field projection and source/placement reconstruction go through
 `MonitorEditDraft`. Keep conversion between selected monitor assignments and
@@ -1083,11 +1234,17 @@ checking missing-image/invalid-value flags directly.
 `MonitorAssignmentUpdateResult` rejects mixed success/error outcomes and
 `MonitorAssignmentUpdate` rejects missing editor/session/monitor-key dependencies
 before editor field changes can mutate Active Session.
-`MonitorEditDraft` validates source/fit/anchor enums, finite offsets, assignment
-input, and monitor-key input before rebuilding source/placement values.
+`MonitorEditDraft` validates source/fit/anchor enums through
+`DefinedEnumValue`, finite offsets, assignment input, and monitor-key input
+before rebuilding source/placement values. Source reconstruction must handle
+Empty explicitly and reject unsupported source-kind values instead of turning
+invalid editor state into Empty.
 Picker and swatch commands should create `MonitorSourceSelection` values and
 let the view model apply those values, rather than manually assigning source
 kind plus image/color fields in each command.
+`MonitorSourceSelection`, Settings option refresh, and editor option refresh
+also use Core `DefinedEnumValue` for enum boundaries, so UI option state
+rejects unsupported enum values consistently.
 Image-source picker results must use `ImageSourceSelectionResult`, which keeps
 selection-plus-status output explicit and rejects blank status copy.
 Disconnected monitor edit actions should go through `DisconnectedMonitorEdit`,
@@ -1101,6 +1258,10 @@ individual command handlers.
 Selected-monitor editor surface projection belongs in `MonitorEditorSurface`:
 edit-panel visibility, selected monitor display name, source editor visibility,
 and selected-source warnings should not be reassembled in `MainPageViewModel`.
+`MonitorEditorSurface` must reject missing localized text and unknown
+`WallpaperSourceKind` values before projecting image/color editor visibility or
+selected-source warning copy, so invalid editor state does not disappear as a
+collapsed XAML branch.
 
 Future split:
 
@@ -1111,6 +1272,11 @@ Future split:
 - `SettingsViewModel`
 
 Do not split early unless complexity demands it.
+
+Monitor workspace surface visibility belongs in `MonitorRowsSurface`. It should
+reject missing current-row and missing-monitor collections before projecting
+no-monitor, topology, or disconnected-monitor visibility, so collection wiring
+bugs fail at the surface boundary instead of inside XAML count projection.
 
 ### MonitorRowViewModel
 
@@ -1129,6 +1295,9 @@ Row view models should use their shared multi-property notification helpers for
 localized text/session refreshes. Avoid adding new open-coded
 `OnPropertyChanged` clusters when placement preview, source preview, or status
 dependencies change together.
+Row construction and replacement methods should reject missing session/
+assignment/text inputs before any property getter reaches nested monitor,
+source, placement, or localization state.
 
 ## Apply Pipeline
 
@@ -1162,8 +1331,9 @@ Selection variants (`all`, one monitor, ready keys, or filtered matching) should
 enter the apply loop as `ApplyTargetPlan` so future batch/selected workflows can
 reuse one target abstraction. `ApplyTargetPlan` rejects blank monitor keys,
 missing ready-key sets, null monitors, and null monitor lists at the boundary.
-`MonitorKeys.CreateSet` rejects blank/null key input and always creates
-case-insensitive sets; use it instead of raw `HashSet<string>` for monitor keys.
+`MonitorKeys.Require` rejects blank key input, and `MonitorKeys.CreateSet`
+always creates case-insensitive sets; use them instead of raw string guards or
+`HashSet<string>` for monitor keys.
 `MonitorSnapshot` rejects null identities/sources and blank display names because
 row titles, apply progress, and accessibility labels all depend on that data.
 `MonitorSession` transition helpers reject null monitors/assignments and blank
@@ -1226,7 +1396,13 @@ detection/fallback policy stays launch-independent and covered by Core tests.
 Root:
 
 ```text
-%LOCALAPPDATA%\Waller
+Waller
+```
+
+In packaged runs the effective root is:
+
+```text
+%LOCALAPPDATA%\Packages\<package-family-name>\LocalCache\Local\Waller
 ```
 
 Subfolders/files:
@@ -1258,6 +1434,22 @@ serialize to a same-folder temp file, flush, then replace the destination. This
 keeps existing local JSON readable if replacement fails because the file is
 locked or app data is inaccessible. Reuse `AtomicFileWriter` for new app-managed
 local files that must not expose partial output.
+Missing local JSON files should flow through `LocalJsonFile.ReadRecoverableAsync`
+and store-level default/null policy, not through separate store-local
+`File.Exists` read branches.
+Preset list/load/delete paths should not create local app-data directories when
+Preset storage is absent; writes own directory creation. This keeps first-run
+and missing-Preset command paths side-effect free until the user saves data.
+Preset delete should use `LocalDataFile.DeleteIfExists` after id validation
+instead of a pre-delete existence probe, so missing files or missing Preset
+directories stay a no-op without scattering local branches.
+Recoverable best-effort cleanup, such as atomic-write temp-file deletion, should
+use `LocalDataFile.DeleteRecoverableIfExists` so missing files, missing parent
+directories, IO locks, and access failures follow one cleanup policy instead of
+private per-writer catch blocks.
+Cleanup flows that must count failures, such as rendered-cache clear, should use
+`LocalDataFile.TryDeleteIfExists` and project the returned success flag instead
+of duplicating delete/catch logic.
 `AtomicFileWriter` rejects blank paths and missing write callbacks before
 creating temp files, so store-level validation failures cannot leave local-data
 debris.
@@ -1270,10 +1462,15 @@ WinUI language selectors should reuse those constants instead of hard-coding
 `en`/`es` in multiple places.
 Localized formatting should also use `AppLanguages.CultureFor`, so formatted
 status text follows the selected app language instead of the machine's current
-OS culture.
+OS culture. `LocalizedText.Format` validates format strings and argument arrays
+before calling `string.Format`, so catalog/caller mistakes fail at the shared
+formatting boundary.
 Localized dropdown options use `OptionItem<T>` and `OptionItems`; display names
 must be non-blank, option collections must be present, and option lists cannot
 contain null entries before Settings/editor selection refresh reaches XAML.
+`LocalizedOptionCatalog` rejects missing localized text even when called outside
+the full refresh helpers, so direct option-list construction cannot defer null
+failures into `OptionItem` or XAML.
 
 Settings normalization goes through `UserSettingsPolicy`: theme fallback,
 language fallback, minimum window size, and incomplete window-position cleanup
@@ -1285,6 +1482,9 @@ payloads out of null-reference paths without moving language policy into the
 model.
 WinUI `ElementTheme` projection from `AppThemePreference` goes through
 `ThemePreferenceMapper`; keep UI enum mapping out of the main view model.
+`ThemePreferenceMapper` must reject unsupported theme preferences instead of
+mapping them to `ElementTheme.Default`; persisted invalid Settings still
+normalize through Core policy before reaching runtime UI state.
 Settings preference projection goes through `SettingsPreferenceDraft`, and
 load/save orchestration goes through `SettingsPreferenceStore`; writes still use
 `UserSettings.WithPreferences` so theme, language, and last selected Preset move
@@ -1325,11 +1525,23 @@ height, x, and y are written as one complete settings update. MainWindow treats
 placement restore/save as best-effort and uses `LocalDataErrorPolicy` to ignore
 recoverable local settings failures during startup/shutdown.
 
+Editor placement offsets go through `EditorOffsetPercent.NormalizeX/Y` before
+they are stored in the editor draft and through `ToPlacementOffsetX/Y` before
+they become Core `WallpaperPlacement` offsets. Keep the X/Y parameter names and
+finite-value error messages in that helper so NumberBox edge cases do not
+scatter validation copy across editor DTOs.
+
 WinUI commands that write app-managed local data should use
 `LocalDataWriteGuard` for recoverable filesystem failures. The shared exception
 policy starts in Core `LocalDataFileSystemErrors`; App `LocalDataErrorPolicy`
 can add UI-specific cases such as window-placement argument cleanup while
 keeping Preset, Settings, and window-placement filesystem semantics consistent.
+Managed Preset mutations should still map missing Preset files to explicit
+missing-result DTOs before `LocalDataWriteGuard` applies recoverable filesystem
+fallbacks, so stale selection and local-write-failed paths remain distinct.
+Rendered wallpaper cache cleanup also uses `LocalDataFileSystemErrors`, so
+cache-clear delete/enumeration failures stay aligned with local-data read/write
+filesystem policy.
 
 ## Error Strategy
 
@@ -1361,6 +1573,8 @@ any progress event can leak impossible completed/total values into the UI.
 It also rejects missing progress monitors, step results, sessions, and monitor
 lists before progress or result projection, keeping apply-loop contract failures
 near the tracker boundary instead of surfacing as null-reference crashes.
+Result projection uses `RequiredList`, so final and cancelled Apply results
+reject null monitor rows before publishing partial or final session state.
 Single-monitor render/apply execution should stay in the focused
 `WallpaperApplyService` step helper; the main apply loop should only select
 monitors, coordinate cancellation/progress, and commit step results.
@@ -1375,6 +1589,9 @@ case-insensitive matching policy stays in one Core helper.
 Cancellation is not an apply failure. `ApplyCanceledException` carries the
 partial `ApplySessionResult`, so UI can keep already-applied monitor state
 without showing false monitor errors.
+`DesktopWallpaperApplier` uses `DesktopWallpaperApplyErrors` to map recoverable
+Windows writer failures to `wallpaper-apply-failed` while letting
+`OperationCanceledException` propagate as cancellation.
 `ApplyCanceledException` must always carry a non-null result. Step results must
 always carry a monitor, and failure step results must carry a non-empty Core
 error code before they reach `ApplyRunTracker`.

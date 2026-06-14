@@ -16,10 +16,10 @@ internal static class LocalizedOptionSelections
         ArgumentNullException.ThrowIfNull(themeOptions);
         ArgumentNullException.ThrowIfNull(languageOptions);
         ArgumentNullException.ThrowIfNull(text);
-        if (!Enum.IsDefined(selectedTheme))
-        {
-            throw new ArgumentOutOfRangeException(nameof(selectedTheme), selectedTheme, "Unknown selected Settings theme.");
-        }
+        DefinedEnumValue.Require(
+            selectedTheme,
+            nameof(selectedTheme),
+            "Unknown selected Settings theme.");
 
         return new(
             OptionItems.ReplaceAndSelect(
@@ -84,20 +84,18 @@ internal static class LocalizedOptionSelections
         WallpaperFitMode selectedFit,
         WallpaperAnchor selectedAnchor)
     {
-        if (!Enum.IsDefined(selectedSource))
-        {
-            throw new ArgumentOutOfRangeException(nameof(selectedSource), selectedSource, "Unknown selected editor source.");
-        }
-
-        if (!Enum.IsDefined(selectedFit))
-        {
-            throw new ArgumentOutOfRangeException(nameof(selectedFit), selectedFit, "Unknown selected editor fit.");
-        }
-
-        if (!Enum.IsDefined(selectedAnchor))
-        {
-            throw new ArgumentOutOfRangeException(nameof(selectedAnchor), selectedAnchor, "Unknown selected editor anchor.");
-        }
+        DefinedEnumValue.Require(
+            selectedSource,
+            nameof(selectedSource),
+            "Unknown selected editor source.");
+        DefinedEnumValue.Require(
+            selectedFit,
+            nameof(selectedFit),
+            "Unknown selected editor fit.");
+        DefinedEnumValue.Require(
+            selectedAnchor,
+            nameof(selectedAnchor),
+            "Unknown selected editor anchor.");
     }
 }
 

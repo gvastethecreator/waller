@@ -14,6 +14,7 @@ public sealed partial record LocalizedText
     public string MonitorStatusSummary(
         MonitorApplyStatus applyStatus,
         string? applyError,
+        string? applyErrorMessage,
         bool isMissingImageSource,
         bool hasUnsavedPresetChanges)
     {
@@ -25,7 +26,10 @@ public sealed partial record LocalizedText
 
         if (applyStatus == MonitorApplyStatus.Error && !string.IsNullOrWhiteSpace(applyError))
         {
-            return $"{Error}: {ApplyErrorLabel(applyError)} - {saved}";
+            var label = ApplyErrorLabel(applyError);
+            return string.IsNullOrWhiteSpace(applyErrorMessage)
+                ? $"{Error}: {label} - {saved}"
+                : $"{Error}: {label} ({applyErrorMessage}) - {saved}";
         }
 
         return $"{ApplyStatus(applyStatus)} - {saved}";

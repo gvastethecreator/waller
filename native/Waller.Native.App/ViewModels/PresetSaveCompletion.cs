@@ -1,4 +1,5 @@
 using Waller.Native.Core.Models;
+using Waller.Native.Core.Presets;
 
 namespace Waller.Native.App.ViewModels;
 
@@ -9,13 +10,11 @@ internal sealed record PresetSaveCompletion
         string? PresetNameDraft)
     {
         ArgumentNullException.ThrowIfNull(SelectedPresetRecord);
-        if (PresetNameDraft is not null)
-        {
-            ArgumentException.ThrowIfNullOrWhiteSpace(PresetNameDraft);
-        }
 
         this.SelectedPresetRecord = SelectedPresetRecord;
-        this.PresetNameDraft = PresetNameDraft;
+        this.PresetNameDraft = PresetNameDraft is null
+            ? null
+            : PresetNames.Validate(PresetNameDraft, nameof(PresetNameDraft));
     }
 
     public Preset SelectedPresetRecord { get; }

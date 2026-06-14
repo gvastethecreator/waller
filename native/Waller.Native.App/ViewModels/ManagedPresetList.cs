@@ -10,6 +10,9 @@ internal static class ManagedPresetList
         ObservableCollection<PresetMenuItem> items,
         Guid? selectPresetId)
     {
+        ArgumentNullException.ThrowIfNull(presetStore);
+        ArgumentNullException.ThrowIfNull(items);
+
         var presets = await presetStore.ListAsync();
         PresetMenuLists.ReplaceManage(items, presets);
         return PresetMenuLists.Select(items, selectPresetId);

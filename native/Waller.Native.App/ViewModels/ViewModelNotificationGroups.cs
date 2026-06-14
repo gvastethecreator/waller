@@ -2,6 +2,23 @@ namespace Waller.Native.App.ViewModels;
 
 internal static class ViewModelNotificationGroups
 {
+    public static IEnumerable<string> Require(IEnumerable<string> propertyNames)
+    {
+        ArgumentNullException.ThrowIfNull(propertyNames);
+
+        foreach (var propertyName in propertyNames)
+        {
+            if (string.IsNullOrWhiteSpace(propertyName))
+            {
+                throw new ArgumentException(
+                    "Property name collection cannot include blank items.",
+                    nameof(propertyNames));
+            }
+
+            yield return propertyName;
+        }
+    }
+
     public static IEnumerable<string> CommandState =>
     [
         nameof(MainPageViewModel.CanStartApply),

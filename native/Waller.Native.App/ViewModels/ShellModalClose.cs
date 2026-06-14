@@ -11,18 +11,31 @@ internal static class ShellModalClose
     {
         switch (layer)
         {
+            case ShellModalLayer.None:
+                break;
             case ShellModalLayer.DeleteConfirmation:
-                closeDeleteConfirmation();
+                Invoke(closeDeleteConfirmation, nameof(closeDeleteConfirmation));
                 break;
             case ShellModalLayer.ManagePresets:
-                closeManagePresets();
+                Invoke(closeManagePresets, nameof(closeManagePresets));
                 break;
             case ShellModalLayer.SaveAs:
-                closeSaveAs();
+                Invoke(closeSaveAs, nameof(closeSaveAs));
                 break;
             case ShellModalLayer.Settings:
-                closeSettings();
+                Invoke(closeSettings, nameof(closeSettings));
                 break;
+            default:
+                throw new ArgumentOutOfRangeException(
+                    nameof(layer),
+                    layer,
+                    "Unknown shell modal layer.");
         }
+    }
+
+    private static void Invoke(Action action, string parameterName)
+    {
+        ArgumentNullException.ThrowIfNull(action, parameterName);
+        action();
     }
 }

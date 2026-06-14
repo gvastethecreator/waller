@@ -11,7 +11,7 @@ public sealed class ActiveSessionEditor
         WallpaperPlacement placement)
     {
         ArgumentNullException.ThrowIfNull(session);
-        ArgumentException.ThrowIfNullOrWhiteSpace(monitorKey);
+        monitorKey = MonitorKeys.Require(monitorKey, nameof(monitorKey));
         ArgumentNullException.ThrowIfNull(source);
         ArgumentNullException.ThrowIfNull(placement);
 
@@ -55,7 +55,7 @@ public sealed class ActiveSessionEditor
     public ActiveSession RemoveMissingAssignment(ActiveSession session, string monitorKey)
     {
         ArgumentNullException.ThrowIfNull(session);
-        ArgumentException.ThrowIfNullOrWhiteSpace(monitorKey);
+        monitorKey = MonitorKeys.Require(monitorKey, nameof(monitorKey));
 
         var missingAssignments = RemoveMissingAssignments(session.MissingAssignments, monitorKey);
 
@@ -77,8 +77,8 @@ public sealed class ActiveSessionEditor
         string targetMonitorKey)
     {
         ArgumentNullException.ThrowIfNull(session);
-        ArgumentException.ThrowIfNullOrWhiteSpace(missingMonitorKey);
-        ArgumentException.ThrowIfNullOrWhiteSpace(targetMonitorKey);
+        missingMonitorKey = MonitorKeys.Require(missingMonitorKey, nameof(missingMonitorKey));
+        targetMonitorKey = MonitorKeys.Require(targetMonitorKey, nameof(targetMonitorKey));
 
         var assignment = session.MissingAssignments.FirstOrDefault(assignment =>
             MonitorKeys.Equals(assignment.SavedMonitor.MonitorKey, missingMonitorKey));

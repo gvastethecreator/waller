@@ -46,12 +46,10 @@ public sealed record WallpaperPlacement
         get => fitMode;
         init
         {
-            if (!Enum.IsDefined(value))
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), value, "Wallpaper fit mode is invalid.");
-            }
-
-            fitMode = value;
+            fitMode = DefinedEnumValue.Require(
+                value,
+                nameof(value),
+                "Wallpaper fit mode is invalid.");
         }
     }
 
@@ -60,12 +58,10 @@ public sealed record WallpaperPlacement
         get => anchor;
         init
         {
-            if (!Enum.IsDefined(value))
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), value, "Wallpaper anchor is invalid.");
-            }
-
-            anchor = value;
+            anchor = DefinedEnumValue.Require(
+                value,
+                nameof(value),
+                "Wallpaper anchor is invalid.");
         }
     }
 

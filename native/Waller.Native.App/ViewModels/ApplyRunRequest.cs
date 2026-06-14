@@ -7,19 +7,31 @@ internal static class ApplyRunRequest
 {
     public static Func<ApplyProgressHandler?, CancellationToken, Task<ApplySessionResult>> AllReadySources(
         WallpaperApplyService applyService,
-        ActiveSession session) =>
-        (progress, cancellationToken) => applyService.ApplyAllReadySourcesAsync(
+        ActiveSession session)
+    {
+        ArgumentNullException.ThrowIfNull(applyService);
+        ArgumentNullException.ThrowIfNull(session);
+
+        return (progress, cancellationToken) => applyService.ApplyAllReadySourcesAsync(
             session,
             progress,
             cancellationToken);
+    }
 
     public static Func<ApplyProgressHandler?, CancellationToken, Task<ApplySessionResult>> MonitorReadySource(
         WallpaperApplyService applyService,
         ActiveSession session,
-        MonitorRowViewModel monitor) =>
-        (progress, cancellationToken) => applyService.ApplyMonitorReadySourceAsync(
+        MonitorRowViewModel monitor)
+    {
+        ArgumentNullException.ThrowIfNull(applyService);
+        ArgumentNullException.ThrowIfNull(session);
+        ArgumentNullException.ThrowIfNull(monitor);
+        var monitorKey = MonitorKeys.Require(monitor.MonitorKey, "monitor.MonitorKey");
+
+        return (progress, cancellationToken) => applyService.ApplyMonitorReadySourceAsync(
             session,
-            monitor.MonitorKey,
+            monitorKey,
             progress,
             cancellationToken);
+    }
 }

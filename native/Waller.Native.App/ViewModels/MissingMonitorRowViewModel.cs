@@ -7,9 +7,10 @@ namespace Waller.Native.App.ViewModels;
 
 public sealed partial class MissingMonitorRowViewModel(PresetAssignment assignment, LocalizedText text) : ObservableObject
 {
-    private LocalizedText text = text;
+    private LocalizedText text = text ?? throw new ArgumentNullException(nameof(text));
 
-    public PresetAssignment Assignment { get; } = assignment;
+    public PresetAssignment Assignment { get; } =
+        assignment ?? throw new ArgumentNullException(nameof(assignment));
 
     public string DisplayName =>
         Assignment.SavedMonitor.DeviceName
@@ -47,13 +48,14 @@ public sealed partial class MissingMonitorRowViewModel(PresetAssignment assignme
 
     public void ReplaceText(LocalizedText text)
     {
+        ArgumentNullException.ThrowIfNull(text);
         this.text = text;
         NotifyPropertiesChanged(MonitorRowNotificationGroups.MissingMonitorText);
     }
 
     private void NotifyPropertiesChanged(IEnumerable<string> propertyNames)
     {
-        foreach (var propertyName in propertyNames)
+        foreach (var propertyName in ViewModelNotificationGroups.Require(propertyNames))
         {
             OnPropertyChanged(propertyName);
         }

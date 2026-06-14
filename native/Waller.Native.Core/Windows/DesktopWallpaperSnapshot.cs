@@ -12,14 +12,9 @@ internal sealed record DesktopWallpaperSnapshot
         MonitorBounds Bounds,
         string? WallpaperPath)
     {
-        if (string.IsNullOrWhiteSpace(MonitorId))
-        {
-            throw new ArgumentException("Monitor id is required.", nameof(MonitorId));
-        }
-
         ArgumentNullException.ThrowIfNull(Bounds);
 
-        monitorId = MonitorId;
+        monitorId = MonitorKeys.Require(MonitorId, nameof(MonitorId));
         bounds = Bounds;
         this.WallpaperPath = WallpaperPath;
     }
@@ -29,12 +24,7 @@ internal sealed record DesktopWallpaperSnapshot
         get => monitorId;
         init
         {
-            if (string.IsNullOrWhiteSpace(value))
-            {
-                throw new ArgumentException("Monitor id is required.", nameof(value));
-            }
-
-            monitorId = value;
+            monitorId = MonitorKeys.Require(value, nameof(value));
         }
     }
 

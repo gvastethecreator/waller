@@ -11,13 +11,10 @@ public sealed class UserSettingsStore(string rootDirectory)
 
     public async Task<UserSettings> LoadAsync(CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         try
         {
-            if (!File.Exists(settingsPath))
-            {
-                return UserSettings.Default;
-            }
-
             var settings = await LocalJsonFile.ReadRecoverableAsync(
                 settingsPath,
                 WallerJsonContext.Default.UserSettings,
@@ -32,6 +29,8 @@ public sealed class UserSettingsStore(string rootDirectory)
 
     public async Task SaveAsync(UserSettings settings, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         await LocalJsonFile.WriteAsync(
             settingsPath,
             UserSettingsPolicy.Normalize(settings),

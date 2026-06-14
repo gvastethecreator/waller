@@ -88,7 +88,7 @@ Goal:
 Tasks:
 
 - add Preset dropdown view model - done
-- list Presets from `%LOCALAPPDATA%\Waller\presets` - done
+- list Presets from the Waller local-data root - done
 - implement Save - done
 - implement Save as modal - done
 - implement Manage Presets modal - done
@@ -102,16 +102,30 @@ Tasks:
 - show no Presets state inside Manage Presets - done
 - reject blank Preset menu item names before picker/list surfaces render them -
   done
+- normalize Preset menu/list display names through one App helper, including
+  the localized Current setup item - done
+- use the same menu display-name helper for delete-confirmation target names -
+  done
 - guard Preset save/load/active-rename session DTOs before Preset view-model
   split - done
 - guard Preset load/delete/mutation result shapes before command handlers
   consume them - done
 - guard Manage Presets command inputs, delete confirmations, selection helpers,
   and Preset menu ids before modal commands mutate local Presets - done
+- share Core `PresetIds` with App Preset menu and Manage Presets command DTOs
+  so real id validation stays separate from optional visual-memory ids - done
+- return nullable ids from managed Preset selection helpers instead of using
+  `Guid.Empty` as an App-side no-selection sentinel - done
 - guard Preset menu list/refresh/localized-surface helpers against missing
   collections, blank Current setup labels, empty selection ids, and stale
   visual-memory result shapes before dropdown selection changes - done
+- normalize optional Preset visual-memory ids through shared Core `PresetIds`
+  policy so `Guid.Empty` behaves as no remembered selection across dropdown
+  refresh, Settings save/load, and selected-session projection - done
 - validate blank rename and missing/corrupt rename target - done
+- route managed Preset mutation recoverable filesystem fallback through
+  `LocalDataWriteGuard.TryAsync` while preserving missing-Preset result
+  semantics - done
 - mark dirty state in header and rows - done initial version
 - skip corrupt local Preset JSON during list/load - done
 
@@ -154,6 +168,8 @@ Tasks:
 - require Image source paths to be full local paths - done
 - reject unsupported Image source file types through shared Core path policy -
   done
+- image source existence and display-name helpers reuse the same Core
+  path-normalization policy as picker/source validation - done
 - add missing source detection - done
 - add simple color picker or validated hex entry - done, native ColorPicker
   plus validated hex and quick swatches
@@ -167,6 +183,8 @@ Tasks:
   done
 - normalize source-picker DTO paths/colors before editor fields mutate session
   state - done
+- normalize image picker display names through one App helper before
+  source-selection status text consumes them - done
 
 Acceptance:
 
@@ -294,6 +312,11 @@ Acceptance:
 - Apply error-code normalization is centralized in `ApplyErrorCodes.Normalize`
   so render exceptions, applier results, and apply service fallback copy share
   one error vocabulary - done
+- Desktop wallpaper writer cancellation propagates as cancellation instead of
+  being mapped to `wallpaper-apply-failed` - done
+- Rendered cache-clear filesystem failures use the shared Core
+  `LocalDataFileSystemErrors` policy instead of local duplicated IO/access
+  filters - done
 - Apply preflight result rejects missing session or key-set references before
   ready/skipped target selection - done
 - Apply preflight result rejects overlapping ready/skipped monitor key sets
@@ -305,10 +328,22 @@ Acceptance:
   null monitor/list inputs before counting selected targets - done
 - monitor-key set creation rejects blank/null key input and always returns
   case-insensitive sets - done
+- Apply preflight and target-plan monitor-key membership routes through shared
+  `MonitorKeys.Contains`, so future ready/skipped sets cannot reintroduce
+  comparer-sensitive Apply matching - done
+- App editor, Core preflight, target-plan, and key-set construction monitor-key
+  inputs share `MonitorKeys.Require` instead of local blank-string guards -
+  done
 - monitor snapshots reject null identity/source and blank display names before
   row/progress/accessibility projection - done
-- desktop wallpaper snapshots reject blank monitor ids and missing bounds before
-  Windows detector projection - done
+- monitor display/progress names trim through one Core helper before row,
+  progress, and accessibility projection - done
+- Windows monitor display-name helper validates monitor ids and positive display
+  indices before detector projection - done
+- desktop wallpaper snapshots validate ids through `MonitorKeys.Require` and
+  reject missing bounds before Windows detector projection - done
+- desktop wallpaper position mapping rejects unknown successful Windows position
+  enum values instead of silently treating them as Cover - done
 - monitor bounds reject non-positive dimensions before topology/render/UI code
   consumes geometry - done
 - monitor session transition helpers reject null monitor/assignment inputs and
@@ -319,6 +354,11 @@ Acceptance:
   references before Apply/row/Preset code consumes session state - done
 - Apply UI result state rejects success without an updated session and missing
   final status copy before command handlers update the surface - done
+- Apply, image-pick, and disconnected-monitor workflow results share
+  `WorkflowStatusText` for non-blank status copy validation - done
+- Apply command target request construction rejects missing services/sessions/
+  monitors and captures a validated monitor key before async Apply starts -
+  done
 - monitor assignment update result state rejects mixed success/error outcomes
   and missing editor/session/monitor-key dependencies before editor field
   changes mutate Active Session - done
@@ -337,12 +377,34 @@ Acceptance:
   assignment inputs before Apply-Preset matching - done
 - Preset matcher assignment index rejects missing normalized assignment
   collections before exact/fallback matching consumes the index - done
+- Preset matcher used-assignment membership routes through shared
+  `MonitorKeys.Contains`, matching Apply preflight/target set membership and
+  keeping disconnected-assignment projection case-insensitive - done
 - Preset store/save policy rejects blank or relative local-data roots and null
   presets before touching local JSON - done
+- Preset missing-file loads use shared `LocalJsonFile.ReadRecoverableAsync`
+  instead of a store-local `File.Exists` branch - done
+- Preset list/load/delete operations avoid creating local app-data directories
+  for missing Preset storage; only writes materialize the Preset directory -
+  done
+- Preset delete uses shared `LocalDataFile.DeleteIfExists` after id validation
+  instead of a separate pre-delete existence branch - done
+- Atomic local file temp cleanup uses shared
+  `LocalDataFile.DeleteRecoverableIfExists` instead of a writer-local cleanup
+  branch - done
+- Rendered cache cleanup uses shared `LocalDataFile.TryDeleteIfExists` so
+  deleted/failed counts reuse the same local delete policy as Presets and
+  atomic temp cleanup - done
+- Basic PNG renderer rejects unsupported source-kind enum values instead of
+  silently rendering black output - done
+- Image placement math rejects unsupported fit/anchor enum values instead of
+  silently treating them as Cover/Center - done
 - Active Session rejects null monitor/missing-assignment collections and copies
   incoming collections before later editor/preset/apply mutations - done
 - Settings store/policy rejects blank or relative local-data roots and null
   settings before touching local JSON - done
+- Settings missing-file loads use shared `LocalJsonFile.ReadRecoverableAsync`
+  instead of a store-local `File.Exists` branch - done
 - UserSettings converts null language values to an empty draft value before
   Settings normalization applies the default supported language - done
 - Rendered wallpaper store rejects blank or relative local-data roots before
@@ -381,7 +443,8 @@ Risks:
 - Windows may apply behavior globally if using wrong API/position
 - packaged permissions/runtime identity
 - monitor key mismatch between detector and applier - partially mitigated:
-  direct Apply monitor key matching is case-insensitive
+  direct Apply monitor key matching and ready/skipped key-set membership are
+  case-insensitive
 
 ## Slice 6: Settings
 
@@ -405,6 +468,8 @@ Tasks:
 - remember last selected Preset visually only - done
 - fall back to defaults when settings JSON is corrupt - done
 - normalize unsupported theme/language/window-size settings - done
+- reject unsupported theme enum values before WinUI theme projection can fall
+  back to default theme silently - done
 - reject unsupported App-side Settings DTO theme/language values, impossible
   failed-save result shapes, and missing Settings store/request/draft/status
   dependencies before modal save/load mutates local state - done
@@ -441,6 +506,8 @@ Tasks:
 - localize saved/unsaved and missing-source row labels - done
 - localize main Preset/Settings/Apply status messages - done
 - localize Apply progress status from Core enum - done
+- validate localized text presenter provider wiring before status/progress
+  projection reaches command handlers - done
 - keep placement fit/anchor/offset copy in the localized catalog and project it
   through `PlacementText` - done
 - split English and Spanish catalog values into language-specific files - done
@@ -466,15 +533,57 @@ Acceptance:
   assignment items before editor, Preset matching, or Apply code consumes them
 - Preset assignment collection boundaries reject null assignment items before
   matching/save normalization consumes them
+- Preset identity boundaries reject empty ids before local JSON path generation,
+  selection memory, or management commands consume impossible identifiers
+- App Preset menu/list/Manage Presets DTOs use the same Core `PresetIds`
+  policy for real ids instead of local `Guid.Empty` checks
+- Managed Preset selection uses nullable ids for missing/current selections,
+  not `Guid.Empty` sentinels
+- App Preset menu/list display names normalize through one helper before
+  dropdown or modal-list surfaces render them
+- Delete-confirmation target names share the same App menu display-name helper
+  as Preset dropdown/list items
+- Selected Preset load-result display names and dropdown refresh current-setup
+  labels share the same App menu display-name helper
+- Selected Preset load-result status projection rejects missing presenters and
+  unknown load kinds instead of returning blank status text
+- App save/rename completion DTOs normalize Preset name drafts through the same
+  Core `PresetNames` policy before updating editable fields
+- App Save As and Manage Presets rename entrypoints normalize names through
+  shared `PresetNames` before factories/stores mutate local Presets
+- App Settings/editor/Preset-load enum boundaries use Core
+  `DefinedEnumValue` before option/session DTOs mutate UI state
+- Core enum-bearing models, App option projection, and Settings mutation use
+  shared `DefinedEnumValue` before source, placement, monitor/apply status,
+  Preset assignment, or runtime Settings state accepts unsupported enum values
+- Preset model names normalize through the shared `PresetNames` policy before
+  model instances reach save/load/factory paths
+- loaded Preset JSON empty-id checks use the shared `PresetIds` policy before
+  load normalization accepts the file
 - shared `RequiredList` helper keeps collection copy/null-item contracts
   consistent across Core models
+- solid-color normalization rejects missing/blank payloads before source
+  factories or editor validation can leak null-reference failures
 - runtime Settings preference mutation validates supported theme/language before
   App save state mutates, while JSON-loaded invalid settings still normalize
+- empty last-selected Preset ids in Settings and App visual-memory paths
+  normalize through `PresetIds.NormalizeOptional` before startup Preset refresh
+  can consume them
+- editor placement offsets use `EditorOffsetPercent.NormalizeX/Y` and
+  `ToPlacementOffsetX/Y`, keeping X/Y parameter names and finite-value errors
+  in one helper before NumberBox values mutate monitor assignment state
 - runtime window placement mutation clamps minimum size before Settings save
   state mutates
 - Preset, Settings, and rendered-cache stores share
   `LocalDataRootDirectory.RequireFullyQualified` so local MVP state cannot drift
   into process-relative paths
+- rendered output path creation uses `MonitorKeys.Require`, so missing/blank
+  monitor keys fail before cache directories or fallback file names are created
+- cancelled Preset/Settings local-data operations throw before creating app
+  folders or temp files
+- Atomic file writes centralize temp-path creation and reject target paths
+  without a file name before creating directories or exposing partial temp
+  output
 - core Apply status carriers reject invalid `MonitorApplyStatus` values before
   row state, progress reporting, or Apply orchestration splits consume them
 - Apply run accounting is guarded so success/failure recording cannot exceed the
@@ -584,6 +693,8 @@ Tasks:
   `MainPageViewModel.State.*.cs` partials
 - split derived surface projections by workflow - done through focused
   `MainPageViewModel.Surface.*.cs` partials
+- cover shell modal interaction state and top-modal close dispatch through
+  focused helpers/guards - done
 - split Manage Presets modal commands by responsibility - done through focused
   `MainPageViewModel.PresetManagement.*.cs` partials
 - split Preset save/load/selection flow by responsibility - done through
@@ -593,13 +704,51 @@ Tasks:
 - localize edit panel source/fit/anchor option display values - done
 - reject blank option display names before localized dropdowns render them -
   done
+- trim option display names through one helper before localized dropdowns render
+  Settings/editor labels - done
 - reject missing option collections and null option entries before localized
   dropdown refresh reaches Settings/editor surfaces - done
 - validate localized option refresh inputs and selected enum values before
   Settings/editor dropdown option projection reaches XAML - done
+- validate selected-editor surface localized text and source-kind values before
+  image/color editor visibility or selected-source warnings reach XAML - done
 - localize monitor row and disconnected monitor placement summaries - done
 - guard monitor row projection inputs and topology dimensions before monitor
   workspace row/topology state updates - done
+- monitor row selection restoration uses shared `MonitorKeys.Equals`, so
+  refresh/reprojection keeps selected monitor state case-insensitively - done
+- guard monitor row view-model session/assignment/text inputs before row
+  rendering, previews, summaries, and accessible names reach XAML - done
+- guard status-aware Preset name validation presenter dependency before
+  save/rename command handlers request localized required-name text - done
+- guard shell current-session status composition before startup/refresh appends
+  monitor counts to localized success text - done
+- guard Apply progress/result text projection before localization reads missing
+  Apply DTOs - done
+- guard Preset/editor presenter formatted string inputs before command handlers
+  surface status copy - done
+- guard localized formatting inputs before shared status copy calls
+  `string.Format` - done
+- guard localized surface refresh and Preset menu list item boundaries before
+  row/menu projections are relabeled - done
+- guard grouped property-change notification names before view models call
+  `OnPropertyChanged` - done
+- guard localized option catalog and monitor-row selection inputs before option
+  or row-selection projection runs - done
+- guard Apply run delegate/state boundaries before Apply controller extraction -
+  done
+- guard monitor workspace visibility helpers before no-monitors/topology/missing
+  monitor surfaces read row collection counts - done
+- guard source/placement preview helpers before unsupported source/fit/anchor
+  enum values can render as transparent/default preview state - done
+- guard source-summary projection before unsupported source-kind enum values can
+  render as Empty row copy - done
+- guard editor draft source reconstruction before unsupported source-kind enum
+  values can mutate Active Session as Empty - done
+- guard editor source-kind localized option labels before unsupported enum
+  values can render generic fallback copy - done
+- guard placement text projection before unsupported fit/anchor enum values can
+  render as generic fallback copy - done
 - guard against hard-coded placement fit/anchor/offset labels in
   `PlacementText.cs` - done
 - guard against moving English/Spanish static catalogs back into
@@ -607,6 +756,9 @@ Tasks:
 - guard against unnamed English/Spanish catalog arguments - done
 - guard localized surface refresh output as an explicit result object before
   Settings language changes update cached Preset/row labels - done
+- normalize edit-panel offset values through a focused helper before placement
+  payload creation so NumberBox/direct values cannot overflow round/cast paths -
+  done
 - refresh editor fields on monitor selection without mutating Active Session - done
 - add detailed manual smoke checklist for launch, topology, previews, Presets,
   Settings, disconnected monitors, Apply, placement, and accessibility - done
@@ -660,15 +812,17 @@ Tasks:
   done through `WallerAppDataPaths.RootFor(...)` plus WinUI code guard
 - reject missing App-side services/stores before composing startup view-model
   flows - done through `WallerAppServices`, `WallerLocalDataStores`, and
-  `MainPageViewModel` constructor guards plus WinUI code guard
-- guard app-data path policy so package identity changes cannot move
-  Presets/settings/rendered cache away from `%LOCALAPPDATA%\Waller` - done
+  `MainPageViewModel`/`MainPageLocalState` constructor guards plus WinUI code
+  guard
+- guard app-data path policy so Presets/settings/rendered cache stay under one
+  Waller local-data root; packaged runs resolve it under package
+  `LocalCache\Local\Waller` - done
 - guard launch contract so AUMID suffix, window title, and smoke launch stay
   aligned with package identity - done
 - keep current-session detection/fallback policy out of App view-model files -
   done through Core `CurrentSessionLoader` tests plus WinUI code guard
-- guard update policy so version bumps cannot change package identity or move
-  Presets/settings away from `%LOCALAPPDATA%\Waller` - done
+- guard update policy so version bumps cannot change package name/publisher or
+  move Presets/settings away from the package-local Waller root - done
 - add JSON source-generation metadata for Presets and Settings - done
 - add explicit trim-analysis suppression for manual `IDesktopWallpaper` COM
   activation - done
@@ -684,14 +838,14 @@ Tasks:
 Acceptance:
 
 - clean package installs
-- app launches from Start menu - covered at launch-contract level by stable
-  `Application Id`, Waller window title, and `winapp` smoke script guard; real
-  Start-menu smoke still required after package registration conflict is cleared
+- app launches from package identity - covered by current-user
+  `SmokeLaunch.ps1 -DisableNuGetAudit` on 2026-06-12 plus launch-contract guards;
+  real Start-menu smoke on a clean profile is still required before release
 - app data path correct - done through `WallerAppDataPaths`,
   `WallerLocalDataStores`, and `TestLocalDataPolicy.ps1`
 - app updates do not erase Presets/settings - covered at policy/script level by
-  stable package identity versioning plus `%LOCALAPPDATA%\Waller` data root;
-  real update smoke still required before release
+  stable package identity versioning plus package `LocalCache\Local\Waller`
+  data root; real update smoke still required before release
 
 ## "Do Not Build Yet" List
 

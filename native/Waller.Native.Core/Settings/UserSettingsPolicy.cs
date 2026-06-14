@@ -1,3 +1,5 @@
+using Waller.Native.Core.Models;
+
 namespace Waller.Native.Core.Settings;
 
 public static class UserSettingsPolicy
@@ -11,7 +13,7 @@ public static class UserSettingsPolicy
     {
         ArgumentNullException.ThrowIfNull(settings);
 
-        var theme = Enum.IsDefined(settings.Theme)
+        var theme = DefinedEnumValue.IsDefined(settings.Theme)
             ? settings.Theme
             : UserSettings.Default.Theme;
         var windowX = settings.WindowX is null || settings.WindowY is null

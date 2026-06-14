@@ -6,8 +6,16 @@ using Waller.Native.Core.Rendering;
 
 namespace Waller.Native.App.ViewModels;
 
-internal sealed class MainPageLocalState(WallerLocalDataStores stores)
+internal sealed class MainPageLocalState
 {
+    private readonly WallerLocalDataStores stores;
+
+    public MainPageLocalState(WallerLocalDataStores stores)
+    {
+        ArgumentNullException.ThrowIfNull(stores);
+        this.stores = stores;
+    }
+
     public Task<SettingsPreferenceDraft> LoadSettingsDraftAsync() =>
         SettingsPreferenceStore.LoadDraftAsync(stores.Settings);
 

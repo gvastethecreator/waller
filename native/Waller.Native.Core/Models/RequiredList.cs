@@ -19,6 +19,8 @@ internal static class RequiredList
         string nullItemMessage)
         where T : class
     {
+        ArgumentNullException.ThrowIfNull(value, parameterName);
+
         foreach (var item in value)
         {
             if (item is null)

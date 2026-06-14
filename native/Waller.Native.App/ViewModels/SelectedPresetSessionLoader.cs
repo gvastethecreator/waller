@@ -17,10 +17,10 @@ internal sealed record SelectedPresetLoadResult
         SelectedPresetSession? Selection,
         string DisplayName)
     {
-        if (!Enum.IsDefined(Kind))
-        {
-            throw new ArgumentOutOfRangeException(nameof(Kind), Kind, "Unknown selected Preset load kind.");
-        }
+        DefinedEnumValue.Require(
+            Kind,
+            nameof(Kind),
+            "Unknown selected Preset load kind.");
 
         if (Kind is SelectedPresetLoadKind.CurrentSetup or SelectedPresetLoadKind.LoadedPreset)
         {
@@ -31,14 +31,11 @@ internal sealed record SelectedPresetLoadResult
             throw new ArgumentException("Missing Preset load results cannot include a selection.", nameof(Selection));
         }
 
-        if (Kind is SelectedPresetLoadKind.LoadedPreset or SelectedPresetLoadKind.MissingPreset)
-        {
-            ArgumentException.ThrowIfNullOrWhiteSpace(DisplayName);
-        }
-
         this.Kind = Kind;
         this.Selection = Selection;
-        this.DisplayName = DisplayName;
+        this.DisplayName = Kind is SelectedPresetLoadKind.LoadedPreset or SelectedPresetLoadKind.MissingPreset
+            ? PresetMenuDisplayName.Normalize(DisplayName, nameof(DisplayName))
+            : DisplayName;
     }
 
     public SelectedPresetLoadKind Kind { get; }
@@ -72,14 +69,22 @@ internal sealed record SelectedPresetLoadResult
 
     public string StatusText(PresetTextPresenter text)
     {
+        ArgumentNullException.ThrowIfNull(text);
+
         return Kind switch
         {
             SelectedPresetLoadKind.CurrentSetup => text.CurrentSetupSelected,
             SelectedPresetLoadKind.LoadedPreset => text.Loaded(DisplayName),
             SelectedPresetLoadKind.MissingPreset => text.NotFound(DisplayName),
-            _ => string.Empty,
+            _ => InvalidStatusTextKind(Kind),
         };
     }
+
+    private static string InvalidStatusTextKind(SelectedPresetLoadKind kind) =>
+        throw new ArgumentOutOfRangeException(
+            nameof(kind),
+            kind,
+            "Unknown selected Preset load kind.");
 }
 
 internal static class SelectedPresetSessionLoader

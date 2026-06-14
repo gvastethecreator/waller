@@ -14,6 +14,301 @@ checklist for behavior that still depends on a real Windows session.
 
 Latest verification:
 
+- 2026-06-12: `scripts\Verify.ps1 -SurfaceSmoke -SettingsRoundTrip -DisableNuGetAudit`
+  passed after adding the packaged Settings roundtrip smoke and correcting the
+  local-data contract to package `LocalCache\Local\Waller` for packaged runs.
+  Covered XAML/accessibility/localization and code/package guards, solution
+  build, 460 tests, packaged launch smoke with process `51164`, and packaged
+  UI Automation surface smoke with process `55040`. Settings roundtrip persisted
+  `Theme=1` and `Language=es` before restoring the package-local Settings file.
+- 2026-06-12: `scripts\Verify.ps1 -SurfaceSmoke -DisableNuGetAudit` passed
+  after adding the opt-in surface smoke gate. Covered XAML/accessibility/
+  localization and code/package guards, solution build, 460 tests, packaged
+  launch smoke with process `58376`, and packaged UI Automation surface smoke
+  with process `55256`.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  extending `SmokeSurface.ps1` with reusable UI Automation wait/assert/invoke
+  helpers and modal surface checks. Covered XAML/accessibility/localization and
+  code/package guards, solution build, packaged build, and 460 tests.
+- 2026-06-12: `scripts\SmokeSurface.ps1 -DisableNuGetAudit` passed after adding
+  modal surface checks. The packaged app built, launched with title `Waller`,
+  process `54740`, opened/closed Settings, Save As, and Manage Presets through
+  UI Automation, and found Shell 9/9, Settings 5/5, Save As 3/3, and Manage
+  Presets 6/6 required controls.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  adding reusable `SmokeSurface.ps1` and documenting the UI Automation surface
+  smoke path. Covered XAML/accessibility/localization and code/package guards,
+  solution build, packaged build, and 460 tests.
+- 2026-06-12: `scripts\SmokeSurface.ps1 -DisableNuGetAudit` passed after
+  promoting the ad-hoc UI Automation surface smoke into a reusable script. The
+  packaged app built, launched with title `Waller`, process `57428`,
+  `Responding=True`, and UIA found all 9 required shell controls.
+- 2026-06-12: ad-hoc UI Automation surface smoke passed after packaged launch.
+  The app built and launched with process `50180`, main window title `Waller`,
+  and UIA found all 9 required shell controls: Preset dropdown, Save, Save As,
+  Manage, Refresh, Settings, Apply All, Monitor list, and status InfoBar.
+- 2026-06-12: `scripts\SmokeLaunch.ps1 -DisableNuGetAudit` passed after the
+  latest editor offset/local-data hardening work. The packaged app built,
+  launched with AUMID `1EB1FFC3-B778-402F-85FA-F6C6BF1EA9A4_yq0fg95n1tr90!App`,
+  exposed process `Waller.Native.App` with title `Waller`, reported
+  `Responding=True`, and was closed by the smoke script. Process id: `12344`.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  moving editor placement offset X/Y parameter names and finite-value messages
+  into `EditorOffsetPercent.NormalizeX/Y` and `ToPlacementOffsetX/Y`. The
+  editor draft no longer duplicates offset validation copy before NumberBox
+  values mutate monitor assignment state. Covered XAML/accessibility/
+  localization and code/package guards, solution build, packaged build, and
+  460 tests.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  routing rendered-cache file deletion through `LocalDataFile.TryDeleteIfExists`.
+  Cache clear now counts deleted/failed files from the shared local delete
+  policy instead of duplicating per-file delete/catch logic. Covered XAML/
+  accessibility/localization and code/package guards, solution build, packaged
+  build, and 460 tests.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  routing atomic-write temp cleanup through shared
+  `LocalDataFile.DeleteRecoverableIfExists`. Local delete policy now covers
+  missing-file deletion and best-effort recoverable cleanup without private
+  writer cleanup branches. Covered XAML/accessibility/localization and
+  code/package guards, solution build, packaged build, and 460 tests.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  moving missing-file Preset deletion through shared
+  `LocalDataFile.DeleteIfExists`. Missing Preset files and missing Preset
+  directories are now explicit no-ops after id/cancellation validation, without
+  a store-local existence branch. Covered XAML/accessibility/localization and
+  code/package guards, solution build, packaged build, and 456 tests.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making missing Preset list/load/delete paths side-effect free. Preset reads
+  and missing deletes no longer create local app-data directories; Save remains
+  the Preset directory materialization point. Covered XAML/accessibility/
+  localization and code/package guards, solution build, packaged build, and
+  456 tests.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  routing missing Preset/settings JSON reads through shared
+  `LocalJsonFile.ReadRecoverableAsync` instead of per-store `File.Exists`
+  branches. Missing, corrupt, locked, or unreadable local JSON now stays on one
+  read-recovery path. Covered XAML/accessibility/localization and code/package
+  guards, solution build, packaged build, and 455 tests.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  routing restored monitor-row selection through `MonitorKeys.Equals`.
+  `MonitorRowsProjector` now keeps selected monitor state across refreshes even
+  if monitor-key casing differs between Windows/session projections. Covered
+  XAML/accessibility/localization and code/package guards, solution build,
+  packaged build, and 453 tests.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  routing Preset matcher used-assignment membership through shared
+  `MonitorKeys.Contains`. Preset fallback matching and missing-assignment
+  projection now share the same case-insensitive monitor-key helper as Apply
+  preflight/target planning. Covered XAML/accessibility/localization and
+  code/package guards, solution build, packaged build, and 453 tests.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  routing Apply preflight/target monitor-key membership through shared
+  `MonitorKeys.Contains`. Ready/skipped matching now stays case-insensitive even
+  if future Apply planning code passes sets with a different comparer. Covered
+  XAML/accessibility/localization and code/package guards, solution build,
+  packaged build, and 453 tests.
+- 2026-06-12: `scripts\Verify.ps1 -DisableNuGetAudit` passed the full local
+  gate: XAML/accessibility/localization and code/package guards, solution build,
+  452 tests, and packaged launch smoke. The smoke launched AUMID
+  `1EB1FFC3-B778-402F-85FA-F6C6BF1EA9A4_yq0fg95n1tr90!App`, observed process
+  `Waller.Native.App` with title `Waller` and `Responding=True`, then closed
+  the launched process.
+- 2026-06-12: `scripts\SmokeLaunch.ps1 -DisableNuGetAudit` passed on the
+  current Windows user. It built the packaged app, launched AUMID
+  `1EB1FFC3-B778-402F-85FA-F6C6BF1EA9A4_yq0fg95n1tr90!App`, observed process
+  `Waller.Native.App` with title `Waller` and `Responding=True`, then closed
+  the launched process.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  hardening Apply run orchestration boundaries. `RunApplyAsync` now rejects
+  missing Apply delegates, and terminal Apply UI presentation rejects missing
+  `ApplyRunUiState`.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  hardening option catalog and monitor-row selection boundaries. Direct
+  localized option construction now rejects missing text, and monitor selection
+  rejects missing/null row collections before toggling selection.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  hardening grouped property-change notifications. Main and row view models now
+  validate notification groups through `ViewModelNotificationGroups.Require`
+  before calling `OnPropertyChanged`.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  hardening localized surface and Preset menu list item boundaries. Language
+  refresh and Preset selection/relabeling now reject null collection items
+  before touching row or menu projections.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  hardening localized formatting. `LocalizedText.Format` now rejects missing
+  format strings or argument arrays before calling `string.Format`.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  hardening Preset and monitor-edit text presenters. Presenter format methods
+  now normalize Preset names, selected image names, monitor names, and edit
+  validation errors before producing status copy.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  hardening Apply text projection. `ApplyTextPresenter` now rejects missing
+  progress/result DTOs before localized Apply summaries read them.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  hardening shell current-session status composition. `ShellStatusTextPresenter`
+  now validates success status copy through `WorkflowStatusText` before adding
+  monitor count text.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  hardening status-aware Preset name validation. `PresetNameInput` now rejects
+  missing `PresetTextPresenter` dependencies before save/rename command
+  handlers request localized required-name status text.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  hardening current and missing monitor row view-model boundaries. Row
+  construction and replacement now reject missing session/assignment/text inputs
+  before row rendering, previews, summaries, or accessible names reach XAML.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  hardening `MainPageLocalState` and `RenderedCacheCleanup` dependency
+  boundaries. Local-state forwarding now rejects missing store groups before
+  Settings/Preset/cache helpers run.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  routing managed Preset mutation recoverable filesystem fallback through
+  `LocalDataWriteGuard.TryAsync` while preserving `FileNotFoundException` as a
+  missing-Preset result.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  hardening `ApplyRunRequest`. Apply target request construction now rejects
+  missing service/session/monitor inputs and captures a validated monitor key
+  before async Apply starts.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  moving optional remembered Preset id normalization into shared Core
+  `PresetIds.NormalizeOptional`. Settings, selected-session, and Preset dropdown
+  refresh paths now share the same `Guid.Empty` to no remembered Preset policy.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  guarding shell modal interaction state and top-modal close dispatch:
+  `ShellInteractionState` owns modal/apply command permissions and modal
+  priority, while `ShellModalClose` now no-ops `None` and rejects unknown modal
+  layers or missing selected close actions.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  routing image source existence and display file-name helpers through
+  `WallpaperSourcePath.TryNormalizeImagePath`, so raw/legacy paths use the same
+  trim/full-path/extension policy as picker input.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  removing the duplicate App `DefinedEnumValue` helper and routing App
+  Settings/editor/Preset-load enum boundaries through Core
+  `DefinedEnumValue`.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  adding `MonitorDisplayName` and routing `MonitorSnapshot`/`ApplyProgress`
+  visible monitor names through it before row/progress projection.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making `DesktopWallpaperInterop.PositionToPlacement` reject unknown successful
+  Windows wallpaper position enum values instead of silently treating them as
+  Cover.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making `ImagePlacementPlan` reject unsupported fit/anchor enum values instead
+  of silently treating invalid placement state as Cover/Center.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making `BasicPngWallpaperRenderer` reject unsupported source-kind enum values
+  instead of silently rendering black output.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making `MonitorEditDraft.ToSource` reject unsupported source-kind enum values
+  instead of mutating invalid editor state into Empty.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  adding `OptionDisplayName` and routing `OptionItem` labels through it before
+  Settings/editor dropdown collections render localized options.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  routing App Save As and Manage Presets rename entrypoint names through shared
+  Core `PresetNames` before factory/store mutation.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making `LocalizedText.Editor.SourceKind` reject unsupported source-kind enum
+  values before localized option catalogs can show generic fallback copy.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making `MonitorSourceText` reject missing inputs and unsupported source-kind
+  enum values before row source summaries can show invalid source state as
+  Empty.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making `PlacementText` reject missing inputs and unsupported fit/anchor enum
+  values before row/dropdown placement copy can show generic fallback text.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making `ThemePreferenceMapper` reject unsupported theme enum values before
+  WinUI theme projection can silently fall back to default theme.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  adding `DesktopMonitorDisplayName` boundary guards for missing/blank monitor
+  ids and non-positive display indices before Windows detector row names are
+  composed.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  routing `DesktopWallpaperSnapshot` monitor-id validation through
+  `MonitorKeys.Require`, so detector snapshots share the Core monitor-key
+  boundary and reject null/blank ids before projection.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  adding `LocalizedTextSource` and routing MainPage text presenters through it,
+  so null presenter providers fail before status/progress projection reaches
+  command handlers.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making source/placement preview helpers reject missing inputs and unsupported
+  source/fit/anchor enum values instead of rendering invalid preview state as
+  transparent/default brushes or alignment.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  routing rendered output path monitor-key validation through
+  `MonitorKeys.Require`; blank keys now fail before cache directory creation or
+  fallback rendered file names.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making monitor workspace visibility helpers reject missing row collections
+  before no-monitor, topology, or missing-monitor surfaces read counts.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  adding `ImageDisplayName` and routing image picker selected-file display names
+  through it before source-selection status text consumes them.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making selected-editor surface projection reject missing localized text and
+  unknown source kinds before image/color visibility or selected-source warning
+  copy reaches XAML.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  making selected-Preset load status projection reject missing presenters and
+  unknown load kinds instead of returning blank status text for impossible
+  states.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  routing selected-Preset load-result display names and dropdown refresh
+  current-setup labels through `PresetMenuDisplayName`.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  adding `WorkflowStatusText` and routing Apply, image-pick, and
+  disconnected-monitor result DTO status-copy validation through it.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  routing App editor monitor-key validation through shared Core
+  `MonitorKeys.Require`, matching Core preflight, target-plan, and key-set
+  construction policy.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  exposing `MonitorKeys.Require` and routing editor, preflight, target-plan,
+  and key-set construction monitor-key validation through the shared policy.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  adding Core `DefinedEnumValue` and routing source, placement, monitor/apply
+  status, Preset-assignment normalization, and runtime Settings enum boundaries
+  through it.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  moving desktop wallpaper writer recoverability into
+  `DesktopWallpaperApplyErrors`; writer cancellation now propagates as
+  cancellation instead of being mapped to `wallpaper-apply-failed`. The same
+  pass also routed rendered cache-clear filesystem failures through shared
+  `LocalDataFileSystemErrors`.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  centralizing App enum boundary checks in `DefinedEnumValue` for
+  Settings/editor/Preset-load option and state DTOs.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  routing App save/rename completion Preset name drafts through the shared Core
+  `PresetNames` policy before those values update editable fields.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  routing `PresetDeleteConfirmation` target names through
+  `PresetMenuDisplayName`, sharing menu/list/delete copy validation.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  changing managed Preset selection to return nullable ids instead of using
+  `Guid.Empty` as an App-side no-selection sentinel before command input
+  validation.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  adding `PresetMenuDisplayName` so App Preset dropdown/list names, including
+  localized Current setup labels, trim through one helper before menu surfaces
+  render.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  exposing shared `PresetIds` to App Preset menu and Manage Presets command
+  DTOs, removing local real-id `Guid.Empty` checks from those UI projection
+  paths while keeping optional remembered-selection semantics separate.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  moving `Preset` and `PresetIdentity` name normalization through the shared
+  `PresetNames` policy. Preset model construction and `with` updates now trim
+  names with the same rule used by save/load/factory paths, guarded by Core
+  tests and `TestCoreCodeGuards.ps1`.
+- 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
+  normalizing App-side Preset visual-memory ids through shared Core `PresetIds`
+  policy and moving loaded-Preset id checks through `PresetIds.IsValid`.
+  `Guid.Empty` now means no remembered visual Preset in Settings/dropdown paths,
+  while real Preset ids remain rejected before file, load, rename, delete, and
+  JSON normalization flows consume them.
 - 2026-06-12: `scripts\Verify.ps1 -SkipSmoke -DisableNuGetAudit` passed after
   centralizing local-data root validation in
   `Storage\LocalDataRootDirectory.RequireFullyQualified`. Presets, Settings,
@@ -953,6 +1248,9 @@ Commands are wired:
   exceptions.
 - Renaming the active Preset now flows through `ActivePresetSession.RenameActive`,
   keeping selected record, session identity, and name draft projection together.
+- Active Preset rename/delete checks now validate session input and Preset ids
+  through `ActivePresetSession.IsBasedOn`, so empty ids cannot silently compare
+  as inactive Presets.
 - English/Spanish UI labels are exposed through a lightweight app localizer and
   switched from the Settings language selector.
 - Localized format strings now use the selected app language culture through
@@ -1084,6 +1382,9 @@ Commands are wired:
   monitor tile border, so topology selection matches the selected monitor row.
 - Selected monitor row state now flows through `MonitorRowSelection`, keeping
   row/tile selection flag updates out of `MainPageViewModel`.
+- Core collection validation now flows through `RequiredList`, including
+  validate-only paths, so model helpers reject missing collections and null
+  items with one shared contract.
 - The topology strip is hidden when there are no detected monitors, leaving the
   localized no-monitors empty state as the only primary content.
 - Common validation and Windows detection fallback messages now use friendly
@@ -1120,7 +1421,8 @@ Commands are wired:
   keeping fallback error classification out of the apply orchestration loop.
 - Apply progress counters and progress-event construction now go through
   `ApplyRunTracker`, keeping `WallpaperApplyService` focused on render/apply
-  sequencing.
+  sequencing. Result projection now uses `RequiredList`, so final/cancelled
+  Apply results reject null monitor rows before publishing session state.
 - Single-monitor render/apply execution inside `WallpaperApplyService` now goes
   through a focused step result, keeping renderer/applier failure mapping out of
   the main apply loop.
@@ -1145,7 +1447,9 @@ Commands are wired:
   `ThemePreferenceMapper`, keeping XAML theme projection out of the main view
   model.
 - Settings and editor option lists now go through `LocalizedOptionCatalog`, so
-  enum/language option projection stays out of the main view model.
+  enum/language option projection stays out of the main view model. The catalog
+  now exposes materialized read-only lists, matching how dropdown state consumes
+  option data.
 - Full option-list refreshes now use `OptionItems.ReplaceAndSelect`, keeping
   replacement and selected-value restoration in one helper.
 - Supported language-code normalization now goes through Core `AppLanguages`,
@@ -1182,6 +1486,8 @@ Commands are wired:
   main Preset dropdown refresh goes through `PresetMenuRefresh`, and Manage
   Presets modal refresh goes through `ManagedPresetList`, keeping store
   listing/projection/selection fallback rules out of command handlers.
+  `ManagedPresetList` now rejects missing stores/target collections at the
+  helper boundary instead of failing later in store or XAML paths.
 - Preset listing now uses stable ordinal case-insensitive name ordering with id
   tie-breaks, so dropdown order does not drift with current UI culture.
 - Preset default-name formatting, trimming/validation, and duplicate-name
@@ -1238,7 +1544,9 @@ Commands are wired:
 - SolidColor editing includes a native ColorPicker, validated hex input, and
   quick swatches for common wallpaper colors.
 - SolidColor quick swatches now come from `ColorSwatchCatalog`, keeping palette
-  choices out of `MainPageViewModel`.
+  choices out of `MainPageViewModel`. The catalog now returns a materialized
+  read-only list, so edit state consumes validated swatches instead of a deferred
+  projection.
 - SolidColor hex normalization and RGB parsing now go through Core
   `ColorHexValue`, so App previews and Core rendering share one color policy.
 - Selecting Image without a path keeps the editor on Image without mutating the
@@ -1333,6 +1641,11 @@ Startup behavior:
 
 Packaged launch smoke:
 
+- 2026-06-12: `scripts\SmokeLaunch.ps1 -DisableNuGetAudit` built and launched
+  the packaged app through `winapp` on the current Windows user. Returned AUMID
+  `1EB1FFC3-B778-402F-85FA-F6C6BF1EA9A4_yq0fg95n1tr90!App`; process
+  `Waller.Native.App` had main window title `Waller` and `Responding=True`;
+  smoke cleanup closed the process.
 - 2026-06-07: `BuildAndRun.ps1 ... -Detach` launched the packaged app through
   `winapp`.
 - Returned AUMID: `1EB1FFC3-B778-402F-85FA-F6C6BF1EA9A4_1z32rh13vfry6!App`.

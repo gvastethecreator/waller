@@ -44,10 +44,7 @@ public sealed class BasicPngWallpaperRenderer : IWallpaperRenderer
                 monitor.Bounds.Width,
                 monitor.Bounds.Height,
                 request.Assignment.Placement),
-            _ => PixelBuffer.CreateSolid(
-                monitor.Bounds.Width,
-                monitor.Bounds.Height,
-                RgbColor.Black),
+            _ => InvalidSourceKind(request.Assignment.Source.Kind),
         };
 
         await SolidColorPngWriter.WriteAsync(
@@ -62,4 +59,7 @@ public sealed class BasicPngWallpaperRenderer : IWallpaperRenderer
             monitor.Bounds.Height,
             DateTimeOffset.UtcNow);
     }
+
+    private static PixelBuffer InvalidSourceKind(WallpaperSourceKind sourceKind) =>
+        throw new ArgumentOutOfRangeException(nameof(sourceKind), sourceKind, "Unknown render source kind.");
 }

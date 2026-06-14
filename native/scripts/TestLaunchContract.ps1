@@ -26,6 +26,21 @@ $smokeLaunch = Get-Content -LiteralPath $smokeLaunchFullPath -Raw
 $buildAndRun = Get-Content -LiteralPath $buildAndRunFullPath -Raw
 $errors = @()
 
+function Get-ManifestAttributeByLocalName {
+    param(
+        [System.Xml.XmlElement]$Node,
+        [string]$LocalName
+    )
+
+    foreach ($attribute in $Node.Attributes) {
+        if ($attribute.LocalName -eq $LocalName) {
+            return $attribute.Value
+        }
+    }
+
+    return $null
+}
+
 $application = $manifest.SelectNodes("//*[local-name()='Application']") | Select-Object -First 1
 if (-not $application) {
     $errors += "Package manifest must include an Application node."
@@ -37,6 +52,14 @@ else {
 
     if ($application.GetAttribute("Executable") -ne '$targetnametoken$.exe') {
         $errors += "Package Application Executable must stay '$targetnametoken$.exe'."
+    }
+
+    if ((Get-ManifestAttributeByLocalName -Node $application -LocalName "RuntimeBehavior") -ne "packagedClassicApp") {
+        $errors += "Package Application must run as uap10:RuntimeBehavior='packagedClassicApp'."
+    }
+
+    if ((Get-ManifestAttributeByLocalName -Node $application -LocalName "TrustLevel") -ne "mediumIL") {
+        $errors += "Package Application must run as uap10:TrustLevel='mediumIL'."
     }
 }
 

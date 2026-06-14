@@ -21,7 +21,8 @@ public sealed record MonitorSession
         PresetAssignment? LastAppliedAssignment,
         MonitorApplyStatus ApplyStatus,
         string? ApplyError,
-        bool HasUnsavedPresetChanges)
+        bool HasUnsavedPresetChanges,
+        string? ApplyErrorMessage = null)
     {
         ArgumentNullException.ThrowIfNull(Monitor);
         ArgumentNullException.ThrowIfNull(DesiredAssignment);
@@ -31,6 +32,7 @@ public sealed record MonitorSession
         this.LastAppliedAssignment = LastAppliedAssignment;
         this.ApplyStatus = ApplyStatus;
         this.ApplyError = ApplyError;
+        this.ApplyErrorMessage = ApplyErrorMessage;
         this.HasUnsavedPresetChanges = HasUnsavedPresetChanges;
     }
 
@@ -61,16 +63,16 @@ public sealed record MonitorSession
         get => applyStatus;
         init
         {
-            if (!Enum.IsDefined(value))
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), value, "Monitor apply status is invalid.");
-            }
-
-            applyStatus = value;
+            applyStatus = DefinedEnumValue.Require(
+                value,
+                nameof(value),
+                "Monitor apply status is invalid.");
         }
     }
 
     public string? ApplyError { get; init; }
+
+    public string? ApplyErrorMessage { get; init; }
 
     public bool HasUnsavedPresetChanges { get; init; }
 
@@ -101,6 +103,7 @@ public sealed record MonitorSession
             DesiredAssignment = assignment,
             ApplyStatus = MonitorApplyStatus.Pending,
             ApplyError = null,
+            ApplyErrorMessage = null,
             HasUnsavedPresetChanges = hasUnsavedPresetChanges,
         };
     }
@@ -111,6 +114,7 @@ public sealed record MonitorSession
         {
             ApplyStatus = MonitorApplyStatus.Applying,
             ApplyError = null,
+            ApplyErrorMessage = null,
         };
     }
 
@@ -121,10 +125,11 @@ public sealed record MonitorSession
             ApplyStatus = MonitorApplyStatus.Applied,
             LastAppliedAssignment = DesiredAssignment,
             ApplyError = null,
+            ApplyErrorMessage = null,
         };
     }
 
-    public MonitorSession WithApplyError(string error)
+    public MonitorSession WithApplyError(string error, string? errorMessage = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(error);
 
@@ -132,6 +137,7 @@ public sealed record MonitorSession
         {
             ApplyStatus = MonitorApplyStatus.Error,
             ApplyError = error,
+            ApplyErrorMessage = string.IsNullOrWhiteSpace(errorMessage) ? null : errorMessage,
         };
     }
 }

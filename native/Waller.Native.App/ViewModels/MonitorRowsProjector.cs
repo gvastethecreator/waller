@@ -53,7 +53,8 @@ internal static class MonitorRowsProjector
         bool selectFirst) =>
         selectFirst
             ? monitors.FirstOrDefault()
-            : monitors.FirstOrDefault(monitor => monitor.MonitorKey == selectedMonitorKey)
+            : monitors.FirstOrDefault(monitor =>
+                selectedMonitorKey is not null && MonitorKeys.Equals(monitor.MonitorKey, selectedMonitorKey))
                 ?? monitors.FirstOrDefault();
 }
 

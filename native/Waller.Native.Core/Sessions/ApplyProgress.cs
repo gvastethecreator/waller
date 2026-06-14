@@ -21,11 +21,9 @@ public sealed record ApplyProgress
             throw new ArgumentOutOfRangeException(nameof(Completed), "Completed cannot exceed Total.");
         }
 
-        ArgumentException.ThrowIfNullOrWhiteSpace(MonitorName);
-
         this.Completed = Completed;
         this.Total = Total;
-        this.MonitorName = MonitorName;
+        this.MonitorName = MonitorDisplayName.Normalize(MonitorName, nameof(MonitorName));
         this.Status = Status;
     }
 
@@ -40,12 +38,10 @@ public sealed record ApplyProgress
         get => status;
         init
         {
-            if (!Enum.IsDefined(value))
-            {
-                throw new ArgumentOutOfRangeException(nameof(value), value, "Monitor apply status is invalid.");
-            }
-
-            status = value;
+            status = DefinedEnumValue.Require(
+                value,
+                nameof(value),
+                "Monitor apply status is invalid.");
         }
     }
 }

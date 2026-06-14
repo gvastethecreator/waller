@@ -5,14 +5,19 @@ public static class PresetNames
     public static string DefaultName(DateTimeOffset createdAt) =>
         $"Preset {createdAt:yyyy-MM-dd HH.mm}";
 
-    public static string Validate(string name)
+    public static string Validate(string name) => Validate(name, nameof(name));
+
+    public static string Validate(string name, string parameterName)
     {
-        ArgumentNullException.ThrowIfNull(name);
+        if (name is null)
+        {
+            throw new ArgumentNullException(parameterName);
+        }
 
         var trimmed = name.Trim();
         if (string.IsNullOrWhiteSpace(trimmed))
         {
-            throw new ArgumentException("Preset name is required.", nameof(name));
+            throw new ArgumentException("Preset name is required.", parameterName);
         }
 
         return trimmed;

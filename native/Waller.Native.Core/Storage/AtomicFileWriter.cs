@@ -10,15 +10,14 @@ internal static class AtomicFileWriter
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         ArgumentNullException.ThrowIfNull(write);
 
+        cancellationToken.ThrowIfCancellationRequested();
+
         var directory = Path.GetDirectoryName(path);
+        var tempPath = CreateTempPath(path);
         if (!string.IsNullOrWhiteSpace(directory))
         {
             Directory.CreateDirectory(directory);
         }
-
-        var tempPath = Path.Combine(
-            directory ?? string.Empty,
-            $".{Path.GetFileName(path)}.{Guid.NewGuid():N}.tmp");
 
         try
         {
@@ -36,24 +35,23 @@ internal static class AtomicFileWriter
         }
         finally
         {
-            DeleteTempFileIfPresent(tempPath);
+            LocalDataFile.DeleteRecoverableIfExists(tempPath);
         }
     }
 
-    private static void DeleteTempFileIfPresent(string tempPath)
+    internal static string CreateTempPath(string path)
     {
-        try
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+
+        var fileName = Path.GetFileName(path);
+        if (string.IsNullOrWhiteSpace(fileName))
         {
-            if (File.Exists(tempPath))
-            {
-                File.Delete(tempPath);
-            }
+            throw new ArgumentException("Atomic write path must include a file name.", nameof(path));
         }
-        catch (IOException)
-        {
-        }
-        catch (UnauthorizedAccessException)
-        {
-        }
+
+        var directory = Path.GetDirectoryName(path);
+        return Path.Combine(
+            directory ?? string.Empty,
+            $".{fileName}.{Guid.NewGuid():N}.tmp");
     }
 }

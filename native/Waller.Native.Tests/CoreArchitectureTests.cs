@@ -399,6 +399,23 @@ public sealed class CoreArchitectureTests
         Assert.Contains("display-1", set);
     }
 
+    [Fact]
+    public void MonitorKeys_ContainsIgnoresSourceSetComparer()
+    {
+        IReadOnlySet<string> monitorKeys = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "DISPLAY-1",
+        };
+
+        Assert.True(MonitorKeys.Contains(monitorKeys, "display-1"));
+    }
+
+    [Fact]
+    public void MonitorKeys_RequireReturnsValidMonitorKey()
+    {
+        Assert.Equal("DISPLAY-1", MonitorKeys.Require("DISPLAY-1", "monitorKey"));
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData(" ")]
@@ -407,6 +424,17 @@ public sealed class CoreArchitectureTests
         var error = Assert.Throws<ArgumentException>(() => MonitorKeys.CreateSet(monitorKey));
 
         Assert.Equal("monitorKey", error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void MonitorKeys_RequireRejectsBlankMonitorKey(string monitorKey)
+    {
+        var error = Assert.Throws<ArgumentException>(() => MonitorKeys.Require(monitorKey, "monitorKey"));
+
+        Assert.Equal("monitorKey", error.ParamName);
+        Assert.Contains("Monitor key is required.", error.Message);
     }
 
     [Fact]
@@ -575,6 +603,16 @@ public sealed class CoreArchitectureTests
             new MonitorSnapshot(identity, displayName, WallpaperSource.Empty));
 
         Assert.Equal("displayName", error.ParamName);
+    }
+
+    [Fact]
+    public void MonitorSnapshot_TrimsDisplayName()
+    {
+        var identity = new MonitorIdentity("DISPLAY-1", "Monitor 1", 1, 1920, 1080, 0, 0);
+
+        var monitor = new MonitorSnapshot(identity, "  Monitor 1  ", WallpaperSource.Empty);
+
+        Assert.Equal("Monitor 1", monitor.DisplayName);
     }
 
     [Fact]
@@ -1371,6 +1409,52 @@ public sealed class CoreArchitectureTests
     }
 
     [Fact]
+    public void PresetNames_UsesCallerParameterName()
+    {
+        var error = Assert.Throws<ArgumentException>(() => PresetNames.Validate(" ", "PresetName"));
+
+        Assert.Equal("PresetName", error.ParamName);
+    }
+
+    [Fact]
+    public void PresetIds_ValidatesRealPresetIds()
+    {
+        var id = Guid.NewGuid();
+
+        Assert.True(PresetIds.IsValid(id));
+        Assert.False(PresetIds.IsValid(Guid.Empty));
+        Assert.Equal(id, PresetIds.NormalizeOptional(id));
+        Assert.Null(PresetIds.NormalizeOptional(Guid.Empty));
+        Assert.Null(PresetIds.NormalizeOptional(null));
+        Assert.Equal(id, PresetIds.RequireValid(id, "presetId"));
+
+        var error = Assert.Throws<ArgumentException>(() => PresetIds.RequireValid(Guid.Empty, "presetId"));
+        Assert.Equal("presetId", error.ParamName);
+        Assert.Contains("Preset id cannot be empty.", error.Message);
+    }
+
+    [Fact]
+    public void DefinedEnumValue_ValidatesSupportedEnumValues()
+    {
+        Assert.True(DefinedEnumValue.IsDefined(WallpaperSourceKind.Empty));
+        Assert.False(DefinedEnumValue.IsDefined((WallpaperSourceKind)999));
+        Assert.Equal(
+            WallpaperSourceKind.Image,
+            DefinedEnumValue.Require(
+                WallpaperSourceKind.Image,
+                "sourceKind",
+                "Source kind is invalid."));
+
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            DefinedEnumValue.Require(
+                (WallpaperSourceKind)999,
+                "sourceKind",
+                "Source kind is invalid."));
+        Assert.Equal("sourceKind", error.ParamName);
+        Assert.Contains("Source kind is invalid.", error.Message);
+    }
+
+    [Fact]
     public void ColorHexValue_NormalizesAndParsesRgbValues()
     {
         var color = ColorHexValue.Parse(" A1b2C3 ");
@@ -1390,6 +1474,18 @@ public sealed class CoreArchitectureTests
         Assert.False(ColorHexValue.TryParse("#12345", out _));
         Assert.False(ColorHexValue.TryParse("not-a-color", out _));
         Assert.False(ColorHexValue.TryParse(null, out _));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void ColorHexValue_RejectsMissingValues(string? colorHex)
+    {
+        var error = Assert.Throws<ArgumentException>(() => ColorHexValue.Normalize(colorHex!));
+
+        Assert.Equal("colorHex", error.ParamName);
+        Assert.Contains("Color must be #RRGGBB.", error.Message);
     }
 
     [Fact]
@@ -1476,6 +1572,30 @@ public sealed class CoreArchitectureTests
         Assert.True(LocalDataFileSystemErrors.IsRecoverable(new IOException("locked")));
         Assert.True(LocalDataFileSystemErrors.IsRecoverable(new UnauthorizedAccessException("denied")));
         Assert.False(LocalDataFileSystemErrors.IsRecoverable(new InvalidOperationException("bug")));
+    }
+
+    [Fact]
+    public void LocalDataFile_DeleteIfExistsIgnoresMissingFileOrDirectory()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"waller-local-file-tests-{Guid.NewGuid():N}");
+        var path = Path.Combine(root, "missing", "data.json");
+
+        LocalDataFile.DeleteIfExists(path);
+        LocalDataFile.DeleteRecoverableIfExists(path);
+        Assert.True(LocalDataFile.TryDeleteIfExists(path));
+
+        Assert.False(Directory.Exists(root));
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void LocalDataFile_DeleteRejectsBlankPath(string? path)
+    {
+        Assert.ThrowsAny<ArgumentException>(() => LocalDataFile.DeleteIfExists(path!));
+        Assert.ThrowsAny<ArgumentException>(() => LocalDataFile.DeleteRecoverableIfExists(path!));
+        Assert.ThrowsAny<ArgumentException>(() => LocalDataFile.TryDeleteIfExists(path!));
     }
 
     [Fact]
@@ -1576,6 +1696,44 @@ public sealed class CoreArchitectureTests
         Assert.Equal("Name", error.ParamName);
     }
 
+    [Fact]
+    public void PresetIdentity_RejectsEmptyId()
+    {
+        var error = Assert.Throws<ArgumentException>(() => new PresetIdentity(Guid.Empty, "Desk"));
+
+        Assert.Equal("Id", error.ParamName);
+        Assert.Contains("Preset id cannot be empty.", error.Message);
+    }
+
+    [Fact]
+    public void PresetIdentity_TrimsName()
+    {
+        var identity = new PresetIdentity(Guid.NewGuid(), "  Desk  ");
+
+        Assert.Equal("Desk", identity.Name);
+    }
+
+    [Fact]
+    public void PresetIdentity_WithExpressionTrimsName()
+    {
+        var identity = new PresetIdentity(Guid.NewGuid(), "Desk");
+
+        var updated = identity with { Name = "  Focus  " };
+
+        Assert.Equal("Focus", updated.Name);
+    }
+
+    [Fact]
+    public void PresetIdentity_WithExpressionRejectsEmptyId()
+    {
+        var identity = new PresetIdentity(Guid.NewGuid(), "Desk");
+
+        var error = Assert.Throws<ArgumentException>(() => identity with { Id = Guid.Empty });
+
+        Assert.Equal("value", error.ParamName);
+        Assert.Contains("Preset id cannot be empty.", error.Message);
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -1591,6 +1749,56 @@ public sealed class CoreArchitectureTests
             DateTimeOffset.UnixEpoch));
 
         Assert.Equal("Name", error.ParamName);
+    }
+
+    [Fact]
+    public void Preset_RejectsEmptyId()
+    {
+        var error = Assert.Throws<ArgumentException>(() => new Preset(
+            Preset.CurrentSchemaVersion,
+            Guid.Empty,
+            "Desk",
+            [],
+            DateTimeOffset.UnixEpoch,
+            DateTimeOffset.UnixEpoch));
+
+        Assert.Equal("Id", error.ParamName);
+        Assert.Contains("Preset id cannot be empty.", error.Message);
+    }
+
+    [Fact]
+    public void Preset_TrimsName()
+    {
+        var preset = new Preset(
+            Preset.CurrentSchemaVersion,
+            Guid.NewGuid(),
+            "  Desk  ",
+            [],
+            DateTimeOffset.UnixEpoch,
+            DateTimeOffset.UnixEpoch);
+
+        Assert.Equal("Desk", preset.Name);
+    }
+
+    [Fact]
+    public void Preset_WithExpressionTrimsName()
+    {
+        var preset = CreatePreset([]);
+
+        var updated = preset with { Name = "  Focus  " };
+
+        Assert.Equal("Focus", updated.Name);
+    }
+
+    [Fact]
+    public void Preset_WithExpressionRejectsEmptyId()
+    {
+        var preset = CreatePreset([]);
+
+        var error = Assert.Throws<ArgumentException>(() => preset with { Id = Guid.Empty });
+
+        Assert.Equal("value", error.ParamName);
+        Assert.Contains("Preset id cannot be empty.", error.Message);
     }
 
     [Fact]
@@ -1759,6 +1967,52 @@ public sealed class CoreArchitectureTests
             Assert.Equal("#112233", listed[0].Assignments[0].Source.ColorHex);
             Assert.Equal(25, listed[0].Assignments[0].Placement.OffsetXPercent);
             Assert.Equal(-50, listed[0].Assignments[0].Placement.OffsetYPercent);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task PresetStore_LoadMissingPresetReturnsNullThroughRecoverableRead()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"waller-native-tests-{Guid.NewGuid():N}");
+        try
+        {
+            var store = new PresetStore(root);
+
+            var preset = await store.LoadAsync(Guid.NewGuid());
+
+            Assert.Null(preset);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
+    public async Task PresetStore_MissingReadAndDeleteDoNotCreateLocalDataDirectory()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"waller-native-tests-{Guid.NewGuid():N}");
+        try
+        {
+            var store = new PresetStore(root);
+
+            var listed = await store.ListAsync();
+            var loaded = await store.LoadAsync(Guid.NewGuid());
+            await store.DeleteAsync(Guid.NewGuid());
+
+            Assert.Empty(listed);
+            Assert.Null(loaded);
+            Assert.False(Directory.Exists(root));
         }
         finally
         {
@@ -1990,6 +2244,71 @@ public sealed class CoreArchitectureTests
             await store.DeleteAsync(saved.Id);
             Assert.Null(await store.LoadAsync(saved.Id));
             Assert.Empty(await store.ListAsync());
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData("load")]
+    [InlineData("rename")]
+    [InlineData("delete")]
+    public async Task PresetStore_RejectsEmptyPresetId(string action)
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"waller-native-tests-{Guid.NewGuid():N}");
+        try
+        {
+            var store = new PresetStore(root);
+
+            var error = await Assert.ThrowsAsync<ArgumentException>(() => action switch
+            {
+                "load" => store.LoadAsync(Guid.Empty),
+                "rename" => store.RenameAsync(Guid.Empty, "Renamed"),
+                "delete" => store.DeleteAsync(Guid.Empty),
+                _ => throw new InvalidOperationException(action),
+            });
+
+            Assert.Equal("id", error.ParamName);
+            Assert.Contains("Preset id cannot be empty.", error.Message);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData("list")]
+    [InlineData("load")]
+    [InlineData("save")]
+    [InlineData("delete")]
+    public async Task PresetStore_CancelledOperationsDoNotCreateLocalFolders(string action)
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"waller-native-tests-{Guid.NewGuid():N}");
+        try
+        {
+            var store = new PresetStore(root);
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => action switch
+            {
+                "list" => store.ListAsync(cts.Token),
+                "load" => store.LoadAsync(Guid.NewGuid(), cts.Token),
+                "save" => store.SaveAsync(CreatePreset([]), cts.Token),
+                "delete" => store.DeleteAsync(Guid.NewGuid(), cts.Token),
+                _ => throw new InvalidOperationException(action),
+            });
+
+            Assert.False(Directory.Exists(root));
         }
         finally
         {
@@ -2676,6 +2995,27 @@ public sealed class CoreArchitectureTests
         }
     }
 
+    [Fact]
+    public async Task UserSettingsStore_LoadMissingSettingsReturnsDefaultsThroughRecoverableRead()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"waller-settings-tests-{Guid.NewGuid():N}");
+        try
+        {
+            var store = new UserSettingsStore(root);
+
+            var loaded = await store.LoadAsync();
+
+            Assert.Equal(UserSettings.Default, loaded);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -2700,6 +3040,37 @@ public sealed class CoreArchitectureTests
             var error = await Assert.ThrowsAsync<ArgumentNullException>(() => store.SaveAsync(settings!));
 
             Assert.Equal("settings", error.ParamName);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData("load")]
+    [InlineData("save")]
+    public async Task UserSettingsStore_CancelledOperationsDoNotCreateLocalFiles(string action)
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"waller-settings-tests-{Guid.NewGuid():N}");
+        try
+        {
+            var store = new UserSettingsStore(root);
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => action switch
+            {
+                "load" => store.LoadAsync(cts.Token),
+                "save" => store.SaveAsync(UserSettings.Default, cts.Token),
+                _ => throw new InvalidOperationException(action),
+            });
+
+            Assert.False(File.Exists(Path.Combine(root, "settings.json")));
+            Assert.False(Directory.Exists(root));
         }
         finally
         {
@@ -2868,6 +3239,28 @@ public sealed class CoreArchitectureTests
     }
 
     [Fact]
+    public async Task UserSettingsStore_DropsEmptyLastSelectedPresetId()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"waller-settings-tests-{Guid.NewGuid():N}");
+        try
+        {
+            var store = new UserSettingsStore(root);
+            await store.SaveAsync(UserSettings.Default with { LastSelectedPresetId = Guid.Empty });
+
+            var loaded = await store.LoadAsync();
+
+            Assert.Null(loaded.LastSelectedPresetId);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
+    }
+
+    [Fact]
     public async Task UserSettingsStore_DropsIncompleteWindowPosition()
     {
         var root = Path.Combine(Path.GetTempPath(), $"waller-settings-tests-{Guid.NewGuid():N}");
@@ -2935,6 +3328,14 @@ public sealed class CoreArchitectureTests
         var normalized = UserSettingsPolicy.Normalize(settings);
 
         Assert.Equal(AppLanguages.English, normalized.Language);
+    }
+
+    [Fact]
+    public void UserSettings_ConvertsEmptyLastSelectedPresetIdToNull()
+    {
+        var settings = UserSettings.Default with { LastSelectedPresetId = Guid.Empty };
+
+        Assert.Null(settings.LastSelectedPresetId);
     }
 
     [Fact]
@@ -3012,6 +3413,17 @@ public sealed class CoreArchitectureTests
     }
 
     [Fact]
+    public void UserSettings_WithPreferencesConvertsEmptyLastSelectedPresetIdToNull()
+    {
+        var updated = UserSettings.Default.WithPreferences(
+            AppThemePreference.Dark,
+            AppLanguages.Spanish,
+            Guid.Empty);
+
+        Assert.Null(updated.LastSelectedPresetId);
+    }
+
+    [Fact]
     public void UserSettings_WithPreferencesRejectsInvalidTheme()
     {
         var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
@@ -3058,6 +3470,14 @@ public sealed class CoreArchitectureTests
     }
 
     [Fact]
+    public void UserSettings_WithLastSelectedPresetConvertsEmptyIdToNull()
+    {
+        var updated = UserSettings.Default.WithLastSelectedPreset(Guid.Empty);
+
+        Assert.Null(updated.LastSelectedPresetId);
+    }
+
+    [Fact]
     public async Task RenderedWallpaperStore_ClearDeletesRenderedPngFiles()
     {
         var root = Path.Combine(Path.GetTempPath(), $"waller-render-cache-tests-{Guid.NewGuid():N}");
@@ -3093,6 +3513,21 @@ public sealed class CoreArchitectureTests
         var error = Assert.ThrowsAny<ArgumentException>(() => new RenderedWallpaperStore(rootDirectory!));
 
         Assert.Equal("rootDirectory", error.ParamName);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void RenderedWallpaperStore_RejectsBlankMonitorKeyBeforeCreatingDirectory(string? monitorKey)
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"waller-render-cache-tests-{Guid.NewGuid():N}");
+        var store = new RenderedWallpaperStore(root);
+
+        var error = Assert.ThrowsAny<ArgumentException>(() => store.CreatePath(monitorKey!));
+
+        Assert.Equal("monitorKey", error.ParamName);
+        Assert.False(Directory.Exists(store.RenderedDirectory));
     }
 
     [Fact]
@@ -3225,6 +3660,19 @@ public sealed class CoreArchitectureTests
         Assert.False(RenderedWallpaperFileNames.IsCacheFile(@"C:\cache\notes.txt"));
     }
 
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void RenderedWallpaperFileNames_CreateRejectsBlankMonitorKey(string? monitorKey)
+    {
+        var error = Assert.ThrowsAny<ArgumentException>(() => RenderedWallpaperFileNames.Create(
+            monitorKey!,
+            DateTimeOffset.UnixEpoch));
+
+        Assert.Equal("monitorKey", error.ParamName);
+    }
+
     [Fact]
     public void RenderedCacheClearResult_ReportsFailures()
     {
@@ -3338,6 +3786,63 @@ public sealed class CoreArchitectureTests
             AtomicFileWriter.WriteAsync("data.bin", write!, CancellationToken.None));
 
         Assert.Equal("write", error.ParamName);
+    }
+
+    [Fact]
+    public async Task AtomicFileWriter_RejectsPathWithoutFileName()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"waller-atomic-write-tests-{Guid.NewGuid():N}");
+        var path = root + Path.DirectorySeparatorChar;
+
+        var error = await Assert.ThrowsAsync<ArgumentException>(() =>
+            AtomicFileWriter.WriteAsync(
+                path,
+                (_, _) => Task.CompletedTask,
+                CancellationToken.None));
+
+        Assert.Equal("path", error.ParamName);
+        Assert.Contains("Atomic write path must include a file name.", error.Message);
+        Assert.False(Directory.Exists(root));
+    }
+
+    [Fact]
+    public void AtomicFileWriter_CreateTempPathUsesTargetDirectoryAndFileName()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"waller-atomic-write-tests-{Guid.NewGuid():N}");
+        var path = Path.Combine(root, "data.bin");
+
+        var tempPath = AtomicFileWriter.CreateTempPath(path);
+
+        Assert.Equal(root, Path.GetDirectoryName(tempPath));
+        Assert.StartsWith(".data.bin.", Path.GetFileName(tempPath), StringComparison.Ordinal);
+        Assert.EndsWith(".tmp", tempPath, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task AtomicFileWriter_CancelledWriteDoesNotCreateDirectory()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"waller-atomic-write-tests-{Guid.NewGuid():N}");
+        try
+        {
+            var path = Path.Combine(root, "data.bin");
+            using var cts = new CancellationTokenSource();
+            cts.Cancel();
+
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+                AtomicFileWriter.WriteAsync(
+                    path,
+                    (_, _) => Task.CompletedTask,
+                    cts.Token));
+
+            Assert.False(Directory.Exists(root));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, recursive: true);
+            }
+        }
     }
 
     [Fact]
@@ -3569,6 +4074,15 @@ public sealed class CoreArchitectureTests
     }
 
     [Fact]
+    public void DesktopWallpaperInterop_RejectsUnknownWindowsPosition()
+    {
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            DesktopWallpaperInterop.PositionToPlacement((DesktopWallpaperPosition)999));
+
+        Assert.Equal("position", error.ParamName);
+    }
+
+    [Fact]
     public void DesktopWallpaperInterop_SetsWallpaperBeforePosition()
     {
         var desktopWallpaper = new RecordingDesktopWallpaperCom();
@@ -3585,6 +4099,48 @@ public sealed class CoreArchitectureTests
                 "SetPosition:Fill",
             ],
             desktopWallpaper.Calls);
+    }
+
+    [Fact]
+    public void StaThreadRunner_RunsActionOnStaThreadFromMtaCaller()
+    {
+        ApartmentState? callerApartment = null;
+        ApartmentState? actionApartment = null;
+
+        var thread = new Thread(() =>
+        {
+            callerApartment = Thread.CurrentThread.GetApartmentState();
+            StaThreadRunner.Run(() =>
+            {
+                actionApartment = Thread.CurrentThread.GetApartmentState();
+            });
+        });
+
+        thread.SetApartmentState(ApartmentState.MTA);
+        thread.Start();
+        thread.Join();
+
+        Assert.Equal(ApartmentState.MTA, callerApartment);
+        Assert.Equal(ApartmentState.STA, actionApartment);
+    }
+
+    [Fact]
+    public void StaThreadRunner_PropagatesExceptionFromStaThread()
+    {
+        Exception? observed = null;
+
+        var thread = new Thread(() =>
+        {
+            observed = Record.Exception(() =>
+                StaThreadRunner.Run(() => throw new InvalidOperationException("COM failed.")));
+        });
+
+        thread.SetApartmentState(ApartmentState.MTA);
+        thread.Start();
+        thread.Join();
+
+        var error = Assert.IsType<InvalidOperationException>(observed);
+        Assert.Equal("COM failed.", error.Message);
     }
 
     [Fact]
@@ -3648,6 +4204,42 @@ public sealed class CoreArchitectureTests
                 File.Delete(path);
             }
         }
+    }
+
+    [Fact]
+    public async Task WallpaperSourceFiles_NormalizesImagePathsBeforeFileChecks()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"waller-source-file-{Guid.NewGuid():N}.png");
+        try
+        {
+            var source = new WallpaperSource(WallpaperSourceKind.Image, $" {path} ");
+            Assert.True(WallpaperSourceFiles.IsMissingImageFile(source));
+            Assert.False(WallpaperSourceFiles.HasExistingImageFile(source));
+            Assert.Equal(Path.GetFileName(path), WallpaperSourceFiles.ImageFileName(source));
+
+            await File.WriteAllBytesAsync(path, [1, 2, 3]);
+
+            Assert.False(WallpaperSourceFiles.IsMissingImageFile(source));
+            Assert.True(WallpaperSourceFiles.HasExistingImageFile(source));
+            Assert.Equal(Path.GetFileName(path), WallpaperSourceFiles.ImageFileName(source));
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Fact]
+    public void WallpaperSourceFiles_IgnoresInvalidImagePaths()
+    {
+        var source = new WallpaperSource(WallpaperSourceKind.Image, "relative\\wallpaper.png");
+
+        Assert.False(WallpaperSourceFiles.IsMissingImageFile(source));
+        Assert.False(WallpaperSourceFiles.HasExistingImageFile(source));
+        Assert.Null(WallpaperSourceFiles.ImageFileName(source));
     }
 
     [Fact]
@@ -3828,6 +4420,29 @@ public sealed class CoreArchitectureTests
     }
 
     [Fact]
+    public async Task DesktopWallpaperApplier_PropagatesWriterCancellation()
+    {
+        var path = Path.Combine(Path.GetTempPath(), $"waller-applier-{Guid.NewGuid():N}.png");
+        try
+        {
+            await File.WriteAllBytesAsync(path, [1, 2, 3]);
+            var applier = new DesktopWallpaperApplier(new ThrowingDesktopWallpaperWriter(
+                new OperationCanceledException()));
+            var monitor = new MonitorIdentity("DISPLAY-1", "Monitor 1", 1, 1920, 1080, 0, 0);
+            var wallpaper = new RenderedWallpaper(monitor, path, 1920, 1080, DateTimeOffset.UtcNow);
+
+            await Assert.ThrowsAsync<OperationCanceledException>(() => applier.ApplyAsync(wallpaper));
+        }
+        finally
+        {
+            if (File.Exists(path))
+            {
+                File.Delete(path);
+            }
+        }
+    }
+
+    [Fact]
     public void ApplyResult_SuccessClearsErrorFields()
     {
         var monitor = new MonitorIdentity("DISPLAY-1", "Monitor 1", 1, 1920, 1080, 0, 0);
@@ -3978,12 +4593,46 @@ public sealed class CoreArchitectureTests
     }
 
     [Theory]
+    [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]
-    public void DesktopWallpaperSnapshot_RejectsBlankMonitorId(string monitorId)
+    public void DesktopMonitorDisplayName_RejectsBlankMonitorId(string? monitorId)
     {
-        var error = Assert.Throws<ArgumentException>(() => new DesktopWallpaperSnapshot(
-            monitorId,
+        var error = Assert.ThrowsAny<ArgumentException>(() =>
+            DesktopMonitorDisplayName.ShortenDeviceName(monitorId!));
+
+        Assert.Equal("monitorId", error.ParamName);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    public void DesktopMonitorDisplayName_RejectsInvalidDisplayIndex(int displayIndex)
+    {
+        var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
+            DesktopMonitorDisplayName.Create(displayIndex, "DISPLAY-1"));
+
+        Assert.Equal("displayIndex", error.ParamName);
+    }
+
+    [Fact]
+    public void DesktopMonitorDisplayName_TruncatesLongDeviceIds()
+    {
+        var deviceId = new string('A', 60);
+
+        var displayName = DesktopMonitorDisplayName.Create(2, deviceId);
+
+        Assert.Equal($"Monitor 2 - {new string('A', 45)}...", displayName);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void DesktopWallpaperSnapshot_RejectsBlankMonitorId(string? monitorId)
+    {
+        var error = Assert.ThrowsAny<ArgumentException>(() => new DesktopWallpaperSnapshot(
+            monitorId!,
             new MonitorBounds(0, 0, 1920, 1080),
             null));
 
@@ -4004,16 +4653,17 @@ public sealed class CoreArchitectureTests
     }
 
     [Theory]
+    [InlineData(null)]
     [InlineData("")]
     [InlineData(" ")]
-    public void DesktopWallpaperSnapshot_WithExpressionRejectsBlankMonitorId(string monitorId)
+    public void DesktopWallpaperSnapshot_WithExpressionRejectsBlankMonitorId(string? monitorId)
     {
         var snapshot = new DesktopWallpaperSnapshot(
             "DISPLAY-1",
             new MonitorBounds(0, 0, 1920, 1080),
             null);
 
-        var error = Assert.Throws<ArgumentException>(() => snapshot with { MonitorId = monitorId });
+        var error = Assert.ThrowsAny<ArgumentException>(() => snapshot with { MonitorId = monitorId! });
 
         Assert.Equal("value", error.ParamName);
     }
@@ -5004,6 +5654,14 @@ public sealed class CoreArchitectureTests
     }
 
     [Fact]
+    public void ApplyProgress_TrimsMonitorName()
+    {
+        var progress = new ApplyProgress(0, 1, "  DISPLAY-1  ", MonitorApplyStatus.Applying);
+
+        Assert.Equal("DISPLAY-1", progress.MonitorName);
+    }
+
+    [Fact]
     public void ApplyProgress_RejectsInvalidStatus()
     {
         var error = Assert.Throws<ArgumentOutOfRangeException>(() =>
@@ -5193,6 +5851,33 @@ public sealed class CoreArchitectureTests
         });
 
         Assert.Equal(parameterName, error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("result")]
+    [InlineData("canceled")]
+    public void ApplyRunTracker_RejectsNullResultProjectionMonitorItems(string action)
+    {
+        var monitor = CreateMonitor("DISPLAY-1", 16, 16, WallpaperSource.FromSolidColor("#112233"));
+        var session = ActiveSession.FromMonitors([monitor]);
+        var tracker = new ApplyRunTracker(total: 1, progress: null);
+        IReadOnlyList<MonitorSession> monitors = [session.Monitors[0], null!];
+
+        var error = Assert.Throws<ArgumentException>(() =>
+        {
+            if (action == "result")
+            {
+                tracker.ToResult(session, monitors);
+                return;
+            }
+
+            tracker.ToCanceledException(session, monitors);
+        });
+
+        Assert.Equal("monitors", error.ParamName);
+        Assert.Equal(
+            "Apply result monitor list cannot include null items. (Parameter 'monitors')",
+            error.Message);
     }
 
     [Fact]

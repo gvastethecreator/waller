@@ -22,7 +22,7 @@ internal static class PresetFilePolicy
     {
         if (preset is null
             || preset.SchemaVersion != Preset.CurrentSchemaVersion
-            || preset.Id == Guid.Empty
+            || !PresetIds.IsValid(preset.Id)
             || string.IsNullOrWhiteSpace(preset.Name)
             || preset.Assignments is null)
         {

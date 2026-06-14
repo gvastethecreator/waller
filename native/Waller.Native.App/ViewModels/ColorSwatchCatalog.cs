@@ -12,6 +12,8 @@ internal static class ColorSwatchCatalog
         "#F59E0B",
     ];
 
-    public static IEnumerable<ColorSwatchOption> Defaults() =>
-        DefaultHexValues.Select(ColorSwatchOption.FromHex);
+    public static IReadOnlyList<ColorSwatchOption> Defaults() =>
+        DefaultHexValues
+            .Select(ColorSwatchOption.FromHex)
+            .ToArray();
 }

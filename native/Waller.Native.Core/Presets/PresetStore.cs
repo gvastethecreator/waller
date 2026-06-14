@@ -14,9 +14,10 @@ public sealed class PresetStore(string rootDirectory)
 
     public async Task<IReadOnlyList<Preset>> ListAsync(CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         try
         {
-            EnsurePresetsDirectory();
             var presets = new List<Preset>();
 
             foreach (var path in Directory.EnumerateFiles(presetsDirectory, PresetFileSearchPattern))
@@ -41,13 +42,12 @@ public sealed class PresetStore(string rootDirectory)
 
     public async Task<Preset?> LoadAsync(Guid id, CancellationToken cancellationToken = default)
     {
+        cancellationToken.ThrowIfCancellationRequested();
+
         try
         {
-            EnsurePresetsDirectory();
             var path = GetPath(id);
-            return File.Exists(path)
-                ? await LoadFromPathAsync(path, cancellationToken)
-                : null;
+            return await LoadFromPathAsync(path, cancellationToken);
         }
         catch (Exception exception) when (LocalDataReadErrors.IsRecoverableFileSystem(exception))
         {
@@ -57,8 +57,9 @@ public sealed class PresetStore(string rootDirectory)
 
     public async Task<Preset> SaveAsync(Preset preset, CancellationToken cancellationToken = default)
     {
-        EnsurePresetsDirectory();
         var normalized = PresetFilePolicy.NormalizeForSave(preset, DateTimeOffset.UtcNow);
+        cancellationToken.ThrowIfCancellationRequested();
+        EnsurePresetsDirectory();
 
         var path = GetPath(normalized.Id);
         await LocalJsonFile.WriteAsync(
@@ -84,21 +85,18 @@ public sealed class PresetStore(string rootDirectory)
 
     public Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
     {
-        EnsurePresetsDirectory();
         cancellationToken.ThrowIfCancellationRequested();
 
         var path = GetPath(id);
-        if (File.Exists(path))
-        {
-            File.Delete(path);
-        }
-
+        LocalDataFile.DeleteIfExists(path);
         return Task.CompletedTask;
     }
 
     private void EnsurePresetsDirectory() => Directory.CreateDirectory(presetsDirectory);
 
-    private string GetPath(Guid id) => Path.Combine(presetsDirectory, $"{id:N}.json");
+    private string GetPath(Guid id) => Path.Combine(
+        presetsDirectory,
+        $"{PresetIds.RequireValid(id, nameof(id)):N}.json");
 
     private static async Task<Preset?> LoadFromPathAsync(string path, CancellationToken cancellationToken)
     {

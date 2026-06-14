@@ -42,6 +42,8 @@ public sealed partial class MainPageViewModel
     private async Task<bool> RunApplyAsync(
         Func<ApplyProgressHandler, CancellationToken, Task<ApplySessionResult>> apply)
     {
+        ArgumentNullException.ThrowIfNull(apply);
+
         if (IsApplying)
         {
             return false;
@@ -69,6 +71,8 @@ public sealed partial class MainPageViewModel
 
     private bool PresentApplyRunUiState(ApplyRunUiState state)
     {
+        ArgumentNullException.ThrowIfNull(state);
+
         if (state.Session is not null)
         {
             activeSession = state.Session;

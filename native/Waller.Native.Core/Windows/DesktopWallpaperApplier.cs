@@ -37,11 +37,12 @@ public sealed class DesktopWallpaperApplier : IWallpaperApplier
 
             return Task.FromResult(ApplyResult.Success(wallpaper.Monitor));
         }
-        catch (Exception)
+        catch (Exception error) when (DesktopWallpaperApplyErrors.IsRecoverable(error))
         {
             return Task.FromResult(ApplyResult.Failure(
                 wallpaper.Monitor,
-                ApplyErrorCodes.WallpaperApplyFailed));
+                ApplyErrorCodes.WallpaperApplyFailed,
+                error.Message));
         }
     }
 }
