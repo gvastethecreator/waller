@@ -18,5 +18,5 @@ public sealed partial class MainPageViewModel
     public partial double TopologyWidth { get; set; } = 960;
 
     [ObservableProperty]
-    public partial double TopologyHeight { get; set; } = 208;
+    public partial double TopologyHeight { get; set; } = 312;
 }

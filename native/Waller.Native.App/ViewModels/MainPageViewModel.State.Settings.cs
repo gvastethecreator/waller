@@ -11,7 +11,10 @@ public sealed partial class MainPageViewModel
     public ObservableCollection<OptionItem<string>> LanguageOptions { get; } = [];
 
     [ObservableProperty]
-    public partial AppThemePreference SelectedThemePreference { get; set; } = AppThemePreference.System;
+    public partial AppThemePreference SelectedThemePreference { get; set; } = AppThemePreference.Dark;
+
+    [ObservableProperty]
+    public partial bool IsDarkThemeSetting { get; set; } = true;
 
     [ObservableProperty]
     public partial string SelectedLanguage { get; set; } = AppLanguages.English;

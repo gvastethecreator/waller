@@ -9,9 +9,10 @@ internal sealed record MonitorStageLayout(
     IReadOnlyList<MonitorTopologyTile> Tiles)
 {
     private const double StageWidth = 960;
-    private const double StageHeight = 176;
-    private const double TileGap = 16;
-    private const double MaximumVerticalOffset = 32;
+    private const double StageHeight = 312;
+    private const double SurfacePadding = 16;
+    private const double MaximumContentWidth = StageWidth - (SurfacePadding * 2);
+    private const double MaximumContentHeight = StageHeight - (SurfacePadding * 2);
 
     public static MonitorStageLayout Calculate(IReadOnlyList<MonitorBounds> bounds)
     {
@@ -22,31 +23,24 @@ internal sealed record MonitorStageLayout(
             return new(StageWidth, StageHeight, []);
         }
 
-        var orderedIndexes = Enumerable
-            .Range(0, bounds.Count)
-            .OrderBy(index => bounds[index].X)
-            .ThenBy(index => bounds[index].Y)
+        var physicalLayout = MonitorTopologyLayout.Calculate(
+            bounds,
+            maxWidth: MaximumContentWidth,
+            maxHeight: MaximumContentHeight,
+            minSurfaceWidth: 96,
+            minSurfaceHeight: 48);
+        var tiles = bounds
+            .Select(monitor => physicalLayout.TileFor(monitor, minTileWidth: 1, minTileHeight: 1))
+            .Select(tile => new MonitorTopologyTile(
+                tile.Left + SurfacePadding,
+                tile.Top + SurfacePadding,
+                tile.Width,
+                tile.Height))
             .ToArray();
-        var totalAspectRatio = bounds.Sum(item => (double)item.Width / item.Height);
-        var availableWidth = StageWidth - (TileGap * (bounds.Count - 1));
-        var tileHeight = Math.Min(StageHeight, availableWidth / totalAspectRatio);
-        var currentLeft = 0d;
-        var minY = bounds.Min(item => item.Y);
-        var maxY = bounds.Max(item => item.Y);
-        var yRange = maxY - minY;
-        var tiles = new MonitorTopologyTile[bounds.Count];
 
-        foreach (var index in orderedIndexes)
-        {
-            var monitor = bounds[index];
-            var width = ((double)monitor.Width / monitor.Height) * tileHeight;
-            var top = yRange == 0
-                ? 0
-                : ((double)(monitor.Y - minY) / yRange) * MaximumVerticalOffset;
-            tiles[index] = new MonitorTopologyTile(currentLeft, top, width, tileHeight);
-            currentLeft += width + TileGap;
-        }
-
-        return new(StageWidth, tileHeight + MaximumVerticalOffset, tiles);
+        return new(
+            physicalLayout.SurfaceWidth + (SurfacePadding * 2),
+            physicalLayout.SurfaceHeight + (SurfacePadding * 2),
+            tiles);
     }
 }

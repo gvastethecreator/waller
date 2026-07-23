@@ -11,7 +11,7 @@
                 <!-- Other merged dictionaries here -->
             </ResourceDictionary.MergedDictionaries>
             <ResourceDictionary.ThemeDictionaries>
-                <ResourceDictionary x:Key="Default">
+                <ResourceDictionary x:Key="Dark">
                     <SolidColorBrush x:Key="WallerModalOverlayBrush" Color="#80000000" />
                     <SolidColorBrush x:Key="WallerPrimaryBrush" Color="#FFFFB900" />
                     <SolidColorBrush x:Key="WallerPrimaryTextBrush" Color="#FF1F1F1F" />
@@ -19,6 +19,7 @@
                     <SolidColorBrush x:Key="WallerSelectionTextBrush" Color="#FFFFFFFF" />
                     <SolidColorBrush x:Key="WallerPreviewLabelBrush" Color="#CC111111" />
                     <SolidColorBrush x:Key="WallerPreviewLabelTextBrush" Color="#FFFFFFFF" />
+                    <SolidColorBrush x:Key="WallerStatusSuccessBrush" Color="#FF72D572" />
                     <LinearGradientBrush x:Key="WallerStageBrush" StartPoint="0,0" EndPoint="0,1">
                         <GradientStop Color="#FF20242A" Offset="0" />
                         <GradientStop Color="#FF171C22" Offset="0.55" />
@@ -33,11 +34,23 @@
                     <SolidColorBrush x:Key="WallerSelectionTextBrush" Color="#FFFFFFFF" />
                     <SolidColorBrush x:Key="WallerPreviewLabelBrush" Color="#CC111111" />
                     <SolidColorBrush x:Key="WallerPreviewLabelTextBrush" Color="#FFFFFFFF" />
+                    <SolidColorBrush x:Key="WallerStatusSuccessBrush" Color="#FF107C10" />
                     <LinearGradientBrush x:Key="WallerStageBrush" StartPoint="0,0" EndPoint="0,1">
                         <GradientStop Color="#FFF9FBFD" Offset="0" />
                         <GradientStop Color="#FFEEF5FB" Offset="0.55" />
                         <GradientStop Color="#FFF8FAFC" Offset="1" />
                     </LinearGradientBrush>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="HighContrast">
+                    <StaticResource x:Key="WallerModalOverlayBrush" ResourceKey="SystemColorWindowColorBrush" />
+                    <StaticResource x:Key="WallerPrimaryBrush" ResourceKey="SystemColorHighlightColorBrush" />
+                    <StaticResource x:Key="WallerPrimaryTextBrush" ResourceKey="SystemColorHighlightTextColorBrush" />
+                    <StaticResource x:Key="WallerSelectionBrush" ResourceKey="SystemColorHighlightColorBrush" />
+                    <StaticResource x:Key="WallerSelectionTextBrush" ResourceKey="SystemColorHighlightTextColorBrush" />
+                    <StaticResource x:Key="WallerPreviewLabelBrush" ResourceKey="SystemColorButtonFaceColorBrush" />
+                    <StaticResource x:Key="WallerPreviewLabelTextBrush" ResourceKey="SystemColorButtonTextColorBrush" />
+                    <StaticResource x:Key="WallerStatusSuccessBrush" ResourceKey="SystemColorHotlightColorBrush" />
+                    <StaticResource x:Key="WallerStageBrush" ResourceKey="SystemColorWindowColorBrush" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
             <Style x:Key="WallerButtonIconStyle" TargetType="FontIcon">

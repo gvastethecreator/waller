@@ -3313,6 +3313,28 @@ public sealed class CoreArchitectureTests
     }
 
     [Fact]
+    public void UserSettings_DefaultsToDarkWithoutAnExplicitThemeChoice()
+    {
+        Assert.Equal(AppThemePreference.Dark, UserSettings.Default.Theme);
+        Assert.False(UserSettings.Default.ThemePreferenceWasSet);
+    }
+
+    [Fact]
+    public void UserSettingsPolicy_MigratesLegacyThemeToDark()
+    {
+        var legacyLight = UserSettings.Default with
+        {
+            Theme = AppThemePreference.Light,
+            ThemePreferenceWasSet = false,
+        };
+
+        var normalized = UserSettingsPolicy.Normalize(legacyLight);
+
+        Assert.Equal(AppThemePreference.Dark, normalized.Theme);
+        Assert.False(normalized.ThemePreferenceWasSet);
+    }
+
+    [Fact]
     public void UserSettings_WithExpressionConvertsNullLanguageToEmptyDraftValue()
     {
         var settings = UserSettings.Default with { Language = null! };
@@ -3479,6 +3501,21 @@ public sealed class CoreArchitectureTests
         Assert.Equal(720, updated.WindowHeight);
         Assert.Equal(-20, updated.WindowX);
         Assert.Equal(40, updated.WindowY);
+        Assert.True(updated.ThemePreferenceWasSet);
+    }
+
+    [Fact]
+    public void UserSettings_WithPreferencesPreservesExplicitLightTheme()
+    {
+        var updated = UserSettings.Default.WithPreferences(
+            AppThemePreference.Light,
+            AppLanguages.English,
+            lastSelectedPresetId: null);
+
+        var normalized = UserSettingsPolicy.Normalize(updated);
+
+        Assert.Equal(AppThemePreference.Light, normalized.Theme);
+        Assert.True(normalized.ThemePreferenceWasSet);
     }
 
     [Fact]

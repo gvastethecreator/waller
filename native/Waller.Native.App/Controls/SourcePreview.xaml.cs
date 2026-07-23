@@ -66,6 +66,18 @@ public sealed partial class SourcePreview : UserControl
         typeof(SourcePreview),
         new PropertyMetadata(TextWrapping.Wrap));
 
+    public static readonly DependencyProperty PreviewBadgeTextProperty = DependencyProperty.Register(
+        nameof(PreviewBadgeText),
+        typeof(string),
+        typeof(SourcePreview),
+        new PropertyMetadata(string.Empty));
+
+    public static readonly DependencyProperty PreviewBadgeVisibilityProperty = DependencyProperty.Register(
+        nameof(PreviewBadgeVisibility),
+        typeof(Visibility),
+        typeof(SourcePreview),
+        new PropertyMetadata(Visibility.Collapsed));
+
     public SourcePreview()
     {
         InitializeComponent();
@@ -129,5 +141,17 @@ public sealed partial class SourcePreview : UserControl
     {
         get => (TextWrapping)GetValue(PreviewTextWrappingProperty);
         set => SetValue(PreviewTextWrappingProperty, value);
+    }
+
+    public string PreviewBadgeText
+    {
+        get => (string)GetValue(PreviewBadgeTextProperty);
+        set => SetValue(PreviewBadgeTextProperty, value);
+    }
+
+    public Visibility PreviewBadgeVisibility
+    {
+        get => (Visibility)GetValue(PreviewBadgeVisibilityProperty);
+        set => SetValue(PreviewBadgeVisibilityProperty, value);
     }
 }

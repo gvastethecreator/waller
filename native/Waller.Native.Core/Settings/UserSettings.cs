@@ -21,7 +21,8 @@ public sealed record UserSettings
         int WindowHeight,
         int? WindowX,
         int? WindowY,
-        Guid? LastSelectedPresetId)
+        Guid? LastSelectedPresetId,
+        bool ThemePreferenceWasSet = false)
     {
         this.Theme = Theme;
         language = Language ?? string.Empty;
@@ -30,19 +31,27 @@ public sealed record UserSettings
         this.WindowX = WindowX;
         this.WindowY = WindowY;
         this.LastSelectedPresetId = PresetIds.NormalizeOptional(LastSelectedPresetId);
+        this.ThemePreferenceWasSet = ThemePreferenceWasSet;
     }
 
     public static UserSettings Default { get; } =
         new(
-            AppThemePreference.Light,
+            AppThemePreference.Dark,
             AppLanguages.English,
             UserSettingsPolicy.DefaultWindowWidth,
             UserSettingsPolicy.DefaultWindowHeight,
             null,
             null,
-            null);
+            null,
+            ThemePreferenceWasSet: false);
 
     public AppThemePreference Theme { get; init; }
+
+    /// <summary>
+    /// Tracks whether the user explicitly chose a theme. Older settings files
+    /// do not contain this value and therefore migrate to the dark default.
+    /// </summary>
+    public bool ThemePreferenceWasSet { get; init; }
 
     public string Language
     {
@@ -86,6 +95,7 @@ public sealed record UserSettings
         return this with
         {
             Theme = theme,
+            ThemePreferenceWasSet = true,
             Language = normalizedLanguage,
             LastSelectedPresetId = PresetIds.NormalizeOptional(lastSelectedPresetId),
         };

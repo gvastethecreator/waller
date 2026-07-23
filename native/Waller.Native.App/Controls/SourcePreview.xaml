@@ -18,7 +18,7 @@
                 Background="{Binding PreviewImageBrush, ElementName=Root}"
                 Visibility="{Binding PreviewImageVisibility, ElementName=Root}" />
             <TextBlock
-                HorizontalAlignment="Center"
+                HorizontalAlignment="Stretch"
                 VerticalAlignment="Center"
                 FontSize="{Binding PreviewTextFontSize, ElementName=Root}"
                 Text="{Binding PreviewText, ElementName=Root}"
@@ -26,6 +26,21 @@
                 TextTrimming="{Binding PreviewTextTrimming, ElementName=Root}"
                 TextWrapping="{Binding PreviewTextWrapping, ElementName=Root}"
                 Visibility="{Binding PreviewTextVisibility, ElementName=Root}" />
+            <Grid
+                Width="32"
+                Height="32"
+                Margin="12"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top"
+                Visibility="{Binding PreviewBadgeVisibility, ElementName=Root}">
+                <Ellipse Fill="{ThemeResource WallerSelectionBrush}" />
+                <TextBlock
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Foreground="{ThemeResource WallerSelectionTextBrush}"
+                    Text="{Binding PreviewBadgeText, ElementName=Root}"
+                    Style="{StaticResource BodyStrongTextBlockStyle}" />
+            </Grid>
         </Grid>
     </Border>
 </UserControl>

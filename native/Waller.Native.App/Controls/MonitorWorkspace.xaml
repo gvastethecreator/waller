@@ -59,6 +59,8 @@
                                             <Grid Width="184" Height="88" HorizontalAlignment="Center">
                                                 <controls:SourcePreview
                                                     AutomationProperties.Name="{x:Bind SourceSummary, Mode=OneWay}"
+                                                    PreviewBadgeText="{x:Bind Session.Monitor.Identity.DisplayIndex, Mode=OneWay}"
+                                                    PreviewBadgeVisibility="Visible"
                                                     PreviewWidth="184"
                                                     PreviewHeight="88"
                                                     PreviewBrush="{x:Bind SourcePreviewBrush, Mode=OneWay}"
@@ -68,20 +70,6 @@
                                                     PreviewTextVisibility="{x:Bind SourcePreviewTextVisibility, Mode=OneWay}"
                                                     PreviewTextTrimming="CharacterEllipsis"
                                                     PreviewTextWrapping="NoWrap" />
-                                                <Grid
-                                                    Width="26"
-                                                    Height="26"
-                                                    Margin="7"
-                                                    HorizontalAlignment="Left"
-                                                    VerticalAlignment="Top">
-                                                    <Ellipse Fill="{ThemeResource WallerSelectionBrush}" />
-                                                    <TextBlock
-                                                        HorizontalAlignment="Center"
-                                                        VerticalAlignment="Center"
-                                                        Foreground="{ThemeResource WallerSelectionTextBrush}"
-                                                        Text="{x:Bind Session.Monitor.Identity.DisplayIndex, Mode=OneWay}"
-                                                        Style="{StaticResource CaptionTextBlockStyle}" />
-                                                </Grid>
                                             </Grid>
                                             <TextBlock
                                                 Text="{x:Bind DisplayName, Mode=OneWay}"
@@ -95,7 +83,7 @@
                                                     TextWrapping="NoWrap"
                                                     Style="{StaticResource CaptionTextBlockStyle}" />
                                                 <TextBlock
-                                                    Foreground="#FF107C10"
+                                                    Foreground="{ThemeResource WallerStatusSuccessBrush}"
                                                     Text="{x:Bind StatusSummary, Mode=OneWay}"
                                                     TextTrimming="CharacterEllipsis"
                                                     TextWrapping="NoWrap"

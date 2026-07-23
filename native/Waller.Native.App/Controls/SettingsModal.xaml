@@ -25,6 +25,7 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <Grid ColumnSpacing="12">
@@ -46,7 +47,7 @@
                         AutomationProperties.AutomationId="CloseSettingsButton"
                         AutomationProperties.Name="{Binding ViewModel.Text.Close, ElementName=Root}"
                         ToolTipService.ToolTip="{Binding ViewModel.Text.Close, ElementName=Root}"
-                        TabIndex="4">
+                        TabIndex="5">
                         <FontIcon Glyph="&#xE711;" Style="{StaticResource WallerButtonIconStyle}" />
                     </Button>
                 </Grid>
@@ -62,24 +63,34 @@
                     SelectedItem="{Binding ViewModel.SelectedThemeOption, ElementName=Root, Mode=TwoWay}"
                     TabIndex="0" />
 
-                <ComboBox
+                <ToggleSwitch
                     Grid.Row="2"
+                    AutomationProperties.AutomationId="DarkModeToggle"
+                    AutomationProperties.Name="{Binding ViewModel.Text.ThemeDark, ElementName=Root}"
+                    Header="{Binding ViewModel.Text.ThemeDark, ElementName=Root}"
+                    IsOn="{Binding ViewModel.IsDarkThemeSetting, ElementName=Root, Mode=TwoWay}"
+                    OffContent="{Binding ViewModel.Text.ThemeLight, ElementName=Root}"
+                    OnContent="{Binding ViewModel.Text.ThemeDark, ElementName=Root}"
+                    TabIndex="1" />
+
+                <ComboBox
+                    Grid.Row="3"
                     AutomationProperties.AutomationId="SettingsLanguageComboBox"
                     AutomationProperties.Name="{Binding ViewModel.Text.Language, ElementName=Root}"
                     Header="{Binding ViewModel.Text.Language, ElementName=Root}"
                     DisplayMemberPath="DisplayName"
                     ItemsSource="{Binding ViewModel.LanguageOptions, ElementName=Root}"
                     SelectedItem="{Binding ViewModel.SelectedLanguageOption, ElementName=Root, Mode=TwoWay}"
-                    TabIndex="1" />
+                    TabIndex="2" />
 
-                <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
                     <Button
                         Command="{Binding ViewModel.ClearRenderedCacheCommand, ElementName=Root}"
                         AutomationProperties.AutomationId="ClearRenderedCacheButton"
                         AutomationProperties.Name="{Binding ViewModel.Text.ClearCache, ElementName=Root}"
                         IsEnabled="{Binding ViewModel.CanUseModalActions, ElementName=Root}"
                         ToolTipService.ToolTip="{Binding ViewModel.Text.ClearCache, ElementName=Root}"
-                        TabIndex="2">
+                        TabIndex="3">
                         <controls:IconText Glyph="&#xE74D;" Text="{Binding ViewModel.Text.ClearCache, ElementName=Root}" />
                     </Button>
                     <Button
@@ -88,7 +99,7 @@
                         AutomationProperties.Name="{Binding ViewModel.Text.SaveSettings, ElementName=Root}"
                         IsEnabled="{Binding ViewModel.CanUseModalActions, ElementName=Root}"
                         ToolTipService.ToolTip="{Binding ViewModel.Text.SaveSettings, ElementName=Root}"
-                        TabIndex="3">
+                        TabIndex="4">
                         <controls:IconText Glyph="&#xE74E;" Text="{Binding ViewModel.Text.SaveSettings, ElementName=Root}" />
                     </Button>
                 </StackPanel>
