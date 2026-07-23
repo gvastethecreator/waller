@@ -7,19 +7,20 @@
     xmlns:controls="using:Waller.Native.App.Controls">
 
     <Border
-        Padding="20,12"
+        Padding="20,17"
         BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
         BorderThickness="0,0,0,1">
         <Grid ColumnSpacing="16" VerticalAlignment="Center">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="220" />
-                <ColumnDefinition Width="280" />
+                <ColumnDefinition Width="200" />
+                <ColumnDefinition Width="380" />
                 <ColumnDefinition Width="*" />
                 <ColumnDefinition Width="Auto" />
             </Grid.ColumnDefinitions>
 
             <ComboBox
                 Grid.Column="1"
+                MinWidth="288"
                 AutomationProperties.AutomationId="PresetComboBox"
                 AutomationProperties.Name="{Binding ViewModel.Text.Preset, ElementName=Root}"
                 DisplayMemberPath="Name"
@@ -35,6 +36,7 @@
 
                 <Button
                     Grid.Column="0"
+                    MinWidth="112"
                     AutomationProperties.AutomationId="MoreButton"
                     AutomationProperties.Name="{Binding ViewModel.Text.More, ElementName=Root}"
                     IsEnabled="{Binding ViewModel.CanUseShellCommands, ElementName=Root}"
@@ -108,13 +110,13 @@
 
                 <Button
                     Grid.Column="1"
-                    MinWidth="152"
-                    Background="{StaticResource WallerPrimaryBrush}"
-                    BorderBrush="{StaticResource WallerPrimaryBrush}"
+                    MinWidth="176"
+                    Background="{ThemeResource WallerPrimaryBrush}"
+                    BorderBrush="{ThemeResource WallerPrimaryBrush}"
                     Command="{Binding ViewModel.ApplyAllCommand, ElementName=Root}"
                     AutomationProperties.AutomationId="ApplyAllButton"
                     AutomationProperties.Name="{Binding ViewModel.Text.ApplyAll, ElementName=Root}"
-                    Foreground="{StaticResource WallerPrimaryTextBrush}"
+                    Foreground="{ThemeResource WallerPrimaryTextBrush}"
                     IsEnabled="{Binding ViewModel.CanStartApply, ElementName=Root}"
                     ToolTipService.ToolTip="{Binding ViewModel.Text.ApplyAll, ElementName=Root}">
                     <Button.KeyboardAccelerators>

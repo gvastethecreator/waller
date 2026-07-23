@@ -9,7 +9,7 @@
 
     <Grid ColumnSpacing="16">
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="280" />
+            <ColumnDefinition Width="224" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
 
@@ -27,8 +27,9 @@
                 </Grid.RowDefinitions>
 
                     <TextBlock
-                        Text="{Binding ViewModel.Text.Monitors, ElementName=Root}"
-                        Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        Margin="4,2,0,0"
+                        Text="{Binding ViewModel.MonitorCountHeader, ElementName=Root}"
+                        Style="{StaticResource SubtitleTextBlockStyle}" />
 
                     <Grid Grid.Row="1">
                         <ListView
@@ -48,38 +49,56 @@
                                 <DataTemplate x:DataType="vm:MonitorRowViewModel">
                                     <Border
                                         Margin="0,0,0,8"
-                                        Padding="6"
+                                        Padding="8"
                                         CornerRadius="{ThemeResource ControlCornerRadius}"
                                         BorderBrush="{x:Bind TopologyBorderBrush, Mode=OneWay}"
                                         BorderThickness="{x:Bind TopologyBorderThickness, Mode=OneWay}"
                                         Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                                         Opacity="{x:Bind TopologyOpacity, Mode=OneWay}">
-                                        <StackPanel Spacing="4">
-                                            <controls:SourcePreview
-                                                HorizontalAlignment="Center"
-                                                PreviewWidth="220"
-                                                PreviewHeight="44"
-                                                PreviewBrush="{x:Bind SourcePreviewBrush, Mode=OneWay}"
-                                                PreviewImageBrush="{x:Bind SourcePreviewImageBrush, Mode=OneWay}"
-                                                PreviewImageVisibility="{x:Bind SourcePreviewImageVisibility, Mode=OneWay}"
-                                                PreviewText="{x:Bind SourceSummary, Mode=OneWay}"
-                                                PreviewTextVisibility="{x:Bind SourcePreviewTextVisibility, Mode=OneWay}"
-                                                PreviewTextTrimming="CharacterEllipsis"
-                                                PreviewTextWrapping="NoWrap" />
+                                        <StackPanel Spacing="7">
+                                            <Grid Width="184" Height="88" HorizontalAlignment="Center">
+                                                <controls:SourcePreview
+                                                    AutomationProperties.Name="{x:Bind SourceSummary, Mode=OneWay}"
+                                                    PreviewWidth="184"
+                                                    PreviewHeight="88"
+                                                    PreviewBrush="{x:Bind SourcePreviewBrush, Mode=OneWay}"
+                                                    PreviewImageBrush="{x:Bind SourcePreviewImageBrush, Mode=OneWay}"
+                                                    PreviewImageVisibility="{x:Bind SourcePreviewImageVisibility, Mode=OneWay}"
+                                                    PreviewText="{x:Bind SourceSummary, Mode=OneWay}"
+                                                    PreviewTextVisibility="{x:Bind SourcePreviewTextVisibility, Mode=OneWay}"
+                                                    PreviewTextTrimming="CharacterEllipsis"
+                                                    PreviewTextWrapping="NoWrap" />
+                                                <Grid
+                                                    Width="26"
+                                                    Height="26"
+                                                    Margin="7"
+                                                    HorizontalAlignment="Left"
+                                                    VerticalAlignment="Top">
+                                                    <Ellipse Fill="{ThemeResource WallerSelectionBrush}" />
+                                                    <TextBlock
+                                                        HorizontalAlignment="Center"
+                                                        VerticalAlignment="Center"
+                                                        Foreground="{ThemeResource WallerSelectionTextBrush}"
+                                                        Text="{x:Bind Session.Monitor.Identity.DisplayIndex, Mode=OneWay}"
+                                                        Style="{StaticResource CaptionTextBlockStyle}" />
+                                                </Grid>
+                                            </Grid>
                                             <TextBlock
                                                 Text="{x:Bind DisplayName, Mode=OneWay}"
                                                 TextWrapping="NoWrap"
                                                 TextTrimming="CharacterEllipsis"
                                                 Style="{StaticResource BodyStrongTextBlockStyle}" />
-                                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                            <StackPanel Spacing="1">
                                                 <TextBlock
                                                     Text="{x:Bind Resolution, Mode=OneWay}"
                                                     TextTrimming="CharacterEllipsis"
+                                                    TextWrapping="NoWrap"
                                                     Style="{StaticResource CaptionTextBlockStyle}" />
                                                 <TextBlock
                                                     Foreground="#FF107C10"
                                                     Text="{x:Bind StatusSummary, Mode=OneWay}"
                                                     TextTrimming="CharacterEllipsis"
+                                                    TextWrapping="NoWrap"
                                                     Style="{StaticResource CaptionTextBlockStyle}" />
                                             </StackPanel>
                                         </StackPanel>
@@ -123,11 +142,13 @@
                     </Border>
                     <Button
                         HorizontalAlignment="Stretch"
+                        MinHeight="64"
                         Command="{Binding ViewModel.RefreshCommand, ElementName=Root}"
                         AutomationProperties.AutomationId="DetectMonitorsButton"
                         AutomationProperties.Name="{Binding ViewModel.Text.DetectMonitors, ElementName=Root}"
-                        IsEnabled="{Binding ViewModel.CanStartApply, ElementName=Root}">
-                        <controls:IconText Glyph="&#xE72C;" Text="{Binding ViewModel.Text.DetectMonitors, ElementName=Root}" />
+                        IsEnabled="{Binding ViewModel.CanStartApply, ElementName=Root}"
+                        ToolTipService.ToolTip="{Binding ViewModel.Text.DetectMonitors, ElementName=Root}">
+                        <controls:IconText Glyph="&#xE710;" Text="{Binding ViewModel.Text.DetectMonitors, ElementName=Root}" />
                     </Button>
                 </StackPanel>
             </Grid>
@@ -136,14 +157,14 @@
         <Grid Grid.Column="1" RowSpacing="16">
             <Grid.RowDefinitions>
                 <RowDefinition Height="*" />
-                <RowDefinition Height="280" />
+                <RowDefinition Height="301" />
             </Grid.RowDefinitions>
 
             <controls:TopologyStrip ViewModel="{Binding ViewModel, ElementName=Root}" />
 
             <ScrollViewer
                 Grid.Row="1"
-                Margin="24,0,24,24"
+                Margin="16,0,16,16"
                 VerticalScrollBarVisibility="Auto"
                 VerticalScrollMode="Auto">
                 <controls:EditPanel ViewModel="{Binding ViewModel, ElementName=Root}" />

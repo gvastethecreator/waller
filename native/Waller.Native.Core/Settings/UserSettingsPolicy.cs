@@ -4,8 +4,8 @@ namespace Waller.Native.Core.Settings;
 
 public static class UserSettingsPolicy
 {
-    public const int DefaultWindowWidth = 1520;
-    public const int DefaultWindowHeight = 960;
+    public const int DefaultWindowWidth = 1536;
+    public const int DefaultWindowHeight = 1024;
     public const int MinWindowWidth = 640;
     public const int MinWindowHeight = 480;
 

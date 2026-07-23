@@ -3382,6 +3382,86 @@ public sealed class CoreArchitectureTests
     }
 
     [Fact]
+    public void WindowPlacementPolicy_CentersNewDefaultInWorkArea()
+    {
+        var placement = WindowPlacementPolicy.Resolve(
+            UserSettings.Default,
+            workAreaX: 0,
+            workAreaY: 0,
+            workAreaWidth: 1920,
+            workAreaHeight: 1040);
+
+        Assert.Equal(UserSettingsPolicy.DefaultWindowWidth, placement.Width);
+        Assert.Equal(UserSettingsPolicy.DefaultWindowHeight, placement.Height);
+        Assert.Equal(192, placement.X);
+        Assert.Equal(8, placement.Y);
+    }
+
+    [Fact]
+    public void WindowPlacementPolicy_MigratesLegacyDefaultAndIgnoresItsOffset()
+    {
+        var settings = UserSettings.Default with
+        {
+            WindowWidth = 1120,
+            WindowHeight = 760,
+            WindowX = 8,
+            WindowY = 0,
+        };
+
+        var placement = WindowPlacementPolicy.Resolve(settings, 0, 0, 1920, 1040);
+
+        Assert.Equal(UserSettingsPolicy.DefaultWindowWidth, placement.Width);
+        Assert.Equal(UserSettingsPolicy.DefaultWindowHeight, placement.Height);
+        Assert.Equal(192, placement.X);
+        Assert.Equal(8, placement.Y);
+    }
+
+    [Fact]
+    public void WindowPlacementPolicy_MigratesInterimDefaultAndRecentersIt()
+    {
+        var settings = UserSettings.Default with
+        {
+            WindowWidth = 1520,
+            WindowHeight = 960,
+            WindowX = 960,
+            WindowY = 215,
+        };
+
+        var placement = WindowPlacementPolicy.Resolve(settings, 0, 0, 3440, 1400);
+
+        Assert.Equal(1536, placement.Width);
+        Assert.Equal(1024, placement.Height);
+        Assert.Equal(952, placement.X);
+        Assert.Equal(188, placement.Y);
+    }
+
+    [Fact]
+    public void WindowPlacementPolicy_PreservesCustomPlacement()
+    {
+        var settings = UserSettings.Default.WithWindowPlacement(1360, 820, -80, 65);
+
+        var placement = WindowPlacementPolicy.Resolve(settings, 0, 0, 1920, 1040);
+
+        Assert.Equal(new WindowPlacement(1360, 820, -80, 65), placement);
+    }
+
+    [Fact]
+    public void WindowPlacementPolicy_ClampsCenteredDefaultToSmallWorkArea()
+    {
+        var placement = WindowPlacementPolicy.Resolve(
+            UserSettings.Default,
+            workAreaX: 100,
+            workAreaY: 50,
+            workAreaWidth: 1280,
+            workAreaHeight: 720);
+
+        Assert.Equal(1280, placement.Width);
+        Assert.Equal(720, placement.Height);
+        Assert.Equal(100, placement.X);
+        Assert.Equal(50, placement.Y);
+    }
+
+    [Fact]
     public void UserSettings_WithPreferencesPreservesWindowPlacement()
     {
         var presetId = Guid.NewGuid();

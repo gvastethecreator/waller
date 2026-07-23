@@ -4,13 +4,13 @@
     x:Name="Root"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Waller.Native.App.Controls"
     xmlns:vm="using:Waller.Native.App.ViewModels">
 
     <Border
-        Padding="32,24"
-        CornerRadius="0"
+        Padding="32,18"
         BorderThickness="0"
-        Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+        Background="{ThemeResource WallerStageBrush}"
         Visibility="{Binding ViewModel.TopologyVisibility, ElementName=Root}">
         <Grid RowSpacing="8">
             <Grid.RowDefinitions>
@@ -26,14 +26,14 @@
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Stretch="Uniform">
-                <ItemsControl ItemsSource="{Binding ViewModel.Monitors, ElementName=Root}">
+                <ItemsControl ItemsSource="{Binding ViewModel.TopologyMonitors, ElementName=Root}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <StackPanel
                                 HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
+                                VerticalAlignment="Top"
                                 Orientation="Horizontal"
-                                Spacing="12" />
+                                Spacing="16" />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
@@ -41,7 +41,9 @@
                             <Button
                                 Width="{x:Bind TopologyWidth}"
                                 Height="{x:Bind TopologyHeight}"
+                                Margin="{x:Bind TopologyMargin}"
                                 Padding="0"
+                                VerticalAlignment="Top"
                                 HorizontalContentAlignment="Stretch"
                                 VerticalContentAlignment="Stretch"
                                 Background="{ThemeResource ControlFillColorTransparentBrush}"
@@ -55,39 +57,45 @@
                                     CornerRadius="{ThemeResource ControlCornerRadius}"
                                     BorderBrush="{x:Bind TopologyBorderBrush, Mode=OneWay}"
                                     BorderThickness="{x:Bind TopologyBorderThickness, Mode=OneWay}"
-                                    Background="{x:Bind SourcePreviewBrush, Mode=OneWay}"
+                                    Background="{ThemeResource ControlFillColorTransparentBrush}"
                                     Opacity="{x:Bind TopologyOpacity, Mode=OneWay}">
-                                    <Grid Padding="12" RowSpacing="4">
-                                        <Border
-                                            Background="{x:Bind SourcePreviewImageBrush, Mode=OneWay}"
-                                            CornerRadius="{ThemeResource ControlCornerRadius}"
-                                            Visibility="{x:Bind SourcePreviewImageVisibility, Mode=OneWay}" />
-                                        <Grid>
-                                            <Border
+                                    <Grid>
+                                        <controls:SourcePreview
+                                            AutomationProperties.Name="{x:Bind SourceSummary, Mode=OneWay}"
+                                            PreviewWidth="{x:Bind TopologyWidth}"
+                                            PreviewHeight="{x:Bind TopologyHeight}"
+                                            PreviewBrush="{x:Bind SourcePreviewBrush, Mode=OneWay}"
+                                            PreviewImageBrush="{x:Bind SourcePreviewImageBrush, Mode=OneWay}"
+                                            PreviewImageVisibility="{x:Bind SourcePreviewImageVisibility, Mode=OneWay}"
+                                            PreviewText="{x:Bind SourceSummary, Mode=OneWay}"
+                                            PreviewTextVisibility="{x:Bind SourcePreviewTextVisibility, Mode=OneWay}"
+                                            PreviewTextTrimming="CharacterEllipsis" />
+                                        <Grid Padding="12">
+                                            <Grid
                                                 Width="30"
                                                 Height="30"
                                                 HorizontalAlignment="Left"
-                                                VerticalAlignment="Top"
-                                                Background="{StaticResource WallerSelectionBrush}"
-                                                CornerRadius="15">
+                                                VerticalAlignment="Top">
+                                                <Ellipse Fill="{ThemeResource WallerSelectionBrush}" />
                                                 <TextBlock
                                                     HorizontalAlignment="Center"
                                                     VerticalAlignment="Center"
-                                                    Foreground="White"
+                                                    Foreground="{ThemeResource WallerSelectionTextBrush}"
                                                     Text="{x:Bind Session.Monitor.Identity.DisplayIndex, Mode=OneWay}"
                                                     Style="{StaticResource BodyStrongTextBlockStyle}" />
-                                            </Border>
+                                            </Grid>
                                             <Border
                                                 HorizontalAlignment="Right"
                                                 VerticalAlignment="Bottom"
                                                 Padding="6,2"
-                                                Background="#B3000000"
-                                                CornerRadius="4"
+                                                Background="{ThemeResource WallerPreviewLabelBrush}"
+                                                CornerRadius="{ThemeResource ControlCornerRadius}"
                                                 Visibility="{x:Bind TopologyResolutionVisibility, Mode=OneWay}">
                                                 <TextBlock
-                                                    Foreground="White"
+                                                    Foreground="{ThemeResource WallerPreviewLabelTextBrush}"
                                                     Text="{x:Bind Resolution}"
                                                     TextTrimming="CharacterEllipsis"
+                                                    Visibility="{x:Bind TopologyResolutionVisibility, Mode=OneWay}"
                                                     Style="{StaticResource CaptionTextBlockStyle}" />
                                             </Border>
                                         </Grid>

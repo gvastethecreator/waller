@@ -13,6 +13,17 @@ Apply wiring, restore-safe Apply smoke coverage, and package/local-data guards.
 
 Latest verification:
 
+- 2026-07-22: the option-3 monitor composer revision passed its final local
+  gate. The app now starts at 1536 × 1024, migrates the former 1120 × 760 and
+  interim 1520 × 960 defaults, and centers the default window in the active
+  work area while preserving custom placements. UI Automation measured
+  1536 × 1024 at x=952/y=183 on the 3440 × 1390 work area. The x64 Debug build
+  passed with 0 warnings, all 467 tests passed, XAML accessibility/theme lint
+  passed for 15 files, WinUI code guards passed, and `SmokeSurface.ps1`
+  passed Shell 5/5, Settings 5/5, Save As 3/3, and Manage Presets 6/6. The
+  joined reference/native review is recorded in `design-qa.md`; real Windows
+  solid-color sources stay black instead of using the reference's sample
+  wallpaper photos.
 - 2026-06-14: `scripts\Verify.ps1 -SkipSmoke -Package -DisableNuGetAudit`
   passed. Covered all static guards, solution build with 0 warnings, packaged
   Debug build, 462 tests, Release x64 build, signed dev MSIX creation, and MSIX

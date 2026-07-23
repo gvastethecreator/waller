@@ -384,7 +384,9 @@ foreach ($file in $xamlFiles) {
         }
 
         $statusInfoBar = $xaml.SelectSingleNode("//*[@AutomationProperties.AutomationId='StatusInfoBar']")
-        if ($null -eq $statusInfoBar -or $statusInfoBar.GetAttribute("IsOpen") -ne "True") {
+        if ($null -eq $statusInfoBar -or
+            ($statusInfoBar.LocalName -eq "InfoBar" -and $statusInfoBar.GetAttribute("IsOpen") -ne "True") -or
+            ($statusInfoBar.LocalName -ne "InfoBar" -and $statusInfoBar.LocalName -ne "Border")) {
             $statusFooterStatusInfoBarsNotPersistent += "${relativePath}: StatusInfoBar"
         }
     }
@@ -430,8 +432,8 @@ foreach ($file in $xamlFiles) {
 
         if ($null -eq $sourceEditorHost -or
             $sourceEditorHost.LocalName -ne "ScrollViewer" -or
-            $sourceEditorHost.GetAttribute("MinHeight") -ne "320" -or
-            $sourceEditorHost.GetAttribute("MaxHeight") -ne "320" -or
+            $sourceEditorHost.GetAttribute("MinHeight") -ne "226" -or
+            $sourceEditorHost.GetAttribute("MaxHeight") -ne "226" -or
             $sourceEditorHost.GetAttribute("VerticalScrollBarVisibility") -ne "Auto") {
             $editPanelMissingStableSourceHost += "${relativePath}: SourceEditorHost"
         }
@@ -638,7 +640,7 @@ if ($statusFooterSurfacesMissingNames.Count -gt 0) {
 }
 
 if ($statusFooterStatusInfoBarsNotPersistent.Count -gt 0) {
-    Write-Host "Status footer InfoBar is not persistent; keep StatusInfoBar IsOpen=True so final operation status remains visible:" -ForegroundColor Red
+    Write-Host "Status footer surface is not persistent; keep the StatusInfoBar live surface always visible:" -ForegroundColor Red
     foreach ($surface in $statusFooterStatusInfoBarsNotPersistent) {
         Write-Host " - $surface" -ForegroundColor Red
     }

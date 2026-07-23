@@ -10,10 +10,36 @@
                 <XamlControlsResources xmlns="using:Microsoft.UI.Xaml.Controls" />
                 <!-- Other merged dictionaries here -->
             </ResourceDictionary.MergedDictionaries>
-            <SolidColorBrush x:Key="WallerModalOverlayBrush" Color="#80000000" />
-            <SolidColorBrush x:Key="WallerPrimaryBrush" Color="#FFFFB900" />
-            <SolidColorBrush x:Key="WallerPrimaryTextBrush" Color="#FF1F1F1F" />
-            <SolidColorBrush x:Key="WallerSelectionBrush" Color="#FF0078D4" />
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Default">
+                    <SolidColorBrush x:Key="WallerModalOverlayBrush" Color="#80000000" />
+                    <SolidColorBrush x:Key="WallerPrimaryBrush" Color="#FFFFB900" />
+                    <SolidColorBrush x:Key="WallerPrimaryTextBrush" Color="#FF1F1F1F" />
+                    <SolidColorBrush x:Key="WallerSelectionBrush" Color="#FF0078D4" />
+                    <SolidColorBrush x:Key="WallerSelectionTextBrush" Color="#FFFFFFFF" />
+                    <SolidColorBrush x:Key="WallerPreviewLabelBrush" Color="#CC111111" />
+                    <SolidColorBrush x:Key="WallerPreviewLabelTextBrush" Color="#FFFFFFFF" />
+                    <LinearGradientBrush x:Key="WallerStageBrush" StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#FF20242A" Offset="0" />
+                        <GradientStop Color="#FF171C22" Offset="0.55" />
+                        <GradientStop Color="#FF20242A" Offset="1" />
+                    </LinearGradientBrush>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="WallerModalOverlayBrush" Color="#80000000" />
+                    <SolidColorBrush x:Key="WallerPrimaryBrush" Color="#FFFFB900" />
+                    <SolidColorBrush x:Key="WallerPrimaryTextBrush" Color="#FF1F1F1F" />
+                    <SolidColorBrush x:Key="WallerSelectionBrush" Color="#FF0078D4" />
+                    <SolidColorBrush x:Key="WallerSelectionTextBrush" Color="#FFFFFFFF" />
+                    <SolidColorBrush x:Key="WallerPreviewLabelBrush" Color="#CC111111" />
+                    <SolidColorBrush x:Key="WallerPreviewLabelTextBrush" Color="#FFFFFFFF" />
+                    <LinearGradientBrush x:Key="WallerStageBrush" StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#FFF9FBFD" Offset="0" />
+                        <GradientStop Color="#FFEEF5FB" Offset="0.55" />
+                        <GradientStop Color="#FFF8FAFC" Offset="1" />
+                    </LinearGradientBrush>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
             <Style x:Key="WallerButtonIconStyle" TargetType="FontIcon">
                 <Setter Property="FontSize" Value="14" />
             </Style>

@@ -55,7 +55,9 @@ internal static class ViewModelNotificationGroups
     [
         nameof(MainPageViewModel.Text),
         nameof(MainPageViewModel.SessionSummary),
+        nameof(MainPageViewModel.MonitorCountHeader),
         nameof(MainPageViewModel.SelectedMonitorDisplayName),
+        nameof(MainPageViewModel.SelectedMonitorResolution),
         nameof(MainPageViewModel.SelectedSourceWarning),
         nameof(MainPageViewModel.SelectedSourceWarningVisibility),
         nameof(MainPageViewModel.DeleteConfirmationMessage),
@@ -102,6 +104,8 @@ internal static class ViewModelNotificationGroups
     [
         nameof(MainPageViewModel.EditPanelVisibility),
         nameof(MainPageViewModel.SelectedMonitorDisplayName),
+        nameof(MainPageViewModel.SelectedMonitorResolution),
+        nameof(MainPageViewModel.SelectedMonitorDisplayIndex),
     ];
 
     public static IEnumerable<string> RowsSurface =>
@@ -109,5 +113,7 @@ internal static class ViewModelNotificationGroups
         nameof(MainPageViewModel.NoMonitorsVisibility),
         nameof(MainPageViewModel.TopologyVisibility),
         nameof(MainPageViewModel.MissingMonitorsVisibility),
+        nameof(MainPageViewModel.TopologyMonitors),
+        nameof(MainPageViewModel.MonitorCountHeader),
     ];
 }

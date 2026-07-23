@@ -51,9 +51,26 @@ internal static class LocalizedOptionCatalog
         var localizedText = RequireText(text);
 
         return Enum.GetValues<WallpaperAnchor>()
-            .Select(anchor => new OptionItem<WallpaperAnchor>(anchor, localizedText.AnchorLabel(anchor)))
+            .Select(anchor => new OptionItem<WallpaperAnchor>(
+                anchor,
+                localizedText.AnchorLabel(anchor),
+                AnchorGlyph(anchor)))
             .ToArray();
     }
+
+    private static string AnchorGlyph(WallpaperAnchor anchor) => anchor switch
+    {
+        WallpaperAnchor.TopLeft => "↖",
+        WallpaperAnchor.Top => "↑",
+        WallpaperAnchor.TopRight => "↗",
+        WallpaperAnchor.Left => "←",
+        WallpaperAnchor.Center => "•",
+        WallpaperAnchor.Right => "→",
+        WallpaperAnchor.BottomLeft => "↙",
+        WallpaperAnchor.Bottom => "↓",
+        WallpaperAnchor.BottomRight => "↘",
+        _ => throw new ArgumentOutOfRangeException(nameof(anchor), anchor, "Wallpaper anchor is not supported."),
+    };
 
     private static LocalizedText RequireText(LocalizedText text)
     {

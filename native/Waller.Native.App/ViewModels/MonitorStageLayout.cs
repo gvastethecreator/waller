@@ -8,9 +8,10 @@ internal sealed record MonitorStageLayout(
     double SurfaceHeight,
     IReadOnlyList<MonitorTopologyTile> Tiles)
 {
-    private const double StageWidth = 720;
-    private const double StageHeight = 128;
-    private const double TileGap = 12;
+    private const double StageWidth = 960;
+    private const double StageHeight = 176;
+    private const double TileGap = 16;
+    private const double MaximumVerticalOffset = 32;
 
     public static MonitorStageLayout Calculate(IReadOnlyList<MonitorBounds> bounds)
     {
@@ -21,19 +22,31 @@ internal sealed record MonitorStageLayout(
             return new(StageWidth, StageHeight, []);
         }
 
+        var orderedIndexes = Enumerable
+            .Range(0, bounds.Count)
+            .OrderBy(index => bounds[index].X)
+            .ThenBy(index => bounds[index].Y)
+            .ToArray();
         var totalAspectRatio = bounds.Sum(item => (double)item.Width / item.Height);
         var availableWidth = StageWidth - (TileGap * (bounds.Count - 1));
         var tileHeight = Math.Min(StageHeight, availableWidth / totalAspectRatio);
         var currentLeft = 0d;
-        var tiles = new List<MonitorTopologyTile>(bounds.Count);
+        var minY = bounds.Min(item => item.Y);
+        var maxY = bounds.Max(item => item.Y);
+        var yRange = maxY - minY;
+        var tiles = new MonitorTopologyTile[bounds.Count];
 
-        foreach (var monitor in bounds)
+        foreach (var index in orderedIndexes)
         {
+            var monitor = bounds[index];
             var width = ((double)monitor.Width / monitor.Height) * tileHeight;
-            tiles.Add(new MonitorTopologyTile(currentLeft, 0, width, tileHeight));
+            var top = yRange == 0
+                ? 0
+                : ((double)(monitor.Y - minY) / yRange) * MaximumVerticalOffset;
+            tiles[index] = new MonitorTopologyTile(currentLeft, top, width, tileHeight);
             currentLeft += width + TileGap;
         }
 
-        return new(StageWidth, StageHeight, tiles);
+        return new(StageWidth, tileHeight + MaximumVerticalOffset, tiles);
     }
 }

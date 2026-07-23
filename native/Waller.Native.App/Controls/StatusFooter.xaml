@@ -7,8 +7,8 @@
     xmlns:controls="using:Waller.Native.App.Controls">
 
     <Border
-        MinHeight="48"
-        Padding="24,10"
+        MinHeight="32"
+        Padding="24,6"
         AutomationProperties.AutomationId="StatusInfoBar"
         AutomationProperties.Name="{Binding ViewModel.StatusText, ElementName=Root}"
         AutomationProperties.LiveSetting="Polite"
