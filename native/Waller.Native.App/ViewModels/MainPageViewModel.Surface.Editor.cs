@@ -15,6 +15,11 @@ public sealed partial class MainPageViewModel
     public string SelectedMonitorDisplayName =>
         MonitorEditorSurface.SelectedMonitorDisplayName(SelectedMonitor, Text);
 
+    public string SelectedMonitorResolution => SelectedMonitor?.Resolution ?? string.Empty;
+
+    public int SelectedMonitorDisplayIndex =>
+        SelectedMonitor?.Session.Monitor.Identity.DisplayIndex ?? 0;
+
     public Visibility SelectedSourceWarningVisibility =>
         MonitorEditorSurface.SelectedSourceWarningVisibility(SelectedSourceWarning);
 

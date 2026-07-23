@@ -1,4 +1,5 @@
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Windowing;
 using Waller.Native.App.Platform;
 using Waller.Native.Core.Settings;
 using Windows.Graphics;
@@ -83,15 +84,18 @@ public sealed partial class MainWindow : Window
         try
         {
             var settings = await settingsStore.LoadAsync();
-            if (settings.WindowWidth > 0 && settings.WindowHeight > 0)
-            {
-                AppWindow.Resize(new SizeInt32(settings.WindowWidth, settings.WindowHeight));
-            }
+            var workArea = DisplayArea
+                .GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary)
+                .WorkArea;
+            var placement = WindowPlacementPolicy.Resolve(
+                settings,
+                workArea.X,
+                workArea.Y,
+                workArea.Width,
+                workArea.Height);
 
-            if (settings.WindowX is int x && settings.WindowY is int y)
-            {
-                AppWindow.Move(new PointInt32(x, y));
-            }
+            AppWindow.Resize(new SizeInt32(placement.Width, placement.Height));
+            AppWindow.Move(new PointInt32(placement.X, placement.Y));
         }
         catch (Exception error) when (LocalDataErrorPolicy.IsRecoverableWindowPlacement(error))
         {

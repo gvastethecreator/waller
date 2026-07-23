@@ -2,15 +2,18 @@ namespace Waller.Native.App.ViewModels;
 
 public sealed record OptionItem<T>
 {
-    public OptionItem(T Value, string DisplayName)
+    public OptionItem(T Value, string DisplayName, string Glyph = "")
     {
         this.Value = Value;
         this.DisplayName = OptionDisplayName.Normalize(DisplayName, nameof(DisplayName));
+        this.Glyph = Glyph ?? string.Empty;
     }
 
     public T Value { get; }
 
     public string DisplayName { get; }
+
+    public string Glyph { get; }
 
     public override string ToString() => DisplayName;
 }

@@ -41,6 +41,8 @@ public sealed partial class MonitorRowViewModel(
 
     public double TopologyTop { get; } = topologyTop;
 
+    public Thickness TopologyMargin => new(0, TopologyTop, 0, 0);
+
     public double TopologyWidth { get; } = topologyWidth;
 
     public double TopologyHeight { get; } = topologyHeight;
