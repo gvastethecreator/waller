@@ -4,6 +4,10 @@ public sealed partial record LocalizedText
 {
     public static LocalizedText English { get; } = new(
         CurrentSetup: "Current setup",
+        Monitors: "Monitors",
+        DetectMonitors: "Detect monitors",
+        More: "More",
+        SelectMonitorToEdit: "Select a monitor to edit its wallpaper and color.",
         Preset: "Preset",
         PresetName: "Preset name",
         Save: "Save",

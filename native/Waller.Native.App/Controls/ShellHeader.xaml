@@ -6,101 +6,115 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Waller.Native.App.Controls">
 
-    <Grid ColumnSpacing="12">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" />
-            <ColumnDefinition Width="260" />
-            <ColumnDefinition Width="12" />
-            <ColumnDefinition Width="*" />
-        </Grid.ColumnDefinitions>
+    <Border
+        Padding="20,12"
+        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+        BorderThickness="0,0,0,1">
+        <Grid ColumnSpacing="16" VerticalAlignment="Center">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="220" />
+                <ColumnDefinition Width="280" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
 
-        <StackPanel VerticalAlignment="Center">
-            <TextBlock Text="Waller" Style="{StaticResource TitleTextBlockStyle}" />
-            <TextBlock
-                MaxWidth="220"
-                Text="{Binding ViewModel.SessionSummary, ElementName=Root}"
-                TextTrimming="CharacterEllipsis"
-                ToolTipService.ToolTip="{Binding ViewModel.SessionSummary, ElementName=Root}"
-                Style="{StaticResource CaptionTextBlockStyle}" />
-        </StackPanel>
+            <ComboBox
+                Grid.Column="1"
+                AutomationProperties.AutomationId="PresetComboBox"
+                AutomationProperties.Name="{Binding ViewModel.Text.Preset, ElementName=Root}"
+                DisplayMemberPath="Name"
+                IsEnabled="{Binding ViewModel.CanUseShellCommands, ElementName=Root}"
+                ItemsSource="{Binding ViewModel.Presets, ElementName=Root}"
+                SelectedItem="{Binding ViewModel.SelectedPreset, ElementName=Root, Mode=TwoWay}" />
 
-        <ComboBox
-            Grid.Column="1"
-            AutomationProperties.AutomationId="PresetComboBox"
-            AutomationProperties.Name="{Binding ViewModel.Text.Preset, ElementName=Root}"
-            Header="{Binding ViewModel.Text.Preset, ElementName=Root}"
-            DisplayMemberPath="Name"
-            IsEnabled="{Binding ViewModel.CanUseShellCommands, ElementName=Root}"
-            ItemsSource="{Binding ViewModel.Presets, ElementName=Root}"
-            SelectedItem="{Binding ViewModel.SelectedPreset, ElementName=Root, Mode=TwoWay}" />
+            <Grid Grid.Column="3" ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
 
-        <ScrollViewer
-            Grid.Column="3"
-            HorizontalScrollBarVisibility="Auto"
-            HorizontalScrollMode="Auto"
-            VerticalScrollBarVisibility="Disabled"
-            VerticalScrollMode="Disabled"
-            VerticalAlignment="Bottom">
-            <StackPanel HorizontalAlignment="Right" Orientation="Horizontal" Spacing="8">
                 <Button
-                    Command="{Binding ViewModel.SaveCommand, ElementName=Root}"
-                    AutomationProperties.AutomationId="SaveButton"
-                    AutomationProperties.Name="{Binding ViewModel.Text.Save, ElementName=Root}"
+                    Grid.Column="0"
+                    AutomationProperties.AutomationId="MoreButton"
+                    AutomationProperties.Name="{Binding ViewModel.Text.More, ElementName=Root}"
                     IsEnabled="{Binding ViewModel.CanUseShellCommands, ElementName=Root}"
-                    ToolTipService.ToolTip="{Binding ViewModel.Text.Save, ElementName=Root}">
-                    <Button.KeyboardAccelerators>
-                        <KeyboardAccelerator Key="S" Modifiers="Control" />
-                    </Button.KeyboardAccelerators>
-                    <controls:IconText Glyph="&#xE74E;" Text="{Binding ViewModel.Text.Save, ElementName=Root}" />
+                    ToolTipService.ToolTip="{Binding ViewModel.Text.More, ElementName=Root}">
+                    <controls:IconText Glyph="&#xE712;" Text="{Binding ViewModel.Text.More, ElementName=Root}" />
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem
+                                Text="{x:Bind ViewModel.Text.Save, Mode=OneWay}"
+                                Command="{x:Bind ViewModel.SaveCommand, Mode=OneWay}"
+                                AutomationProperties.AutomationId="SaveButton"
+                                AutomationProperties.Name="{x:Bind ViewModel.Text.Save, Mode=OneWay}">
+                                <MenuFlyoutItem.KeyboardAccelerators>
+                                    <KeyboardAccelerator Key="S" Modifiers="Control" />
+                                </MenuFlyoutItem.KeyboardAccelerators>
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE74E;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem
+                                Text="{x:Bind ViewModel.Text.SaveAs, Mode=OneWay}"
+                                Command="{x:Bind ViewModel.SaveAsCommand, Mode=OneWay}"
+                                AutomationProperties.AutomationId="SaveAsButton"
+                                AutomationProperties.Name="{x:Bind ViewModel.Text.SaveAs, Mode=OneWay}">
+                                <MenuFlyoutItem.KeyboardAccelerators>
+                                    <KeyboardAccelerator Key="S" Modifiers="Control,Shift" />
+                                </MenuFlyoutItem.KeyboardAccelerators>
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE792;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem
+                                Text="{x:Bind ViewModel.Text.Manage, Mode=OneWay}"
+                                Command="{x:Bind ViewModel.ManagePresetsCommand, Mode=OneWay}"
+                                AutomationProperties.AutomationId="ManagePresetsButton"
+                                AutomationProperties.Name="{x:Bind ViewModel.Text.Manage, Mode=OneWay}">
+                                <MenuFlyoutItem.KeyboardAccelerators>
+                                    <KeyboardAccelerator Key="M" Modifiers="Control" />
+                                </MenuFlyoutItem.KeyboardAccelerators>
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE713;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem
+                                Text="{x:Bind ViewModel.Text.Settings, Mode=OneWay}"
+                                Command="{x:Bind ViewModel.OpenSettingsCommand, Mode=OneWay}"
+                                AutomationProperties.AutomationId="SettingsButton"
+                                AutomationProperties.Name="{x:Bind ViewModel.Text.Settings, Mode=OneWay}">
+                                <MenuFlyoutItem.KeyboardAccelerators>
+                                    <KeyboardAccelerator Key="I" Modifiers="Control" />
+                                </MenuFlyoutItem.KeyboardAccelerators>
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE713;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem
+                                Text="{x:Bind ViewModel.Text.Refresh, Mode=OneWay}"
+                                Command="{x:Bind ViewModel.RefreshCommand, Mode=OneWay}"
+                                AutomationProperties.AutomationId="RefreshButton"
+                                AutomationProperties.Name="{x:Bind ViewModel.Text.Refresh, Mode=OneWay}">
+                                <MenuFlyoutItem.KeyboardAccelerators>
+                                    <KeyboardAccelerator Key="R" Modifiers="Control" />
+                                </MenuFlyoutItem.KeyboardAccelerators>
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE72C;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                        </MenuFlyout>
+                    </Button.Flyout>
                 </Button>
+
                 <Button
-                    Command="{Binding ViewModel.SaveAsCommand, ElementName=Root}"
-                    AutomationProperties.AutomationId="SaveAsButton"
-                    AutomationProperties.Name="{Binding ViewModel.Text.SaveAs, ElementName=Root}"
-                    IsEnabled="{Binding ViewModel.CanUseShellCommands, ElementName=Root}"
-                    ToolTipService.ToolTip="{Binding ViewModel.Text.SaveAs, ElementName=Root}">
-                    <Button.KeyboardAccelerators>
-                        <KeyboardAccelerator Key="S" Modifiers="Control,Shift" />
-                    </Button.KeyboardAccelerators>
-                    <controls:IconText Glyph="&#xE792;" Text="{Binding ViewModel.Text.SaveAs, ElementName=Root}" />
-                </Button>
-                <Button
-                    Command="{Binding ViewModel.ManagePresetsCommand, ElementName=Root}"
-                    AutomationProperties.AutomationId="ManagePresetsButton"
-                    AutomationProperties.Name="{Binding ViewModel.Text.Manage, ElementName=Root}"
-                    IsEnabled="{Binding ViewModel.CanUseShellCommands, ElementName=Root}"
-                    ToolTipService.ToolTip="{Binding ViewModel.Text.Manage, ElementName=Root}">
-                    <Button.KeyboardAccelerators>
-                        <KeyboardAccelerator Key="M" Modifiers="Control" />
-                    </Button.KeyboardAccelerators>
-                    <controls:IconText Glyph="&#xE713;" Text="{Binding ViewModel.Text.Manage, ElementName=Root}" />
-                </Button>
-                <Button
-                    Command="{Binding ViewModel.RefreshCommand, ElementName=Root}"
-                    AutomationProperties.AutomationId="RefreshButton"
-                    AutomationProperties.Name="{Binding ViewModel.Text.Refresh, ElementName=Root}"
-                    IsEnabled="{Binding ViewModel.CanStartApply, ElementName=Root}"
-                    ToolTipService.ToolTip="{Binding ViewModel.Text.Refresh, ElementName=Root}">
-                    <Button.KeyboardAccelerators>
-                        <KeyboardAccelerator Key="R" Modifiers="Control" />
-                    </Button.KeyboardAccelerators>
-                    <FontIcon Glyph="&#xE72C;" Style="{StaticResource WallerButtonIconStyle}" />
-                </Button>
-                <Button
-                    Command="{Binding ViewModel.OpenSettingsCommand, ElementName=Root}"
-                    AutomationProperties.AutomationId="SettingsButton"
-                    AutomationProperties.Name="{Binding ViewModel.Text.Settings, ElementName=Root}"
-                    IsEnabled="{Binding ViewModel.CanUseShellCommands, ElementName=Root}"
-                    ToolTipService.ToolTip="{Binding ViewModel.Text.Settings, ElementName=Root}">
-                    <Button.KeyboardAccelerators>
-                        <KeyboardAccelerator Key="I" Modifiers="Control" />
-                    </Button.KeyboardAccelerators>
-                    <FontIcon Glyph="&#xE713;" Style="{StaticResource WallerButtonIconStyle}" />
-                </Button>
-                <Button
+                    Grid.Column="1"
+                    MinWidth="152"
+                    Background="{StaticResource WallerPrimaryBrush}"
+                    BorderBrush="{StaticResource WallerPrimaryBrush}"
                     Command="{Binding ViewModel.ApplyAllCommand, ElementName=Root}"
                     AutomationProperties.AutomationId="ApplyAllButton"
                     AutomationProperties.Name="{Binding ViewModel.Text.ApplyAll, ElementName=Root}"
+                    Foreground="{StaticResource WallerPrimaryTextBrush}"
                     IsEnabled="{Binding ViewModel.CanStartApply, ElementName=Root}"
                     ToolTipService.ToolTip="{Binding ViewModel.Text.ApplyAll, ElementName=Root}">
                     <Button.KeyboardAccelerators>
@@ -108,7 +122,7 @@
                     </Button.KeyboardAccelerators>
                     <controls:IconText Glyph="&#xE73E;" Text="{Binding ViewModel.Text.ApplyAll, ElementName=Root}" />
                 </Button>
-            </StackPanel>
-        </ScrollViewer>
-    </Grid>
+            </Grid>
+        </Grid>
+    </Border>
 </UserControl>

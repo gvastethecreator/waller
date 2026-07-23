@@ -4,6 +4,10 @@ namespace Waller.Native.App.ViewModels;
 
 public sealed partial record LocalizedText(
     string CurrentSetup,
+    string Monitors,
+    string DetectMonitors,
+    string More,
+    string SelectMonitorToEdit,
     string Preset,
     string PresetName,
     string Save,

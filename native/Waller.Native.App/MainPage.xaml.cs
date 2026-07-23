@@ -17,6 +17,8 @@ public sealed partial class MainPage : Page
 {
     public MainPageViewModel ViewModel { get; } = new();
 
+    internal event Action<ElementTheme>? RequestedThemeChanged;
+
     public MainPage()
     {
         InitializeComponent();
@@ -52,6 +54,9 @@ public sealed partial class MainPage : Page
     {
         switch (args.PropertyName)
         {
+            case nameof(ViewModel.RequestedTheme):
+                RequestedThemeChanged?.Invoke(ViewModel.RequestedTheme);
+                break;
             case nameof(ViewModel.ManagePresetsVisibility) when ViewModel.IsManagePresetsOpen:
                 FocusWhenReady(ManagePresetsModal.FocusPresetList);
                 break;

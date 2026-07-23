@@ -3202,7 +3202,7 @@ public sealed class CoreArchitectureTests
 
             var loaded = await store.LoadAsync();
 
-            Assert.Equal(AppThemePreference.System, loaded.Theme);
+            Assert.Equal(UserSettings.Default.Theme, loaded.Theme);
             Assert.Equal(AppLanguages.English, loaded.Language);
             Assert.Equal(UserSettingsPolicy.MinWindowWidth, loaded.WindowWidth);
             Assert.Equal(UserSettingsPolicy.MinWindowHeight, loaded.WindowHeight);

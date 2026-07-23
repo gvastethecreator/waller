@@ -9,76 +9,145 @@
 
     <Grid ColumnSpacing="16">
         <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="280" />
             <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="360" />
         </Grid.ColumnDefinitions>
 
-        <ScrollViewer
-            VerticalScrollBarVisibility="Auto"
-            VerticalScrollMode="Auto">
-            <StackPanel Spacing="10">
-                <ListView
-                    AutomationProperties.AutomationId="MonitorList"
-                    AutomationProperties.Name="{Binding ViewModel.Text.EditMonitor, ElementName=Root}"
-                    ItemsSource="{Binding ViewModel.Monitors, ElementName=Root}"
-                    SelectedItem="{Binding ViewModel.SelectedMonitor, ElementName=Root, Mode=TwoWay}"
-                    SelectionMode="Single">
-                    <ListView.ItemTemplate>
-                        <DataTemplate x:DataType="vm:MonitorRowViewModel">
-                            <controls:MonitorRow
-                                Row="{Binding}"
-                                EditCommand="{Binding ViewModel.SelectMonitorCommand, ElementName=Root}"
-                                ApplyCommand="{Binding ViewModel.ApplyMonitorCommand, ElementName=Root}"
-                                CanApply="{Binding ViewModel.CanStartApply, ElementName=Root}"
-                                EditText="{Binding ViewModel.Text.Edit, ElementName=Root}"
-                                ApplyText="{Binding ViewModel.Text.Apply, ElementName=Root}" />
-                        </DataTemplate>
-                    </ListView.ItemTemplate>
-                </ListView>
+        <Border
+            Padding="12"
+            CornerRadius="{ThemeResource OverlayCornerRadius}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+            <Grid RowSpacing="12">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
 
-                <Border
-                    Padding="12"
-                    CornerRadius="{ThemeResource OverlayCornerRadius}"
-                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                    BorderThickness="1"
-                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                    Visibility="{Binding ViewModel.MissingMonitorsVisibility, ElementName=Root}">
-                    <StackPanel Spacing="8">
-                        <StackPanel>
+                    <TextBlock
+                        Text="{Binding ViewModel.Text.Monitors, ElementName=Root}"
+                        Style="{StaticResource BodyStrongTextBlockStyle}" />
+
+                    <Grid Grid.Row="1">
+                        <ListView
+                            x:Name="MonitorList"
+                            AutomationProperties.AutomationId="MonitorList"
+                            AutomationProperties.Name="{Binding ViewModel.Text.Monitors, ElementName=Root}"
+                            ContainerContentChanging="OnMonitorListContainerContentChanging"
+                            ItemsSource="{Binding ViewModel.Monitors, ElementName=Root}"
+                            SelectedItem="{Binding ViewModel.SelectedMonitor, ElementName=Root, Mode=TwoWay}"
+                            SelectionMode="Single">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="vm:MonitorRowViewModel">
+                                    <Border
+                                        Margin="0,0,0,8"
+                                        Padding="6"
+                                        CornerRadius="{ThemeResource ControlCornerRadius}"
+                                        BorderBrush="{x:Bind TopologyBorderBrush, Mode=OneWay}"
+                                        BorderThickness="{x:Bind TopologyBorderThickness, Mode=OneWay}"
+                                        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                        Opacity="{x:Bind TopologyOpacity, Mode=OneWay}">
+                                        <StackPanel Spacing="4">
+                                            <controls:SourcePreview
+                                                HorizontalAlignment="Center"
+                                                PreviewWidth="220"
+                                                PreviewHeight="44"
+                                                PreviewBrush="{x:Bind SourcePreviewBrush, Mode=OneWay}"
+                                                PreviewImageBrush="{x:Bind SourcePreviewImageBrush, Mode=OneWay}"
+                                                PreviewImageVisibility="{x:Bind SourcePreviewImageVisibility, Mode=OneWay}"
+                                                PreviewText="{x:Bind SourceSummary, Mode=OneWay}"
+                                                PreviewTextVisibility="{x:Bind SourcePreviewTextVisibility, Mode=OneWay}"
+                                                PreviewTextTrimming="CharacterEllipsis"
+                                                PreviewTextWrapping="NoWrap" />
+                                            <TextBlock
+                                                Text="{x:Bind DisplayName, Mode=OneWay}"
+                                                TextWrapping="NoWrap"
+                                                TextTrimming="CharacterEllipsis"
+                                                Style="{StaticResource BodyStrongTextBlockStyle}" />
+                                            <StackPanel Orientation="Horizontal" Spacing="12">
+                                                <TextBlock
+                                                    Text="{x:Bind Resolution, Mode=OneWay}"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    Style="{StaticResource CaptionTextBlockStyle}" />
+                                                <TextBlock
+                                                    Foreground="#FF107C10"
+                                                    Text="{x:Bind StatusSummary, Mode=OneWay}"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    Style="{StaticResource CaptionTextBlockStyle}" />
+                                            </StackPanel>
+                                        </StackPanel>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Text="{Binding ViewModel.Text.NoMonitorsDetected, ElementName=Root}"
+                            Style="{StaticResource BodyTextBlockStyle}"
+                            Visibility="{Binding ViewModel.NoMonitorsVisibility, ElementName=Root}" />
+                    </Grid>
+
+                <StackPanel Grid.Row="2" Spacing="12">
+                    <Border
+                        Padding="8"
+                        CornerRadius="{ThemeResource ControlCornerRadius}"
+                        Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                        Visibility="{Binding ViewModel.MissingMonitorsVisibility, ElementName=Root}">
+                        <StackPanel Spacing="4">
                             <TextBlock
                                 Text="{Binding ViewModel.Text.MissingMonitors, ElementName=Root}"
                                 Style="{StaticResource BodyStrongTextBlockStyle}" />
-                            <TextBlock
-                                Text="{Binding ViewModel.Text.MissingMonitorsSubtitle, ElementName=Root}"
-                                Style="{StaticResource CaptionTextBlockStyle}" />
+                            <ItemsControl ItemsSource="{Binding ViewModel.MissingMonitors, ElementName=Root}">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:MissingMonitorRowViewModel">
+                                        <controls:MissingMonitorRow
+                                            Row="{Binding}"
+                                            ReassignCommand="{Binding ViewModel.ReassignMissingMonitorCommand, ElementName=Root}"
+                                            ForgetCommand="{Binding ViewModel.ForgetMissingMonitorCommand, ElementName=Root}"
+                                            CanEdit="{Binding ViewModel.CanEditMonitorAssignment, ElementName=Root}"
+                                            ReassignText="{Binding ViewModel.Text.Reassign, ElementName=Root}"
+                                            ForgetText="{Binding ViewModel.Text.Forget, ElementName=Root}" />
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
                         </StackPanel>
-                        <ItemsControl ItemsSource="{Binding ViewModel.MissingMonitors, ElementName=Root}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate x:DataType="vm:MissingMonitorRowViewModel">
-                                    <controls:MissingMonitorRow
-                                        Row="{Binding}"
-                                        ReassignCommand="{Binding ViewModel.ReassignMissingMonitorCommand, ElementName=Root}"
-                                        ForgetCommand="{Binding ViewModel.ForgetMissingMonitorCommand, ElementName=Root}"
-                                        CanEdit="{Binding ViewModel.CanEditMonitorAssignment, ElementName=Root}"
-                                        ReassignText="{Binding ViewModel.Text.Reassign, ElementName=Root}"
-                                        ForgetText="{Binding ViewModel.Text.Forget, ElementName=Root}" />
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
-        </ScrollViewer>
+                    </Border>
+                    <Button
+                        HorizontalAlignment="Stretch"
+                        Command="{Binding ViewModel.RefreshCommand, ElementName=Root}"
+                        AutomationProperties.AutomationId="DetectMonitorsButton"
+                        AutomationProperties.Name="{Binding ViewModel.Text.DetectMonitors, ElementName=Root}"
+                        IsEnabled="{Binding ViewModel.CanStartApply, ElementName=Root}">
+                        <controls:IconText Glyph="&#xE72C;" Text="{Binding ViewModel.Text.DetectMonitors, ElementName=Root}" />
+                    </Button>
+                </StackPanel>
+            </Grid>
+        </Border>
 
-        <TextBlock
-            HorizontalAlignment="Center"
-            VerticalAlignment="Center"
-            Text="{Binding ViewModel.Text.NoMonitorsDetected, ElementName=Root}"
-            Style="{StaticResource BodyTextBlockStyle}"
-            Visibility="{Binding ViewModel.NoMonitorsVisibility, ElementName=Root}" />
+        <Grid Grid.Column="1" RowSpacing="16">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*" />
+                <RowDefinition Height="280" />
+            </Grid.RowDefinitions>
 
-        <controls:EditPanel
-            Grid.Column="1"
-            ViewModel="{Binding ViewModel, ElementName=Root}" />
+            <controls:TopologyStrip ViewModel="{Binding ViewModel, ElementName=Root}" />
+
+            <ScrollViewer
+                Grid.Row="1"
+                Margin="24,0,24,24"
+                VerticalScrollBarVisibility="Auto"
+                VerticalScrollMode="Auto">
+                <controls:EditPanel ViewModel="{Binding ViewModel, ElementName=Root}" />
+            </ScrollViewer>
+        </Grid>
     </Grid>
 </UserControl>

@@ -10,9 +10,10 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
 
-    <Grid Padding="24" RowSpacing="16">
+    <Grid
+        RowSpacing="0"
+        Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="Auto" />
@@ -20,31 +21,27 @@
 
         <controls:ShellHeader ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
 
-        <controls:TopologyStrip
+        <controls:MonitorWorkspace
             Grid.Row="1"
             ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
 
-        <controls:MonitorWorkspace
-            Grid.Row="2"
-            ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
-
         <controls:StatusFooter
-            Grid.Row="3"
+            Grid.Row="2"
             ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
 
         <controls:SaveAsModal
             x:Name="SaveAsModal"
-            Grid.RowSpan="4"
+            Grid.RowSpan="3"
             ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
 
         <controls:ManagePresetsModal
             x:Name="ManagePresetsModal"
-            Grid.RowSpan="4"
+            Grid.RowSpan="3"
             ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
 
         <controls:SettingsModal
             x:Name="SettingsModal"
-            Grid.RowSpan="4"
+            Grid.RowSpan="3"
             ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
     </Grid>
 </Page>

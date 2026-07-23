@@ -11,6 +11,9 @@
                 <!-- Other merged dictionaries here -->
             </ResourceDictionary.MergedDictionaries>
             <SolidColorBrush x:Key="WallerModalOverlayBrush" Color="#80000000" />
+            <SolidColorBrush x:Key="WallerPrimaryBrush" Color="#FFFFB900" />
+            <SolidColorBrush x:Key="WallerPrimaryTextBrush" Color="#FF1F1F1F" />
+            <SolidColorBrush x:Key="WallerSelectionBrush" Color="#FF0078D4" />
             <Style x:Key="WallerButtonIconStyle" TargetType="FontIcon">
                 <Setter Property="FontSize" Value="14" />
             </Style>
