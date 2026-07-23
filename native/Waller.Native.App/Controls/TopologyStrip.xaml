@@ -26,14 +26,13 @@
                 HorizontalAlignment="Center"
                 VerticalAlignment="Center"
                 Stretch="Uniform">
-                <ItemsControl ItemsSource="{Binding ViewModel.TopologyMonitors, ElementName=Root}">
+                <ItemsControl
+                    Width="{Binding ViewModel.TopologyWidth, ElementName=Root}"
+                    Height="{Binding ViewModel.TopologyHeight, ElementName=Root}"
+                    ItemsSource="{Binding ViewModel.TopologyMonitors, ElementName=Root}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <StackPanel
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Top"
-                                Orientation="Horizontal"
-                                Spacing="16" />
+                            <controls:TopologyPanel />
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
@@ -41,9 +40,7 @@
                             <Button
                                 Width="{x:Bind TopologyWidth}"
                                 Height="{x:Bind TopologyHeight}"
-                                Margin="{x:Bind TopologyMargin}"
                                 Padding="0"
-                                VerticalAlignment="Top"
                                 HorizontalContentAlignment="Stretch"
                                 VerticalContentAlignment="Stretch"
                                 Background="{ThemeResource ControlFillColorTransparentBrush}"
@@ -62,6 +59,8 @@
                                     <Grid>
                                         <controls:SourcePreview
                                             AutomationProperties.Name="{x:Bind SourceSummary, Mode=OneWay}"
+                                            PreviewBadgeText="{x:Bind Session.Monitor.Identity.DisplayIndex, Mode=OneWay}"
+                                            PreviewBadgeVisibility="Visible"
                                             PreviewWidth="{x:Bind TopologyWidth}"
                                             PreviewHeight="{x:Bind TopologyHeight}"
                                             PreviewBrush="{x:Bind SourcePreviewBrush, Mode=OneWay}"
@@ -71,19 +70,6 @@
                                             PreviewTextVisibility="{x:Bind SourcePreviewTextVisibility, Mode=OneWay}"
                                             PreviewTextTrimming="CharacterEllipsis" />
                                         <Grid Padding="12">
-                                            <Grid
-                                                Width="30"
-                                                Height="30"
-                                                HorizontalAlignment="Left"
-                                                VerticalAlignment="Top">
-                                                <Ellipse Fill="{ThemeResource WallerSelectionBrush}" />
-                                                <TextBlock
-                                                    HorizontalAlignment="Center"
-                                                    VerticalAlignment="Center"
-                                                    Foreground="{ThemeResource WallerSelectionTextBrush}"
-                                                    Text="{x:Bind Session.Monitor.Identity.DisplayIndex, Mode=OneWay}"
-                                                    Style="{StaticResource BodyStrongTextBlockStyle}" />
-                                            </Grid>
                                             <Border
                                                 HorizontalAlignment="Right"
                                                 VerticalAlignment="Bottom"

@@ -274,7 +274,7 @@
                             <ListView.ItemsPanel>
                                 <ItemsPanelTemplate>
                                     <ItemsWrapGrid
-                                        Orientation="Vertical"
+                                        Orientation="Horizontal"
                                         MaximumRowsOrColumns="3" />
                                 </ItemsPanelTemplate>
                             </ListView.ItemsPanel>

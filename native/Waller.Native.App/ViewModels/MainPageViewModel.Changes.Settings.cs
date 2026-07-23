@@ -4,9 +4,14 @@ namespace Waller.Native.App.ViewModels;
 
 public sealed partial class MainPageViewModel
 {
+    private bool isSynchronizingThemeToggle;
+
     partial void OnSelectedThemePreferenceChanged(AppThemePreference value)
     {
         OnPropertyChanged(nameof(RequestedTheme));
+        isSynchronizingThemeToggle = true;
+        IsDarkThemeSetting = value == AppThemePreference.Dark;
+        isSynchronizingThemeToggle = false;
         SelectedThemeOption = OptionItems.Select(ThemeOptions, value);
     }
 
@@ -15,6 +20,23 @@ public sealed partial class MainPageViewModel
         if (value is not null)
         {
             SelectedThemePreference = value.Value;
+        }
+    }
+
+    partial void OnIsDarkThemeSettingChanged(bool value)
+    {
+        if (isSynchronizingThemeToggle)
+        {
+            return;
+        }
+
+        var theme = value
+            ? AppThemePreference.Dark
+            : AppThemePreference.Light;
+
+        if (SelectedThemePreference != theme)
+        {
+            SelectedThemePreference = theme;
         }
     }
 

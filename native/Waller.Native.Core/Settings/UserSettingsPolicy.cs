@@ -13,7 +13,7 @@ public static class UserSettingsPolicy
     {
         ArgumentNullException.ThrowIfNull(settings);
 
-        var theme = DefinedEnumValue.IsDefined(settings.Theme)
+        var theme = settings.ThemePreferenceWasSet && DefinedEnumValue.IsDefined(settings.Theme)
             ? settings.Theme
             : UserSettings.Default.Theme;
         var windowX = settings.WindowX is null || settings.WindowY is null

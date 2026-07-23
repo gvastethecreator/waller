@@ -13,6 +13,19 @@ Apply wiring, restore-safe Apply smoke coverage, and package/local-data guards.
 
 Latest verification:
 
+- 2026-07-23: the topology/theme/clipping pass builds cleanly and passes all
+  470 core tests, XAML accessibility/theme lint, WinUI code guards, and core
+  code guards. `SmokeSurface.ps1 -DisableNuGetAudit` passed Shell 5/5,
+  Settings 5/5, Save As 3/3, and Manage Presets 6/6. The Settings round-trip
+  smoke also passed with `Theme=1` and `Language=es`; a live UI Automation
+  check found `DarkModeToggle` on by default and changed it to Off successfully.
+  The stage now maps the real Windows virtual-desktop bounds through an
+  absolute panel, keeps the dark default with safe migration for old settings,
+  and fixes the inset badges, row-major arrows, and clipped header action.
+  The last valid three-monitor capture is recorded in `design-qa.md`. The
+  current desktop session reports one Win32 display while stale COM monitor
+  paths fail `GetMonitorRECT`, so a new three-monitor native screenshot cannot
+  be claimed until Windows refreshes its display state.
 - 2026-07-22: the option-3 monitor composer revision passed its final local
   gate. The app now starts at 1536 × 1024, migrates the former 1120 × 760 and
   interim 1520 × 960 defaults, and centers the default window in the active
