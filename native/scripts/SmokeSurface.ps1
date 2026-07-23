@@ -49,9 +49,22 @@ function Find-WallerElementByAutomationId {
         [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
         $AutomationId)
 
-    return $Root.FindFirst(
+    $element = $Root.FindFirst(
         [System.Windows.Automation.TreeScope]::Descendants,
         $condition)
+    if ($element) {
+        return $element
+    }
+
+    $processCondition = [System.Windows.Automation.AndCondition]::new(
+        $condition,
+        [System.Windows.Automation.PropertyCondition]::new(
+            [System.Windows.Automation.AutomationElement]::ProcessIdProperty,
+            $Root.Current.ProcessId))
+
+    return [System.Windows.Automation.AutomationElement]::RootElement.FindFirst(
+        [System.Windows.Automation.TreeScope]::Descendants,
+        $processCondition)
 }
 
 function Wait-WallerElementByAutomationId {
@@ -119,6 +132,13 @@ function Invoke-WallerElementByAutomationId {
     }
 
     $pattern.Invoke()
+}
+
+function Open-WallerMoreMenu {
+    param([System.Windows.Automation.AutomationElement]$Root)
+
+    Invoke-WallerElementByAutomationId -Root $Root -AutomationId "MoreButton"
+    Start-Sleep -Milliseconds 250
 }
 
 function Set-WallerSettingsPathFromLaunch {
@@ -430,11 +450,7 @@ try {
 
     $requiredAutomationIds = @(
         "PresetComboBox",
-        "SaveButton",
-        "SaveAsButton",
-        "ManagePresetsButton",
-        "RefreshButton",
-        "SettingsButton",
+        "MoreButton",
         "ApplyAllButton",
         "MonitorList",
         "StatusInfoBar"
@@ -450,6 +466,7 @@ try {
         -AutomationIds $requiredAutomationIds `
         -ScopeName "Shell"
 
+    Open-WallerMoreMenu -Root $window
     Invoke-WallerElementByAutomationId -Root $window -AutomationId "SettingsButton"
     Assert-WallerElementsPresent `
         -Root $window `
@@ -469,7 +486,7 @@ try {
         Select-WallerComboBoxItemByName `
             -Root $window `
             -AutomationId "SettingsLanguageComboBox" `
-            -Names @("Spanish", "Espanol") `
+            -Names @("Spanish", "Español") `
             -UseLastItemKeyboardFallback `
             -SkipSelectionVerification
         Invoke-WallerElementByAutomationId -Root $window -AutomationId "SaveSettingsButton"
@@ -483,6 +500,7 @@ try {
 
     Invoke-WallerElementByAutomationId -Root $window -AutomationId "CloseSettingsButton"
 
+    Open-WallerMoreMenu -Root $window
     Invoke-WallerElementByAutomationId -Root $window -AutomationId "SaveAsButton"
     Assert-WallerElementsPresent `
         -Root $window `
@@ -493,6 +511,7 @@ try {
         -ScopeName "Save As modal"
     Invoke-WallerElementByAutomationId -Root $window -AutomationId "CloseSaveAsButton"
 
+    Open-WallerMoreMenu -Root $window
     Invoke-WallerElementByAutomationId -Root $window -AutomationId "ManagePresetsButton"
     Assert-WallerElementsPresent `
         -Root $window `

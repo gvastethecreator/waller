@@ -34,7 +34,7 @@ public sealed record UserSettings
 
     public static UserSettings Default { get; } =
         new(
-            AppThemePreference.System,
+            AppThemePreference.Light,
             AppLanguages.English,
             UserSettingsPolicy.DefaultWindowWidth,
             UserSettingsPolicy.DefaultWindowHeight,

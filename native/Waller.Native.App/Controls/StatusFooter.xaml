@@ -6,49 +6,63 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Waller.Native.App.Controls">
 
-    <Grid ColumnSpacing="12">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="*" />
-            <ColumnDefinition Width="Auto" />
-        </Grid.ColumnDefinitions>
+    <Border
+        MinHeight="48"
+        Padding="24,10"
+        AutomationProperties.AutomationId="StatusInfoBar"
+        AutomationProperties.Name="{Binding ViewModel.StatusText, ElementName=Root}"
+        AutomationProperties.LiveSetting="Polite"
+        Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+        BorderThickness="0,1,0,0">
+        <Grid ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
 
-        <InfoBar
-            AutomationProperties.AutomationId="StatusInfoBar"
-            AutomationProperties.Name="{Binding ViewModel.StatusText, ElementName=Root}"
-            AutomationProperties.LiveSetting="Polite"
-            IsOpen="True"
-            Severity="Informational"
-            Message="{Binding ViewModel.StatusText, ElementName=Root}" />
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <FontIcon
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Glyph="&#xE946;" />
+                <TextBlock
+                    VerticalAlignment="Center"
+                    Foreground="{ThemeResource TextFillColorSecondaryBrush}"
+                    Text="{Binding ViewModel.StatusText, ElementName=Root}"
+                    TextTrimming="CharacterEllipsis"
+                    ToolTipService.ToolTip="{Binding ViewModel.StatusText, ElementName=Root}" />
+            </StackPanel>
 
-        <StackPanel
-            Grid.Column="1"
-            HorizontalAlignment="Right"
-            Orientation="Horizontal"
-            Spacing="8"
-            Visibility="{Binding ViewModel.ApplyProgressVisibility, ElementName=Root}">
-            <ProgressRing
-                Width="20"
-                Height="20"
-                AutomationProperties.AutomationId="ApplyProgressRing"
-                AutomationProperties.Name="{Binding ViewModel.ApplyProgressText, ElementName=Root}"
-                IsActive="{Binding ViewModel.IsApplying, ElementName=Root}" />
-            <TextBlock
-                MaxWidth="360"
-                VerticalAlignment="Center"
-                AutomationProperties.AutomationId="ApplyProgressText"
-                AutomationProperties.Name="{Binding ViewModel.ApplyProgressText, ElementName=Root}"
-                AutomationProperties.LiveSetting="Polite"
-                Text="{Binding ViewModel.ApplyProgressText, ElementName=Root}"
-                TextTrimming="CharacterEllipsis"
-                ToolTipService.ToolTip="{Binding ViewModel.ApplyProgressText, ElementName=Root}" />
-            <Button
-                Command="{Binding ViewModel.CancelApplyCommand, ElementName=Root}"
-                AutomationProperties.AutomationId="CancelApplyButton"
-                AutomationProperties.Name="{Binding ViewModel.Text.CancelApply, ElementName=Root}"
-                IsEnabled="{Binding ViewModel.IsApplying, ElementName=Root}"
-                ToolTipService.ToolTip="{Binding ViewModel.Text.CancelApply, ElementName=Root}">
-                <controls:IconText Glyph="&#xE711;" Text="{Binding ViewModel.Text.CancelApply, ElementName=Root}" />
-            </Button>
-        </StackPanel>
-    </Grid>
+            <StackPanel
+                Grid.Column="1"
+                HorizontalAlignment="Right"
+                Orientation="Horizontal"
+                Spacing="8"
+                Visibility="{Binding ViewModel.ApplyProgressVisibility, ElementName=Root}">
+                <ProgressRing
+                    Width="20"
+                    Height="20"
+                    AutomationProperties.AutomationId="ApplyProgressRing"
+                    AutomationProperties.Name="{Binding ViewModel.ApplyProgressText, ElementName=Root}"
+                    IsActive="{Binding ViewModel.IsApplying, ElementName=Root}" />
+                <TextBlock
+                    MaxWidth="360"
+                    VerticalAlignment="Center"
+                    AutomationProperties.AutomationId="ApplyProgressText"
+                    AutomationProperties.Name="{Binding ViewModel.ApplyProgressText, ElementName=Root}"
+                    AutomationProperties.LiveSetting="Polite"
+                    Text="{Binding ViewModel.ApplyProgressText, ElementName=Root}"
+                    TextTrimming="CharacterEllipsis"
+                    ToolTipService.ToolTip="{Binding ViewModel.ApplyProgressText, ElementName=Root}" />
+                <Button
+                    Command="{Binding ViewModel.CancelApplyCommand, ElementName=Root}"
+                    AutomationProperties.AutomationId="CancelApplyButton"
+                    AutomationProperties.Name="{Binding ViewModel.Text.CancelApply, ElementName=Root}"
+                    IsEnabled="{Binding ViewModel.IsApplying, ElementName=Root}"
+                    ToolTipService.ToolTip="{Binding ViewModel.Text.CancelApply, ElementName=Root}">
+                    <controls:IconText Glyph="&#xE711;" Text="{Binding ViewModel.Text.CancelApply, ElementName=Root}" />
+                </Button>
+            </StackPanel>
+        </Grid>
+    </Border>
 </UserControl>

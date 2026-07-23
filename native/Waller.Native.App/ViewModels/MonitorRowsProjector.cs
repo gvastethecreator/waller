@@ -19,13 +19,13 @@ internal static class MonitorRowsProjector
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(text);
 
-        var topology = MonitorTopologyLayout.Calculate(
+        var topology = MonitorStageLayout.Calculate(
             session.Monitors.Select(monitor => monitor.Monitor.Bounds).ToList());
 
         monitors.Clear();
         foreach (var monitor in session.Monitors)
         {
-            var tile = topology.TileFor(monitor.Monitor.Bounds);
+            var tile = topology.Tiles[monitors.Count];
             monitors.Add(new MonitorRowViewModel(
                 monitor,
                 text,

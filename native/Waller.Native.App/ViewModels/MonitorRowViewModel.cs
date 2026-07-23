@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Waller.Native.Core.Models;
+using Windows.UI;
 
 namespace Waller.Native.App.ViewModels;
 
@@ -13,6 +14,9 @@ public sealed partial class MonitorRowViewModel(
     double topologyWidth = 96,
     double topologyHeight = 54) : ObservableObject
 {
+    private static readonly Brush SelectedTopologyBorderBrush = new SolidColorBrush(Color.FromArgb(255, 0, 120, 212));
+    private static readonly Brush DefaultTopologyBorderBrush = new SolidColorBrush(Color.FromArgb(255, 198, 198, 198));
+
     private LocalizedText text = text ?? throw new ArgumentNullException(nameof(text));
 
     [ObservableProperty]
@@ -22,6 +26,7 @@ public sealed partial class MonitorRowViewModel(
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(TopologyOpacity))]
     [NotifyPropertyChangedFor(nameof(TopologyBorderThickness))]
+    [NotifyPropertyChangedFor(nameof(TopologyBorderBrush))]
     public partial bool IsSelected { get; set; }
 
     public string MonitorKey => Session.Monitor.Identity.MonitorKey;
@@ -40,9 +45,13 @@ public sealed partial class MonitorRowViewModel(
 
     public double TopologyHeight { get; } = topologyHeight;
 
-    public double TopologyOpacity => IsSelected ? 1.0 : 0.62;
+    public double TopologyOpacity => 1.0;
 
     public Thickness TopologyBorderThickness => IsSelected ? new Thickness(2) : new Thickness(1);
+
+    public Brush TopologyBorderBrush => IsSelected
+        ? SelectedTopologyBorderBrush
+        : DefaultTopologyBorderBrush;
 
     public Visibility TopologyResolutionVisibility =>
         VisibilityStates.When(TopologyWidth >= 92 && TopologyHeight >= 48);
