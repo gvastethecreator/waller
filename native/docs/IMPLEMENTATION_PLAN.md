@@ -52,7 +52,7 @@ Tasks:
 - read current wallpaper path where available - done
 - preserve negative coordinates - done through Windows rect mapping
 - map missing current wallpaper to `WallpaperSource.Empty` - done
-- keep `SampleMonitorDetector` for tests/dev fallback - done
+- keep deterministic sample monitors only as a Tests fixture - done
 - use `EmptyMonitorDetector` as production fallback instead of sample monitor
   data - done
 - isolate startup primary detection and fallback loading in separate helpers -
@@ -680,13 +680,12 @@ Tasks:
   `Controls/EditPanel.xaml`
 - extract status/progress footer from `MainPage.xaml` - done through
   `Controls/StatusFooter.xaml`
-- split selected-monitor source picking/color editor commands from the main
-  editor partial - done through `MainPageViewModel.Editor.Source.cs`
-- split selected-monitor placement reset/offset helpers from the main editor
-  partial - done through `MainPageViewModel.Editor.Placement.cs`
-- split remaining selected-monitor editor selection, assignment,
-  disconnected-monitor, and option-refresh flow by responsibility - done
-  through focused `MainPageViewModel.Editor.*.cs` partials
+- move selected-monitor selection, drafts, source/placement edits, and
+  disconnected-monitor operations into XAML-free `MonitorEditorWorkflow` - done
+- move editor state, picker projection, localized status, and commands into
+  focused `MonitorEditorViewModel`; bind `EditPanel` to it directly - done
+- centralize successful editor outcomes into one Active Session replacement and
+  remove legacy root partials/helpers - done
 - split source-generated property-change hooks by workflow - done through
   focused `MainPageViewModel.Changes.*.cs` partials
 - split observable state/collections by workflow - done through focused
@@ -735,8 +734,10 @@ Tasks:
   `OnPropertyChanged` - done
 - guard localized option catalog and monitor-row selection inputs before option
   or row-selection projection runs - done
-- guard Apply run delegate/state boundaries before Apply controller extraction -
-  done
+- extract technical Apply execution, cancellation, concurrency, and partial
+  outcomes into `ApplyWorkflow` - done
+- move localized Apply commands/progress into `ApplyViewModel` and bind Apply
+  controls directly to it - done
 - guard monitor workspace visibility helpers before no-monitors/topology/missing
   monitor surfaces read row collection counts - done
 - guard source/placement preview helpers before unsupported source/fit/anchor
@@ -756,10 +757,9 @@ Tasks:
 - guard against unnamed English/Spanish catalog arguments - done
 - guard localized surface refresh output as an explicit result object before
   Settings language changes update cached Preset/row labels - done
-- normalize edit-panel offset values through a focused helper before placement
-  payload creation so NumberBox/direct values cannot overflow round/cast paths -
-  done
-- refresh editor fields on monitor selection without mutating Active Session - done
+- normalize edit-panel offsets inside `MonitorEditorWorkflow` through Core
+  placement policy before updating Active Session - done
+- create editor drafts on monitor selection without mutating Active Session - done
 - add detailed manual smoke checklist for launch, topology, previews, Presets,
   Settings, disconnected monitors, Apply, placement, and accessibility - done
 - expand XAML accessibility/localization gates from `MainPage.xaml` to the full
@@ -859,7 +859,6 @@ Avoid until MVP proves core:
 - logs UI
 - import/export
 - dynamic/plugin wallpapers
-- legacy Tauri profile import
 - tray behavior
 - scheduled wallpaper changes
 

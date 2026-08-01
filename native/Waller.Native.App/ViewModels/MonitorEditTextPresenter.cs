@@ -15,6 +15,12 @@ internal sealed class MonitorEditTextPresenter
 
     public string ImagePathRequired => text().ImagePathRequired;
 
+    public string MissingImage(string imagePath)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(imagePath);
+        return $"{text().MissingSourcePrefix}: {imagePath}";
+    }
+
     public string SelectedImage(string fileName) =>
         text().Format(text().SelectedImageFormat, ImageDisplayName.Normalize(fileName, nameof(fileName)));
 

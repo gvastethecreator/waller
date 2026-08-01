@@ -1,5 +1,6 @@
 using CommunityToolkit.Mvvm.Input;
 using Waller.Native.Core.Sessions;
+using Waller.Native.Workflows.Shell;
 
 namespace Waller.Native.App.ViewModels;
 
@@ -9,7 +10,7 @@ public sealed partial class MainPageViewModel
     {
         await LoadSettingsAsync();
         await LoadCurrentSessionAsync(shellText.LoadedCurrentSetup);
-        await RefreshPresetListAsync(selectPresetId: lastSelectedPresetId);
+        await Presets.RefreshAsync(Presets.LastSelectedPresetId);
     }
 
     public void ReportInitializationFailure()
@@ -26,24 +27,36 @@ public sealed partial class MainPageViewModel
         }
 
         await LoadCurrentSessionAsync(shellText.CurrentSetupRefreshed);
-        await RefreshPresetListAsync(activeSession.BasedOnPreset?.Id);
+        await Presets.RefreshAsync(activeSession.BasedOnPreset?.Id);
     }
 
     [RelayCommand]
     private void CloseTopModal()
     {
-        ShellModalClose.Dispatch(
-            InteractionState.TopModal,
-            ClearPendingDeletePreset,
-            CloseManagePresets,
-            CloseSaveAs,
-            CloseSettings);
+        switch (workspace.TopModal)
+        {
+            case null:
+                break;
+            case ShellModal.DeleteConfirmation:
+            case ShellModal.ManagePresets:
+            case ShellModal.SaveAs:
+                Presets.CloseTopPresetModal(workspace.TopModal.Value);
+                break;
+            case ShellModal.Settings:
+                CloseSettings();
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(
+                    nameof(workspace.TopModal),
+                    workspace.TopModal,
+                    "Unknown shell modal layer.");
+        }
     }
 
     private async Task LoadCurrentSessionAsync(string successStatus)
     {
         var result = await CurrentSessionLoader.LoadAsync(primaryMonitorDetector, fallbackMonitorDetector);
-        activeSession = result.Session;
+        workspace.ReplaceActiveSession(result.Session);
 
         RefreshSessionSurface(selectFirst: true);
         StatusText = shellText.CurrentSessionLoadResult(result.UsedFallback, successStatus, Monitors.Count);
@@ -62,11 +75,11 @@ public sealed partial class MainPageViewModel
             MissingMonitors,
             activeSession,
             Text,
-            SelectedMonitor?.MonitorKey,
+            Editor.SelectedMonitor?.MonitorKey,
             selectFirst);
         TopologyWidth = projection.TopologyWidth;
         TopologyHeight = projection.TopologyHeight;
-        SelectedMonitor = projection.SelectedMonitor;
+        Editor.SelectProjectedMonitor(projection.SelectedMonitor);
         NotifyRowsSurfaceChanged();
     }
 
@@ -76,35 +89,56 @@ public sealed partial class MainPageViewModel
         NotifyCommandStateChanged();
     }
 
-    private void NotifySelectedMonitorSurfaceChanged()
+    private bool TryOpenModal(ShellModal modal)
     {
-        NotifyPropertiesChanged(ViewModelNotificationGroups.SelectedMonitorSurface);
-        NotifySelectedSourceWarningChanged();
+        if (!workspace.TryOpenModal(modal))
+        {
+            return false;
+        }
+
+        NotifyModalLayerChanged(modal);
+        NotifyModalStateChanged();
+        return true;
+    }
+
+    private bool TryCloseModal(ShellModal modal)
+    {
+        if (workspace.TopModal != modal || !workspace.TryCloseTopModal(out _))
+        {
+            return false;
+        }
+
+        NotifyModalLayerChanged(modal);
+        NotifyModalStateChanged();
+        return true;
+    }
+
+    private void NotifyModalLayerChanged(ShellModal modal)
+    {
+        var properties = modal switch
+        {
+            ShellModal.Settings => ViewModelNotificationGroups.SettingsModalSurface,
+            _ => throw new ArgumentOutOfRangeException(nameof(modal), modal, "Modal is not owned by MainPageViewModel."),
+        };
+
+        NotifyPropertiesChanged(properties);
     }
 
     private void NotifyRowsSurfaceChanged()
     {
-        NotifySelectedSourceWarningChanged();
         NotifyPropertiesChanged(ViewModelNotificationGroups.RowsSurface);
     }
 
     private void NotifyCommandStateChanged()
     {
         NotifyPropertiesChanged(ViewModelNotificationGroups.CommandState);
-        NotifyEditPermissionChanged();
+        Apply.NotifyWorkspaceStateChanged();
+        Editor.NotifyWorkspaceStateChanged();
+        Presets.NotifyWorkspaceStateChanged();
     }
-
-    private void NotifyEditPermissionChanged() =>
-        NotifyPropertiesChanged(ViewModelNotificationGroups.EditPermission);
-
-    private void NotifySelectedSourceWarningChanged() =>
-        NotifyPropertiesChanged(ViewModelNotificationGroups.SelectedSourceWarning);
 
     private void NotifySessionSummaryChanged() =>
         NotifyPropertiesChanged(ViewModelNotificationGroups.SessionSummarySurface);
-
-    private void NotifyDeleteConfirmationSurfaceChanged() =>
-        NotifyPropertiesChanged(ViewModelNotificationGroups.DeleteConfirmationSurface);
 
     private void NotifyPropertiesChanged(params string[] propertyNames)
     {
@@ -119,10 +153,4 @@ public sealed partial class MainPageViewModel
         }
     }
 
-    private void ClearPendingDeletePreset()
-    {
-        pendingDeletePreset = null;
-        IsDeleteConfirmationOpen = false;
-        NotifyDeleteConfirmationSurfaceChanged();
-    }
 }

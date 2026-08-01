@@ -1,22 +1,14 @@
 using System.Security.Principal;
 using Microsoft.Win32;
+using Waller.Native.Workflows.Storage;
 
 namespace Waller.Native.App.Platform;
 
 internal static class WallerAppDataPaths
 {
-    public const string AppFolderName = "Waller";
-
-    public static string Root { get; } = RootFor(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData));
-
-    public static string RenderedRoot { get; } = Path.Combine(UserVisibleProfileDirectory(), ".waller");
-
-    public static string RootFor(string localApplicationDataPath)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(localApplicationDataPath);
-        return Path.Combine(localApplicationDataPath, AppFolderName);
-    }
+    public static LocalDataLayout Current { get; } = LocalDataLayout.Create(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        UserVisibleProfileDirectory());
 
     private static string UserVisibleProfileDirectory()
     {

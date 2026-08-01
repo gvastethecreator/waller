@@ -6,32 +6,15 @@ public sealed partial class MainPageViewModel
 {
     public LocalizedText Text => LocalizedText.For(SelectedLanguage);
 
-    public Visibility ApplyProgressVisibility => VisibilityStates.When(IsApplying);
+    public bool CanStartApply => workspace.CanStartApply;
 
-    private ShellInteractionState InteractionState => new(
-        IsApplying,
-        IsSaveAsOpen,
-        IsManagePresetsOpen,
-        IsDeleteConfirmationOpen,
-        IsSettingsOpen);
+    public bool CanEditSession => workspace.CanEditSession;
 
-    private ApplyTextPresenter applyText => textPresenters.Apply;
-
-    private PresetTextPresenter presetText => textPresenters.Preset;
-
-    private MonitorEditTextPresenter monitorEditText => textPresenters.MonitorEdit;
-
-    private ShellStatusTextPresenter shellText => textPresenters.Shell;
-
-    public bool CanStartApply => InteractionState.CanStartApply;
-
-    public bool CanEditSession => InteractionState.CanEditSession;
-
-    public bool CanUseShellCommands => InteractionState.CanUseShellCommands;
+    public bool CanUseShellCommands => workspace.CanUseShellCommands;
 
     public string SessionSummary => Text.SessionSummary(
         activeSession.BasedOnPreset,
         activeSession.HasUnsavedPresetChanges,
         activeSession.MissingAssignments.Count,
-        SelectedPreset);
+        Presets.SelectedPreset);
 }

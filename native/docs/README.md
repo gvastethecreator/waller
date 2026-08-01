@@ -26,6 +26,8 @@ Start here when continuing Waller Native work.
 
 ## Root References
 
-- `..\..\docs\prototypes\winui\PRODUCT_DECISIONS.md`
-- `..\..\docs\prototypes\winui\NATIVE_ARCHITECTURE.md`
-- `..\..\GITHUB_RESEARCH_REPORT.md`
+- `..\..\README.md` - supported root commands and product overview.
+- `..\..\CONTEXT.md` - canonical product language.
+- `..\..\docs\architecture\winui-definitive-architecture-spec.md` - approved architecture direction.
+- `..\..\docs\architecture\WORKPLAN.md` - current architecture execution tracker.
+- `..\..\docs\architecture\winui-definitive-architecture-report.md` - completed architecture batch and proof.

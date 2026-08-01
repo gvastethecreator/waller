@@ -155,6 +155,39 @@ public static class SmokeDesktopWallpaperInterop
         }
 
         var desktopWallpaper = Create();
+        var hasWallpaper = false;
+        var hasSolidColor = false;
+
+        foreach (var monitor in backup.Monitors)
+        {
+            if (monitor == null || string.IsNullOrWhiteSpace(monitor.MonitorId))
+            {
+                continue;
+            }
+
+            if (string.IsNullOrWhiteSpace(monitor.WallpaperPath))
+            {
+                hasSolidColor = true;
+            }
+            else
+            {
+                hasWallpaper = true;
+            }
+        }
+
+        if (hasWallpaper && hasSolidColor)
+        {
+            throw new InvalidOperationException("A mixed image and solid-color desktop cannot be restored safely.");
+        }
+
+        if (hasSolidColor)
+        {
+            ThrowForHR(desktopWallpaper.SetPosition(backup.Position));
+            ThrowForHR(desktopWallpaper.SetBackgroundColor(backup.BackgroundColor));
+            ThrowForHR(desktopWallpaper.Enable(false));
+            return;
+        }
+
         foreach (var monitor in backup.Monitors)
         {
             if (monitor == null || string.IsNullOrWhiteSpace(monitor.MonitorId) || string.IsNullOrWhiteSpace(monitor.WallpaperPath))
@@ -349,16 +382,17 @@ function Assert-RestorableWallpaperBackup {
         throw "Apply smoke is unsafe: no monitors were captured for wallpaper restore."
     }
 
+    $imageMonitors = @($Backup.Monitors | Where-Object { -not [string]::IsNullOrWhiteSpace($_.WallpaperPath) })
+    if ($imageMonitors.Count -ne 0 -and $imageMonitors.Count -ne $Backup.Monitors.Count) {
+        throw "Apply smoke is unsafe: mixed image and solid-color monitor backgrounds cannot be restored exactly."
+    }
+
     foreach ($monitor in $Backup.Monitors) {
         if ([string]::IsNullOrWhiteSpace($monitor.MonitorId)) {
             throw "Apply smoke is unsafe: captured monitor id is blank."
         }
 
-        if ([string]::IsNullOrWhiteSpace($monitor.WallpaperPath)) {
-            throw "Apply smoke is unsafe: monitor '$($monitor.MonitorId)' has no wallpaper path to restore."
-        }
-
-        if (-not (Test-Path -LiteralPath $monitor.WallpaperPath)) {
+        if (-not [string]::IsNullOrWhiteSpace($monitor.WallpaperPath) -and -not (Test-Path -LiteralPath $monitor.WallpaperPath)) {
             throw "Apply smoke is unsafe: restore wallpaper path does not exist: $($monitor.WallpaperPath)"
         }
     }

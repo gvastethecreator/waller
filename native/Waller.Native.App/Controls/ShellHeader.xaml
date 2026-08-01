@@ -22,13 +22,19 @@
                 Grid.Column="1"
                 Width="200"
                 AutomationProperties.AutomationId="PresetComboBox"
-                AutomationProperties.Name="{Binding ViewModel.Text.Preset, ElementName=Root}"
+                AutomationProperties.Name="{Binding Presets.Text.Preset, ElementName=Root}"
                 DisplayMemberPath="Name"
-                IsEnabled="{Binding ViewModel.CanUseShellCommands, ElementName=Root}"
-                ItemsSource="{Binding ViewModel.Presets, ElementName=Root}"
-                SelectedItem="{Binding ViewModel.SelectedPreset, ElementName=Root, Mode=TwoWay}" />
+                IsEnabled="{Binding Presets.CanUseShellCommands, ElementName=Root}"
+                ItemsSource="{Binding Presets.Items, ElementName=Root}"
+                SelectedItem="{Binding Presets.SelectedPreset, ElementName=Root, Mode=TwoWay}" />
 
-            <Grid Grid.Column="3" ColumnSpacing="12">
+            <ScrollViewer
+                Grid.Column="3"
+                HorizontalScrollBarVisibility="Auto"
+                HorizontalScrollMode="Auto"
+                VerticalScrollBarVisibility="Disabled"
+                VerticalScrollMode="Disabled">
+            <Grid ColumnSpacing="12">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="Auto" />
@@ -45,10 +51,11 @@
                     <Button.Flyout>
                         <MenuFlyout>
                             <MenuFlyoutItem
-                                Text="{x:Bind ViewModel.Text.Save, Mode=OneWay}"
-                                Command="{x:Bind ViewModel.SaveCommand, Mode=OneWay}"
+                                Text="{x:Bind Presets.Text.Save, Mode=OneWay}"
+                                Command="{x:Bind Presets.SaveCommand, Mode=OneWay}"
                                 AutomationProperties.AutomationId="SaveButton"
-                                AutomationProperties.Name="{x:Bind ViewModel.Text.Save, Mode=OneWay}">
+                                AutomationProperties.Name="{x:Bind Presets.Text.Save, Mode=OneWay}"
+                                IsEnabled="{x:Bind Presets.CanUseShellCommands, Mode=OneWay}">
                                 <MenuFlyoutItem.KeyboardAccelerators>
                                     <KeyboardAccelerator Key="S" Modifiers="Control" />
                                 </MenuFlyoutItem.KeyboardAccelerators>
@@ -57,10 +64,11 @@
                                 </MenuFlyoutItem.Icon>
                             </MenuFlyoutItem>
                             <MenuFlyoutItem
-                                Text="{x:Bind ViewModel.Text.SaveAs, Mode=OneWay}"
-                                Command="{x:Bind ViewModel.SaveAsCommand, Mode=OneWay}"
+                                Text="{x:Bind Presets.Text.SaveAs, Mode=OneWay}"
+                                Command="{x:Bind Presets.SaveAsCommand, Mode=OneWay}"
                                 AutomationProperties.AutomationId="SaveAsButton"
-                                AutomationProperties.Name="{x:Bind ViewModel.Text.SaveAs, Mode=OneWay}">
+                                AutomationProperties.Name="{x:Bind Presets.Text.SaveAs, Mode=OneWay}"
+                                IsEnabled="{x:Bind Presets.CanUseShellCommands, Mode=OneWay}">
                                 <MenuFlyoutItem.KeyboardAccelerators>
                                     <KeyboardAccelerator Key="S" Modifiers="Control,Shift" />
                                 </MenuFlyoutItem.KeyboardAccelerators>
@@ -69,10 +77,11 @@
                                 </MenuFlyoutItem.Icon>
                             </MenuFlyoutItem>
                             <MenuFlyoutItem
-                                Text="{x:Bind ViewModel.Text.Manage, Mode=OneWay}"
-                                Command="{x:Bind ViewModel.ManagePresetsCommand, Mode=OneWay}"
+                                Text="{x:Bind Presets.Text.Manage, Mode=OneWay}"
+                                Command="{x:Bind Presets.ManagePresetsCommand, Mode=OneWay}"
                                 AutomationProperties.AutomationId="ManagePresetsButton"
-                                AutomationProperties.Name="{x:Bind ViewModel.Text.Manage, Mode=OneWay}">
+                                AutomationProperties.Name="{x:Bind Presets.Text.Manage, Mode=OneWay}"
+                                IsEnabled="{x:Bind Presets.CanUseShellCommands, Mode=OneWay}">
                                 <MenuFlyoutItem.KeyboardAccelerators>
                                     <KeyboardAccelerator Key="M" Modifiers="Control" />
                                 </MenuFlyoutItem.KeyboardAccelerators>
@@ -84,7 +93,8 @@
                                 Text="{x:Bind ViewModel.Text.Settings, Mode=OneWay}"
                                 Command="{x:Bind ViewModel.OpenSettingsCommand, Mode=OneWay}"
                                 AutomationProperties.AutomationId="SettingsButton"
-                                AutomationProperties.Name="{x:Bind ViewModel.Text.Settings, Mode=OneWay}">
+                                AutomationProperties.Name="{x:Bind ViewModel.Text.Settings, Mode=OneWay}"
+                                IsEnabled="{x:Bind ViewModel.CanUseShellCommands, Mode=OneWay}">
                                 <MenuFlyoutItem.KeyboardAccelerators>
                                     <KeyboardAccelerator Key="I" Modifiers="Control" />
                                 </MenuFlyoutItem.KeyboardAccelerators>
@@ -96,7 +106,8 @@
                                 Text="{x:Bind ViewModel.Text.Refresh, Mode=OneWay}"
                                 Command="{x:Bind ViewModel.RefreshCommand, Mode=OneWay}"
                                 AutomationProperties.AutomationId="RefreshButton"
-                                AutomationProperties.Name="{x:Bind ViewModel.Text.Refresh, Mode=OneWay}">
+                                AutomationProperties.Name="{x:Bind ViewModel.Text.Refresh, Mode=OneWay}"
+                                IsEnabled="{x:Bind ViewModel.CanStartApply, Mode=OneWay}">
                                 <MenuFlyoutItem.KeyboardAccelerators>
                                     <KeyboardAccelerator Key="R" Modifiers="Control" />
                                 </MenuFlyoutItem.KeyboardAccelerators>
@@ -113,18 +124,19 @@
                     Width="176"
                     Background="{ThemeResource WallerPrimaryBrush}"
                     BorderBrush="{ThemeResource WallerPrimaryBrush}"
-                    Command="{Binding ViewModel.ApplyAllCommand, ElementName=Root}"
+                    Command="{Binding Apply.ApplyAllCommand, ElementName=Root}"
                     AutomationProperties.AutomationId="ApplyAllButton"
-                    AutomationProperties.Name="{Binding ViewModel.Text.ApplyAll, ElementName=Root}"
+                    AutomationProperties.Name="{Binding Apply.Text.ApplyAll, ElementName=Root}"
                     Foreground="{ThemeResource WallerPrimaryTextBrush}"
-                    IsEnabled="{Binding ViewModel.CanStartApply, ElementName=Root}"
-                    ToolTipService.ToolTip="{Binding ViewModel.Text.ApplyAll, ElementName=Root}">
+                    IsEnabled="{Binding Apply.CanStartApply, ElementName=Root}"
+                    ToolTipService.ToolTip="{Binding Apply.Text.ApplyAll, ElementName=Root}">
                     <Button.KeyboardAccelerators>
                         <KeyboardAccelerator Key="Enter" Modifiers="Control" />
                     </Button.KeyboardAccelerators>
-                    <controls:IconText Glyph="&#xE73E;" Text="{Binding ViewModel.Text.ApplyAll, ElementName=Root}" />
+                    <controls:IconText Glyph="&#xE73E;" Text="{Binding Apply.Text.ApplyAll, ElementName=Root}" />
                 </Button>
             </Grid>
+            </ScrollViewer>
         </Grid>
     </Border>
 </UserControl>

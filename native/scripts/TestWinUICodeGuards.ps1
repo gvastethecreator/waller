@@ -76,7 +76,6 @@ $mainViewModelMonolithicEditorFiles = @()
 $placementTextCatalogLeaks = @()
 $localizedTextMonolithicCatalogMembers = @()
 $localizedTextUnnamedCatalogArgs = @()
-$appDataRootWithoutValidation = @()
 $appCompositionWithoutValidation = @()
 $appCurrentSessionLoaderFiles = @()
 $presetMenuItemWithoutNameValidation = @()
@@ -240,39 +239,24 @@ else {
 
 $presetSessionContracts = @(
     @{
-        Path = "ViewModels\ActivePresetSession.cs"
-        Required = @("PresetIds.RequireValid(presetId, nameof(presetId))", "ArgumentNullException.ThrowIfNull(Session)", "ArgumentNullException.ThrowIfNull(SelectedPresetRecord)", "PresetNames.Validate(PresetNameDraft, nameof(PresetNameDraft))")
-        PositionalPattern = 'internal\s+sealed\s+record\s+ActivePresetRename\s*\('
+        Path = "ViewModels\PresetsViewModel.cs"
+        Required = @("public sealed partial class PresetsViewModel", "private readonly PresetWorkflow workflow", "public ObservableCollection<PresetMenuItem> Items", "public ObservableCollection<PresetMenuItem> ManagedItems", "public bool CanUseShellCommands", "public bool CanMutateManagedPresets", "public bool CanUseModalActions", "internal void NotifyWorkspaceStateChanged()")
+        PositionalPattern = $null
     },
     @{
-        Path = "ViewModels\PresetSessionSave.cs"
-        Required = @("Preset ?? throw new ArgumentNullException", "ArgumentNullException.ThrowIfNull(presetStore)", "ArgumentNullException.ThrowIfNull(session)", "PresetNames.Validate(name, nameof(name))", "PresetFactory.CreateFromSession(session, presetName)")
-        PositionalPattern = 'internal\s+sealed\s+record\s+PresetSessionSaveResult\s*\('
+        Path = "ViewModels\PresetsViewModel.Catalog.cs"
+        Required = @("workflow.ListAsync()", "workflow.SelectAsync(activeSession, item.Id)", "workspace.ReplaceActiveSession(selection.Session)", "userSettings.UpdateLastSelectedPresetAsync(presetId)")
+        PositionalPattern = $null
     },
     @{
-        Path = "ViewModels\PresetSaveCompletion.cs"
-        Required = @("ArgumentNullException.ThrowIfNull(SelectedPresetRecord)", "PresetNames.Validate(PresetNameDraft, nameof(PresetNameDraft))")
-        PositionalPattern = 'internal\s+sealed\s+record\s+PresetSaveCompletion\s*\('
+        Path = "ViewModels\PresetsViewModel.Save.cs"
+        Required = @("workflow.SaveExistingAsync(activeSession, selectedPresetRecord)", "workflow.SaveAsAsync(activeSession, name)", "activeSession.WithSavedPreset(preset.Identity)")
+        PositionalPattern = $null
     },
     @{
-        Path = "ViewModels\SelectedPresetSession.cs"
-        Required = @("ArgumentNullException.ThrowIfNull(Session)", "ArgumentNullException.ThrowIfNull(PresetNameDraft)", "PresetIds.NormalizeOptional(LastSelectedPresetId)", "PresetIds.NormalizeOptional(PersistPresetId)", "ArgumentNullException.ThrowIfNull(matcher)")
-        PositionalPattern = 'internal\s+sealed\s+record\s+SelectedPresetSession\s*\('
-    },
-    @{
-        Path = "ViewModels\SelectedPresetSessionLoader.cs"
-        Required = @("DefinedEnumValue.Require(", "PresetMenuDisplayName.Normalize(DisplayName, nameof(DisplayName))", "Missing Preset load results cannot include a selection", "ArgumentNullException.ThrowIfNull(text)", "InvalidStatusTextKind(Kind)", "throw new ArgumentOutOfRangeException(", "Unknown selected Preset load kind.", "ArgumentNullException.ThrowIfNull(presetStore)", "ArgumentNullException.ThrowIfNull(presetMatcher)", "ArgumentNullException.ThrowIfNull(activeSession)", "ArgumentNullException.ThrowIfNull(item)")
-        PositionalPattern = 'internal\s+sealed\s+record\s+SelectedPresetLoadResult\s*\('
-    },
-    @{
-        Path = "ViewModels\ManagedPresetMutation.cs"
-        Required = @("Managed Preset mutation result cannot be both missing and write-failed", "Value is null", "ArgumentNullException.ThrowIfNull(presetStore)", "PresetNames.Validate(name, nameof(name))", "presetStore.RenameAsync(presetId, presetName)", "ArgumentNullException.ThrowIfNull(mutation)", "ArgumentNullException.ThrowIfNull(success)", "LocalDataWriteGuard.TryAsync(", "catch (FileNotFoundException)", "ManagedPresetMutationResult<T>.LocalWriteFailed()")
-        PositionalPattern = 'internal\s+sealed\s+record\s+ManagedPresetMutationResult<[^>]+>\s*\('
-    },
-    @{
-        Path = "ViewModels\ManagedPresetDelete.cs"
-        Required = @("Managed Preset delete result cannot be both missing and write-failed", "Failed Managed Preset delete results cannot include replacement selection", "deletedActivePreset && result.TryGetValue(out _)", "ArgumentNullException.ThrowIfNull(presetStore)", "ArgumentNullException.ThrowIfNull(activeSession)", "ArgumentNullException.ThrowIfNull(target)")
-        PositionalPattern = 'internal\s+sealed\s+record\s+ManagedPresetDeleteResult\s*\('
+        Path = "ViewModels\PresetsViewModel.Manage.cs"
+        Required = @("workflow.RenameAsync(input.Id, input.NameDraft)", "workflow.DuplicateAsync(input.Id, input.NameDraft)", "workflow.DeleteAsync(activeSession, target.Id)", "workspace.ReplaceActiveSession(deletion.Session)")
+        PositionalPattern = $null
     }
 )
 
@@ -286,17 +270,17 @@ $settingsContracts = @(
     },
     @{
         Path = "ViewModels\SettingsPreferenceStore.cs"
-        Required = @("PresetIds.NormalizeOptional(LastSelectedPresetId)", "Failed Settings save results cannot include last selected Preset", "ArgumentNullException.ThrowIfNull(settingsStore)", "ArgumentNullException.ThrowIfNull(request)", "ArgumentNullException.ThrowIfNull(shellText)", "PresetIds.NormalizeOptional(presetId)")
+        Required = @("PresetIds.NormalizeOptional(LastSelectedPresetId)", "Failed Settings save results cannot include last selected Preset", "ArgumentNullException.ThrowIfNull(shellText)")
         PositionalPattern = 'internal\s+sealed\s+record\s+SettingsPreferenceSaveResult\s*\('
     },
     @{
         Path = "ViewModels\SettingsSaveRequest.cs"
-        Required = @("draft ?? throw new ArgumentNullException", "SettingsPreferenceDraft.FromSelection")
+        Required = @("draft ?? throw new ArgumentNullException", "SettingsPreferenceDraft.FromSelection", "public AppThemePreference Theme", "public string Language")
         PositionalPattern = 'internal\s+sealed\s+class\s+SettingsSaveRequest\s*\('
     },
     @{
         Path = "ViewModels\MainPageLocalState.cs"
-        Required = @("private readonly WallerLocalDataStores stores", "ArgumentNullException.ThrowIfNull(stores)", "this.stores = stores", "RenderedCacheCleanup.Clear(stores.RenderedWallpapers)")
+        Required = @("private readonly WallerLocalDataStores stores", "private readonly UserSettingsWorkflow userSettings", "ArgumentNullException.ThrowIfNull(stores)", "ArgumentNullException.ThrowIfNull(userSettings)", "this.stores = stores", "this.userSettings = userSettings", "RenderedCacheCleanup.Clear(stores.RenderedWallpapers)")
         PositionalPattern = $null
     },
     @{
@@ -338,47 +322,12 @@ $workflowResultContracts = @(
         Path = "ViewModels\WorkflowStatusText.cs"
         Required = @("internal static class WorkflowStatusText", "public static string Require(string statusText, string parameterName)", "ArgumentException.ThrowIfNullOrWhiteSpace(statusText, parameterName)", "return statusText;")
         PositionalPattern = $null
-    },
-    @{
-        Path = "ViewModels\ApplyRunRequest.cs"
-        Required = @("ArgumentNullException.ThrowIfNull(applyService)", "ArgumentNullException.ThrowIfNull(session)", "ArgumentNullException.ThrowIfNull(monitor)", "MonitorKeys.Require(monitor.MonitorKey, ""monitor.MonitorKey"")", "ApplyMonitorReadySourceAsync(")
-        PositionalPattern = $null
-    },
-    @{
-        Path = "ViewModels\MainPageViewModel.Apply.cs"
-        Required = @("ArgumentNullException.ThrowIfNull(apply)", "ArgumentNullException.ThrowIfNull(state)", "ApplyRunUiState.Success(result, applyText)", "ApplyRunUiState.FromException(error, applyText)")
-        PositionalPattern = $null
-    },
-    @{
-        Path = "ViewModels\ApplyRunUiState.cs"
-        Required = @("ArgumentNullException.ThrowIfNull(Session)", "ArgumentNullException.ThrowIfNull(ProgressText)", "WorkflowStatusText.Require(StatusText, nameof(StatusText))", "ArgumentNullException(nameof(result))", "ArgumentNullException(nameof(text))", "ArgumentNullException(nameof(error))")
-        PositionalPattern = 'internal\s+sealed\s+record\s+ApplyRunUiState\s*\('
-    },
-    @{
-        Path = "ViewModels\MonitorAssignmentUpdate.cs"
-        Required = @("Successful monitor assignment updates cannot include validation failures", "Failed monitor assignment updates must include exactly one validation failure", "ArgumentNullException(nameof(session))", "ArgumentNullException(nameof(error))", "ArgumentNullException.ThrowIfNull(text)", "ArgumentNullException.ThrowIfNull(editor)", "MonitorKeys.Require(monitorKey, nameof(monitorKey))")
-        PositionalPattern = 'internal\s+sealed\s+record\s+MonitorAssignmentUpdateResult\s*\('
     }
 )
 
 $workflowResultDtoWithoutValidation += Test-TextContracts $workflowResultContracts
 
 $editorContracts = @(
-    @{
-        Path = "ViewModels\MonitorEditDraft.cs"
-        Required = @("DefinedEnumValue.Require(", "EditorOffsetPercent.NormalizeX", "EditorOffsetPercent.NormalizeY", "EditorOffsetPercent.ToPlacementOffsetX", "EditorOffsetPercent.ToPlacementOffsetY", "global::Waller.Native.Core.Models.ColorHexValue.Normalize", "ArgumentNullException.ThrowIfNull(assignment)", "MonitorKeys.Require(monitorKey, nameof(monitorKey))", "WallpaperSourceKind.Empty => WallpaperSource.Empty", "InvalidSourceKind(SourceKind)")
-        PositionalPattern = 'internal\s+sealed\s+record\s+MonitorEditDraft\s*\('
-    },
-    @{
-        Path = "ViewModels\EditorOffsetPercent.cs"
-        Required = @("internal static class EditorOffsetPercent", "NormalizeX", "NormalizeY", "ToPlacementOffsetX", "ToPlacementOffsetY", "double.IsFinite(offsetPercent)", "Math.Clamp(offsetPercent, -100d, 100d)", "MidpointRounding.AwayFromZero", "WallpaperPlacement.ClampOffset")
-        PositionalPattern = $null
-    },
-    @{
-        Path = "ViewModels\DisconnectedMonitorEdit.cs"
-        Required = @("WorkflowStatusText.Require(StatusText, nameof(StatusText))", "ArgumentNullException(nameof(editor))", "ArgumentNullException(nameof(session))", "ArgumentNullException(nameof(monitor))", "ArgumentNullException(nameof(text))")
-        PositionalPattern = 'internal\s+sealed\s+record\s+DisconnectedMonitorEditResult\s*\('
-    },
     @{
         Path = "ViewModels\MonitorSourceSelection.cs"
         Required = @("WorkflowStatusText.Require(StatusText, nameof(StatusText))", "ArgumentNullException.ThrowIfNull(text)", "ArgumentNullException(nameof(swatch))")
@@ -400,19 +349,9 @@ $presetMenuContracts = @(
         PositionalPattern = $null
     },
     @{
-        Path = "ViewModels\PresetMenuRefresh.cs"
-        Required = @("ArgumentNullException.ThrowIfNull(SelectedPreset)", "PresetIds.NormalizeOptional(LastSelectedPresetId)", "Missing requested Preset refresh results cannot keep visual-memory id", "ArgumentNullException.ThrowIfNull(presetStore)", "PresetMenuDisplayName.Normalize", "PresetIds.NormalizeOptional(selectPresetId)", "Preset menu refresh did not produce a selected item")
-        PositionalPattern = 'internal\s+sealed\s+record\s+PresetMenuRefreshResult\s*\('
-    },
-    @{
-        Path = "ViewModels\ManagedPresetList.cs"
-        Required = @("ArgumentNullException.ThrowIfNull(presetStore)", "ArgumentNullException.ThrowIfNull(items)", "PresetMenuLists.ReplaceManage(items, presets)", "PresetMenuLists.Select(items, selectPresetId)")
-        PositionalPattern = $null
-    },
-    @{
         Path = "ViewModels\LocalizedSurfaceRefresh.cs"
-        Required = @("internal sealed record LocalizedSurfaceRefreshResult", "public PresetMenuItem? SelectedPreset", "ArgumentNullException.ThrowIfNull(presets)", "ArgumentNullException.ThrowIfNull(monitors)", "ArgumentNullException.ThrowIfNull(missingMonitors)", "ArgumentNullException.ThrowIfNull(text)", "Monitor collection cannot include null items.", "Missing monitor collection cannot include null items.")
-        PositionalPattern = 'internal\s+sealed\s+record\s+LocalizedSurfaceRefreshResult\s*\('
+        Required = @("public static void Refresh(", "ArgumentNullException.ThrowIfNull(monitors)", "ArgumentNullException.ThrowIfNull(missingMonitors)", "ArgumentNullException.ThrowIfNull(text)", "Monitor collection cannot include null items.", "Missing monitor collection cannot include null items.")
+        PositionalPattern = $null
     }
 )
 
@@ -430,23 +369,8 @@ $surfaceProjectionContracts = @(
         PositionalPattern = $null
     },
     @{
-        Path = "ViewModels\MainPageTextPresenters.cs"
-        Required = @("var source = LocalizedTextSource.Require(text)", "Apply = new ApplyTextPresenter(source)", "Preset = new PresetTextPresenter(source)", "MonitorEdit = new MonitorEditTextPresenter(source)", "Shell = new ShellStatusTextPresenter(source)")
-        PositionalPattern = $null
-    },
-    @{
         Path = "ViewModels\ViewModelNotificationGroups.cs"
         Required = @("public static IEnumerable<string> Require(IEnumerable<string> propertyNames)", "ArgumentNullException.ThrowIfNull(propertyNames)", "Property name collection cannot include blank items.")
-        PositionalPattern = $null
-    },
-    @{
-        Path = "ViewModels\ShellInteractionState.cs"
-        Required = @("public ShellModalLayer TopModal", "IsDeleteConfirmationOpen ? ShellModalLayer.DeleteConfirmation", "public bool CanUseShellCommands => !IsApplying && !IsAnyModalOpen", "public bool CanUseModalActions => !IsApplying")
-        PositionalPattern = $null
-    },
-    @{
-        Path = "ViewModels\ShellModalClose.cs"
-        Required = @("case ShellModalLayer.None:", "Invoke(closeDeleteConfirmation, nameof(closeDeleteConfirmation))", "Invoke(closeManagePresets, nameof(closeManagePresets))", "Invoke(closeSaveAs, nameof(closeSaveAs))", "Invoke(closeSettings, nameof(closeSettings))", "Unknown shell modal layer.")
         PositionalPattern = $null
     },
     @{
@@ -548,19 +472,10 @@ $surfaceProjectionContracts = @(
 
 $surfaceProjectionDtoWithoutValidation += Test-TextContracts $surfaceProjectionContracts
 
-$appDataPathsPath = Join-Path $resolvedPath "Platform\WallerAppDataPaths.cs"
-if (Test-Path -LiteralPath $appDataPathsPath) {
-    $appDataPathsText = Get-Content -LiteralPath $appDataPathsPath -Raw
-    if ($appDataPathsText -notmatch 'RootFor\s*\(\s*string\s+localApplicationDataPath\s*\)' -or
-        $appDataPathsText -notmatch 'ArgumentException\.ThrowIfNullOrWhiteSpace\s*\(\s*localApplicationDataPath\s*\)') {
-        $appDataRootWithoutValidation += Get-NativeRelativePath $appDataPathsPath
-    }
-}
-
 $appCompositionContracts = @(
     @{
         Path = "Platform\WallerAppServices.cs"
-        Parameters = @("PrimaryMonitorDetector", "FallbackMonitorDetector", "ImageFilePicker", "ApplyService", "LocalData")
+        Parameters = @("PrimaryMonitorDetector", "FallbackMonitorDetector", "ImageFilePicker", "Apply", "LocalData", "MonitorEditor", "Presets", "UserSettings", "Workspace")
     },
     @{
         Path = "Platform\WallerLocalDataStores.cs"
@@ -568,7 +483,7 @@ $appCompositionContracts = @(
     },
     @{
         Path = "ViewModels\MainPageViewModel.cs"
-        Parameters = @("primaryMonitorDetector", "fallbackMonitorDetector", "imageFilePicker", "applyService", "localData")
+        Parameters = @("primaryMonitorDetector", "fallbackMonitorDetector", "imageFilePicker", "applyWorkflow", "localData", "monitorEditorWorkflow", "presetWorkflow", "userSettings", "workspace")
     }
 )
 
@@ -651,7 +566,7 @@ foreach ($file in Get-ChildItem -LiteralPath $resolvedPath -Recurse -Filter *.cs
             }
         }
 
-        if ($relativePath -eq "Waller.Native.App\ViewModels\MainPageViewModel.Editor.cs") {
+        if ($relativePath -like "Waller.Native.App\ViewModels\MainPageViewModel*.cs") {
             if ($line -match 'private\s+(?:async\s+)?(?:Task|void)\s+(ChooseImage|SelectColorSwatch|ApplySourceSelection|RefreshSourceEditorVisibility|ResetPosition|SetEditOffsets)\b') {
                 $mainEditorSourcePlacementLeaks += "${relativePath}:$lineNumber`: $($line.Trim())"
             }
@@ -827,15 +742,6 @@ if ($localizedTextUnnamedCatalogArgs.Count -gt 0) {
     Write-Host "Unnamed LocalizedText catalog arguments found; use named arguments so constructor order changes stay reviewable:" -ForegroundColor Red
     foreach ($arg in $localizedTextUnnamedCatalogArgs) {
         Write-Host " - $arg" -ForegroundColor Red
-    }
-
-    exit 1
-}
-
-if ($appDataRootWithoutValidation.Count -gt 0) {
-    Write-Host "App data root helpers without blank-path validation found; validate local app-data root before composing Waller paths:" -ForegroundColor Red
-    foreach ($file in $appDataRootWithoutValidation) {
-        Write-Host " - $file" -ForegroundColor Red
     }
 
     exit 1

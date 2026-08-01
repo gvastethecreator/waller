@@ -1,134 +1,97 @@
-# Waller — Multi-Monitor Wallpaper Manager (Windows)
+# Waller
 
-Waller is a **Windows 10/11** desktop application built with **Tauri 2, Rust, React 19, TypeScript 6, Vite 8, Tailwind 4, and Bun**. It manages one **Wallpaper Session** per app run, supports reusable **Profiles**, resolves **Previews** on demand, includes a lightweight image editor, and keeps a persistent diagnostic trail through backend logs.
+Waller is a native Windows wallpaper manager for multi-monitor setups. The definitive product is the WinUI 3 application under `native/`, built with C# and .NET 10.
 
-## What it does
+It keeps one editable **Active Session**, lets every **Monitor** use its own **Wallpaper Source** and placement, saves reusable local **Presets**, and applies rendered wallpapers through Windows `IDesktopWallpaper`.
 
-- Detects active monitors through `IDesktopWallpaper`, with GDI geometry support for layout and fallback visualization.
-- Lets each **Monitor** use one **Wallpaper Source**:
-  - Local image
-  - Solid colour marker (`__SOLID__:#RRGGBB`)
-  - No wallpaper marker (`__NONE__`)
-- Supports fit modes: `Center`, `Tile`, `Stretch`, `Fit`, `Fill`, and `Span`.
-- Saves, loads, lists, and deletes JSON **Profiles** in `%APPDATA%/WallpaperManager/profiles`.
-- Generates and caches image **Previews** through a dedicated registry.
-- Provides an **Identify Overlay** to map physical screens to display indices.
-- Includes a lightweight non-destructive editor for pan/zoom/rotate/filter/tint adjustments before saving a PNG.
-- Stores unified frontend/backend logs at `%APPDATA%/WallpaperManager/logs/app.log`.
-- Ships with English and Spanish UI strings.
+## Current product
 
-## Architecture at a glance
+- Detects connected monitors and their current wallpapers.
+- Supports local images, solid colors, and empty assignments.
+- Supports Cover, Contain, Stretch, Center, and Tile placement.
+- Saves, loads, renames, duplicates, and deletes local Presets.
+- Renders one shell-readable PNG per monitor before Apply.
+- Reports Apply progress and supports cancellation.
+- Provides English and Spanish UI, light/dark themes, keyboard access, and packaged launch diagnostics.
+- Keeps Save and Apply independent: Save persists a Preset; Apply changes Windows.
 
-- `src/App.tsx` composes the shell, modal flows, layout overview, and toasts.
-- `src/hooks/useWallpaperSession.ts` is the React seam that exposes grouped actions (`session`, `monitorDrafts`, `profiles`, `editor`, `previews`).
-- `src/lib/wallpaperSession.ts` owns the command queue, snapshot building, preview warming, editor state, and identify fallback logic.
-- `src/lib/profileComposition.ts`, `previewRegistry.ts`, `wallpaperSessionState.ts`, and `wallpaperSource.ts` keep the pure frontend domain logic focused.
-- `src/lib/tauri.ts` is the typed frontend IPC seam over Tauri commands and plugins.
-- `src-tauri/src/lib.rs` exposes the backend commands and serializes blocking wallpaper work through `run_blocking`.
-- `src-tauri/src/wallpaper.rs`, `profiles.rs`, `logger.rs`, and `wallpaper_value.rs` implement native wallpaper control, profile persistence, logging, and shared value validation.
+The removed web/Tauri implementation remains available through Git history only.
 
-## Current stack snapshot
+## Solution map
 
-### Web/runtime packages
+```text
+native/
+  Waller.Native.App/    WinUI shell, view models, composition, and Windows adapters
+  Waller.Native.Workflows/ XAML-free use cases and shell state
+  Waller.Native.Core/   domain models, rendering, persistence, and Windows contracts
+  Waller.Native.Tests/  xUnit tests for Core and public workflows
+  scripts/              verification, smoke, packaging, and diagnostic commands
+```
 
-- `react` / `react-dom` `19.2.6`
-- `typescript` `6.0.3`
-- `vite` `8.0.14`
-- `@vitejs/plugin-react` `6.0.2`
-- `tailwindcss` / `@tailwindcss/vite` `4.3.0`
-- `vitest` / `@vitest/coverage-istanbul` `4.1.7`
-- `jsdom` `29.1.1`
-- `oxlint` `1.66.0`
-- `@tauri-apps/api` `2.11.0`
-- `@tauri-apps/plugin-dialog` `2.7.1`
-- `@tauri-apps/plugin-log` `2.8.0`
-- `@tauri-apps/cli` `2.11.2`
-
-### Rust/Tauri packages
-
-- `tauri` `2.11.2`
-- `tauri-build` `2.6.2`
-- `tauri-plugin-dialog` `2.7.1`
-- `tauri-plugin-log` `2.8.0`
-- `windows` `0.62.2`
+Dependency direction is `App -> Workflows -> Core`, with `App -> Core` for UI adapters. Tests reference Workflows and Core. Active domain language lives in [`CONTEXT.md`](./CONTEXT.md).
 
 ## Requirements
 
-- Windows 10/11
-- [Bun](https://bun.sh/) `1.3.x`
-- Stable Rust toolchain (MSVC target)
-- Microsoft Visual C++ Build Tools if the environment is not already configured to build native crates
+- Windows 10 version 1809 or newer
+- .NET SDK `10.0.302` or a compatible patch selected by [`global.json`](./global.json)
+- Developer Mode for packaged local launch
 
-## Getting started
+The repository can install the required SDK into `.scratch/toolchains` without changing the machine-wide installation:
 
-```sh
-bun install
-bun run dev
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\BootstrapDotnet.ps1
 ```
 
-Development uses `http://localhost:3000` for the Vite frontend, which Tauri consumes in dev mode.
+## Run
 
-## Useful scripts
-
-| Script | Description |
-|---|---|
-| `bun run dev` | Full Tauri + Vite development flow |
-| `bun run web:dev` | Frontend-only Vite server |
-| `bun run web:build` | Frontend production build |
-| `bun run typecheck` | Strict TypeScript validation |
-| `bun run lint:frontend` | `oxlint` with warnings denied |
-| `bun run test:frontend` | Vitest + coverage |
-| `bun run test:rust` | `cargo test --lib` in `src-tauri` |
-| `bun run lint:backend` | `cargo clippy -- -D warnings` |
-| `bun run check:rust` | `cargo check` |
-| `bun run deps:web:check` | Inspect outdated web dependencies |
-| `bun run deps:web:update` | Refresh web dependencies to latest |
-| `bun run deps:rust:update` | Refresh Cargo lockfile |
-| `bun run deps:tauri:check` | Verify JS/Rust Tauri version alignment |
-| `bun run deps:update` | Run the broad dependency maintenance flow |
-| `bun run verify` | Full repo verification, including Tauri version sync |
-| `bun run build` | Tauri production build |
-
-## Verification and release
-
-For meaningful code or dependency changes, run:
-
-```sh
-bun run verify
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Invoke-Native.ps1 -Task Run
 ```
 
-For packaging-sensitive work, add:
+The root executor uses the workspace-local SDK when present and delegates to the canonical native scripts.
 
-```sh
-bun run build
+## Verify
+
+Fast repository gate without launching the app:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Invoke-Native.ps1 -Task Verify -SkipSmoke
 ```
 
-CI and release workflows live in `.github/workflows/` and run on `windows-latest`.
+Packaged launch and optional UI Automation smoke:
 
-## Shared project rules and skills
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Invoke-Native.ps1 -Task Verify -SurfaceSmoke -SettingsRoundTrip
+```
 
-This repository now includes shared agent/project guidance in:
+Apply smoke temporarily changes the current user's wallpapers and restores them in `finally`. Run it only when that desktop mutation is acceptable:
 
-- `.github/copilot-instructions.md`
-- `.github/instructions/`
-- `.github/skills/waller-maintenance/`
-- `.github/skills/waller-wallpaper-session/`
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Invoke-Native.ps1 -Task Verify -ApplySmoke
+```
 
-These files encode the repo vocabulary, seam boundaries, maintenance workflow, and verification expectations.
+## Build and packaging
 
-## Security and observability
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Invoke-Native.ps1 -Task Release
+powershell -ExecutionPolicy Bypass -File .\scripts\Invoke-Native.ps1 -Task Package
+```
 
-- Hardened CSP in `src-tauri/tauri.conf.json`
-- `withGlobalTauri = false`
-- Minimal capabilities in `src-tauri/capabilities/default.json`
-- Unified logging with `tauri-plugin-log`
-- Log rotation at `2 MiB` with `app.log.bak`
-- Explicit Tauri JS/Rust version-alignment check in `scripts/check-tauri-version-sync.mjs`
+`Package` creates a development-signed MSIX under `native/artifacts/`. It is for local install validation, not public distribution. Production signing, Store publication, and clean-machine qualification remain separate release gates.
 
-## Documentation map
+## Local data
 
-- `docs/INDEX.md` — entry point for architecture, implementation, testing, UI, roadmap, and maintenance notes
-- `src/CONTEXT.md` — domain vocabulary used across the codebase
+- Presets and settings use package-local `LocalCache\Local\Waller` storage.
+- Rendered wallpapers use `%USERPROFILE%\.waller\rendered` so the Windows shell can read them.
+- Repository cleanup and build commands do not migrate or delete user data.
+
+## Documentation
+
+- [`docs/INDEX.md`](./docs/INDEX.md) — active documentation map
+- [`native/docs/README.md`](./native/docs/README.md) — native architecture and operations
+- [`docs/architecture/winui-definitive-architecture-spec.md`](./docs/architecture/winui-definitive-architecture-spec.md) — approved architecture specification
+- [`docs/architecture/WORKPLAN.md`](./docs/architecture/WORKPLAN.md) — architecture execution tracker
+- [`docs/architecture/winui-definitive-architecture-report.md`](./docs/architecture/winui-definitive-architecture-report.md) — completed ten-ticket architecture report
 
 ## License
 

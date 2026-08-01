@@ -2,4 +2,5 @@
   <Project Path="Waller.Native.App/Waller.Native.App.csproj" />
   <Project Path="Waller.Native.Core/Waller.Native.Core.csproj" />
   <Project Path="Waller.Native.Tests/Waller.Native.Tests.csproj" />
+  <Project Path="Waller.Native.Workflows/Waller.Native.Workflows.csproj" />
 </Solution>

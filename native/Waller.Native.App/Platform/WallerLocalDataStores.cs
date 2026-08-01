@@ -1,6 +1,7 @@
 using Waller.Native.Core.Presets;
 using Waller.Native.Core.Rendering;
 using Waller.Native.Core.Settings;
+using Waller.Native.Workflows.Storage;
 
 namespace Waller.Native.App.Platform;
 
@@ -27,18 +28,17 @@ internal sealed record WallerLocalDataStores
     public RenderedWallpaperStore RenderedWallpapers { get; }
 
     public static WallerLocalDataStores CreateDefault() =>
-        Create(
-            WallerAppDataPaths.Root,
-            WallerAppDataPaths.RenderedRoot);
+        Create(WallerAppDataPaths.Current);
 
     public static WallerLocalDataStores Create(string rootDirectory) =>
-        Create(rootDirectory, rootDirectory);
+        Create(new LocalDataLayout(rootDirectory, rootDirectory));
 
-    private static WallerLocalDataStores Create(
-        string rootDirectory,
-        string renderedRootDirectory) =>
-        new(
-            new PresetStore(rootDirectory),
-            new UserSettingsStore(rootDirectory),
-            new RenderedWallpaperStore(renderedRootDirectory));
+    public static WallerLocalDataStores Create(LocalDataLayout layout)
+    {
+        ArgumentNullException.ThrowIfNull(layout);
+        return new(
+            new PresetStore(layout.AppDataRoot),
+            new UserSettingsStore(layout.AppDataRoot),
+            new RenderedWallpaperStore(layout.RenderedCacheRoot));
+    }
 }

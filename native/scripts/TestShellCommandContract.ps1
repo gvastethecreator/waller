@@ -51,27 +51,28 @@ if ($null -eq $presetComboBox) {
 }
 else {
     Assert-RequiredBinding $presetComboBox "IsEnabled" "CanUseShellCommands" "PresetComboBox must stay disabled while shell commands are blocked."
-    Assert-RequiredBinding $presetComboBox "SelectedItem" "SelectedPreset" "PresetComboBox must stay bound to SelectedPreset."
+    Assert-RequiredBinding $presetComboBox "ItemsSource" "Presets.Items" "PresetComboBox must use the focused Presets catalog."
+    Assert-RequiredBinding $presetComboBox "SelectedItem" "Presets.SelectedPreset" "PresetComboBox must stay bound to the focused selection."
 }
 
 $expectedCommands = @(
     @{
         AutomationId = "SaveButton"
-        Command = "SaveCommand"
+        Command = "Presets.SaveCommand"
         IsEnabled = "CanUseShellCommands"
         Key = "S"
         Modifiers = "Control"
     },
     @{
         AutomationId = "SaveAsButton"
-        Command = "SaveAsCommand"
+        Command = "Presets.SaveAsCommand"
         IsEnabled = "CanUseShellCommands"
         Key = "S"
         Modifiers = "Control,Shift"
     },
     @{
         AutomationId = "ManagePresetsButton"
-        Command = "ManagePresetsCommand"
+        Command = "Presets.ManagePresetsCommand"
         IsEnabled = "CanUseShellCommands"
         Key = "M"
         Modifiers = "Control"
@@ -92,8 +93,8 @@ $expectedCommands = @(
     },
     @{
         AutomationId = "ApplyAllButton"
-        Command = "ApplyAllCommand"
-        IsEnabled = "CanStartApply"
+        Command = "Apply.ApplyAllCommand"
+        IsEnabled = "Apply.CanStartApply"
         Key = "Enter"
         Modifiers = "Control"
     }
@@ -130,8 +131,8 @@ if ($null -eq $scrollViewer) {
 }
 
 if ($errors.Count -gt 0) {
-    foreach ($error in $errors) {
-        Write-Host "SHELL COMMAND CONTRACT ERROR: $error" -ForegroundColor Red
+    foreach ($contractError in $errors) {
+        Write-Host "SHELL COMMAND CONTRACT ERROR: $contractError" -ForegroundColor Red
     }
 
     exit 1

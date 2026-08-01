@@ -45,7 +45,7 @@
                                 VerticalContentAlignment="Stretch"
                                 Background="{ThemeResource ControlFillColorTransparentBrush}"
                                 BorderThickness="0"
-                                Command="{Binding ViewModel.SelectMonitorCommand, ElementName=Root}"
+                                Command="{Binding ViewModel.Editor.SelectMonitorCommand, ElementName=Root}"
                                 CommandParameter="{Binding}"
                                 AutomationProperties.AutomationId="TopologyMonitorButton"
                                 AutomationProperties.Name="{x:Bind TopologyAccessibleName, Mode=OneWay}"

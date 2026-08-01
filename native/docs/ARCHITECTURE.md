@@ -1,19 +1,14 @@
 # Waller Native Architecture
 
-This document describes the architecture of the code under `native/`.
-
-The broader product decisions are in the root docs:
-
-- `docs/prototypes/winui/PRODUCT_DECISIONS.md`
-- `docs/prototypes/winui/NATIVE_ARCHITECTURE.md`
-
-This file focuses on current implementation boundaries and how to extend them.
+This document describes the definitive Waller architecture under `native/`.
+Canonical product language lives in the root `CONTEXT.md`; the approved
+architecture batch lives in `docs/architecture/`.
 
 ## Architecture Goals
 
 Primary goals:
 
-- keep native app independent from current Tauri app
+- keep one authoritative native product path
 - keep UI thin
 - keep domain behavior testable
 - keep Windows interop isolated
@@ -25,16 +20,21 @@ Non-goals:
 - cross-platform Core
 - Rust dependency
 - portable JSON workflow
-- legacy profile compatibility in MVP
+- retired-product data compatibility in MVP
 - plugin/dynamic wallpaper system
 
 ## Dependency Direction
 
 ```text
 Waller.Native.App
+  -> Waller.Native.Workflows
+  -> Waller.Native.Core
+
+Waller.Native.Workflows
   -> Waller.Native.Core
 
 Waller.Native.Tests
+  -> Waller.Native.Workflows
   -> Waller.Native.Core
 ```
 
@@ -42,39 +42,59 @@ Rules:
 
 - Core must not reference App.
 - Core must not depend on XAML or WinUI controls.
-- App may reference Core models and services.
-- Tests should target Core first.
+- Workflows must depend only on Core and must not use XAML or WinUI types.
+- App may reference Workflows plus Core adapters and models.
+- Tests should target the public Core or Workflows seam that owns the behavior.
 - UI automation tests should be separate later.
 
 ## Current Composition
 
-Current app composition is centralized in `WallerAppServices`:
-
-```csharp
-new MainPageViewModel();
-```
-
-`WallerAppServices.CreateDefault()` owns default App-side wiring:
+`App` creates one `WallerAppComposition` per process. Composition builds the
+window first, resolves its concrete HWND, then constructs the picker, shared
+stores, workflows, ViewModel, and page before activation:
 
 ```text
-WallerAppServices
-  -> WallerAppDataPaths
+WallerAppComposition
+  -> WallerAppDataPaths (Windows environment adapter)
+      -> LocalDataLayout (pure path policy)
+  -> WallerLocalDataStores
+      -> PresetStore
+      -> UserSettingsStore
+      -> RenderedWallpaperStore
+  -> UserSettingsWorkflow(single serialized writer)
+      -> MainWindow(shared workflow)
+  -> PresetWorkflow
+  -> MonitorEditorWorkflow
+  -> ApplyWorkflow
+  -> ImageFilePicker(concrete HWND)
   -> WindowsMonitorDetector
   -> EmptyMonitorDetector
-  -> ImageFilePicker
   -> WallpaperRenderer
   -> DesktopWallpaperApplier
-  -> PresetStore
-  -> UserSettingsStore
-  -> RenderedWallpaperStore
-  -> MainPageViewModel
+  -> ShellWorkspace
+  -> MainPageViewModel(shell projection)
+      -> PresetsViewModel
+      -> MonitorEditorViewModel
+      -> ApplyViewModel
+  -> MainPage(shared ViewModel)
 ```
 
 The app tries Windows first and uses an empty monitor detector as product
 fallback when detection fails. Sample monitor data is development/test-only.
 
+`App` does not expose static Window, HWND, or dispatcher state. `MainWindow`
+and `MainPage` receive dependencies through constructors; the picker receives
+the HWND value it needs. Settings and Presets therefore share the same local
+store graph for the process.
+
 Keep dependency injection lightweight. Do not introduce a container until there
 is real pressure.
+
+`ShellWorkspace` is the authoritative owner of the Active Session, modal stack,
+and Apply exclusion. Top-level modals are mutually exclusive; Delete
+Confirmation is valid only above Manage Presets. Closing the top confirmation
+reveals its Manage Presets parent. Apply receives one cancelable lease and a
+second lease fails before a Windows adapter can run.
 
 ## Domain Model
 
@@ -261,7 +281,7 @@ return localized validation copy and no `MonitorSourceSelection`; do not apply a
 source update and then overwrite the error status with "selected".
 Editor source changes from file picker and color swatches should go through
 `MonitorSourceSelectionFactory`, so source-kind and field updates stay in one
-place before a future `MonitorEditViewModel` split.
+place before `MonitorEditorViewModel` sends a draft to the workflow.
 `ImageSelectionDraft` normalizes picker paths and routes selected-file display
 names through `ImageDisplayName`, so picker display copy trims and rejects blank
 values in one place before source-selection status text consumes it.
@@ -345,6 +365,20 @@ Responsibilities:
 - return a new session object
 
 Do not mutate existing session in place. This keeps future undo/testing easier.
+
+### MonitorEditorWorkflow
+
+`MonitorEditorWorkflow` owns selection drafts, source and placement updates,
+and disconnected-assignment Forget/Reassign operations. It depends only on
+Core, returns typed outcomes, validates image existence before session changes,
+and normalizes offsets through `WallpaperPlacement` policy. It never saves a
+Preset or touches a Windows wallpaper adapter.
+
+`MonitorEditorViewModel` owns the focused editor state, localized status copy,
+picker projection, and editor commands. One centralized result handler replaces
+the `ShellWorkspace` Active Session once for a successful outcome. `EditPanel`
+depends directly on this child ViewModel; the root ViewModel keeps shell and row
+projection only.
 
 Missing-image Apply preflight is shared through `ApplyPreflight`, so UI command
 handlers and Core apply orchestration do not duplicate missing-source rules.
@@ -618,7 +652,7 @@ Responsibilities:
 - read current per-monitor wallpaper when possible
 - return stable monitor identity metadata
 
-`SampleMonitorDetector` exists for shell development only.
+Deterministic sample monitor data exists only in the Tests fixture assembly.
 `WindowsMonitorDetector` must keep raw COM reads behind the internal
 `IDesktopWallpaperReader` adapter. The detector maps snapshots into stable
 `MonitorSnapshot` values and owns app fallback policy such as empty wallpaper
@@ -665,25 +699,22 @@ Responsibilities:
 - call Core editor
 - coordinate Core apply, Preset, Settings, render-cache, and Windows services
 
-Preset dropdown projection goes through `PresetMenuLists`. Main Preset dropdown
-refresh goes through `PresetMenuRefresh`, and Manage Presets modal refresh goes
-through `ManagedPresetList`; those helpers compose store listing, collection
-replacement, selection fallback, and selected-Preset visual-memory ids. Keep
-those mechanics out of command handlers so future focused Preset view models can
-move menu surfaces without rediscovering menu-list rules.
+Preset catalog, selection, save, rename, duplicate, and delete operations go
+through `PresetWorkflow`. It is the only App-facing owner of `PresetStore` and
+returns typed success, missing, and recoverable write-failure outcomes. Preset
+selection only produces a new `ActiveSession`; it has no Apply or Windows
+wallpaper dependency. Deleting the active Preset clears its identity while
+preserving monitor assignments and marking the session unsaved.
+`PresetsViewModel` owns the two catalog collections, selection memory, Preset
+modals, and every command exposed by the Preset controls. `ShellHeader`,
+`SaveAsModal`, and `ManagePresetsModal` bind to that child surface instead of
+the full `MainPageViewModel`.
 `PresetMenuLists` rejects missing collections, blank Current setup labels, and
 empty real selection ids through the shared Core `PresetIds` policy. Optional
 persisted visual-memory ids go through `PresetIds.NormalizeOptional`, where
 `Guid.Empty` means no remembered Preset.
-Preset menu list selection/relabeling rejects null menu items before reading
-ids or Current setup state, keeping dropdown list corruption from surfacing as
-late XAML binding failures.
-`PresetMenuRefreshResult` requires a selected item and rejects stale
-visual-memory ids when a requested Preset is missing, so dropdown refresh cannot
-persist an impossible selection result.
-`ManagedPresetList` rejects missing stores and target collections before
-refreshing the Manage Presets modal list, matching the main dropdown refresh
-boundary.
+Preset menu list selection/relabeling rejects null menu items before reading ids
+or Current setup state, keeping collection corruption from reaching XAML.
 `PresetMenuItem` rejects blank names during construction and `with` updates, so
 Preset picker/list surfaces cannot carry invisible choices while Preset surface
 helpers are split. `TestWinUICodeGuards.ps1` blocks removing that blank-name
@@ -696,19 +727,8 @@ go through `ManagedPresetCommandInput`, which composes
 rename, duplicate, and delete do not drift in validation/status behavior.
 `ManagedPresetSelection.SelectedId` returns `null` for Current setup or missing
 selections; do not use `Guid.Empty` as an App-side no-selection sentinel.
-Manage Presets mutations that can hit stale files or recoverable local-data
-failures should return explicit `ManagedPresetMutationResult` values, keeping
-exception mapping out of command handlers.
-Command handlers should consume successful mutation values through
-`ManagedPresetMutationResult.TryGetValue` instead of checking nullable payload
-shape directly.
-`ManagedPresetMutationResult` enforces one result shape: success has a value,
-missing/write-failed states have no value, and missing/write-failed cannot both
-be true. `ManagedPresetMutation` rejects missing stores and mutation callbacks
-before rename, duplicate, or delete work starts.
-Missing managed Preset handling should refresh both the modal list and the main
-Preset dropdown, so stale file-system state disappears from every Preset entry
-point after one failed rename, duplicate, or delete attempt.
+Missing managed Preset handling refreshes both the modal list and main dropdown,
+so stale file-system state disappears from every Preset entry point.
 Delete confirmation target capture goes through `PresetDeleteConfirmation`.
 Keep the modal target id/name together so confirmation text and final delete
 cannot drift when Manage Presets selection changes behind the modal.
@@ -760,20 +780,12 @@ so source/color/placement/disconnected-monitor commands cannot mutate the active
 session while a modal is open. Keep modal-local buttons and fields behind
 `CanUseModalActions` so Save as, Settings, and confirmation actions can continue
 inside the active modal while Apply is idle.
-Apply commands should start and finish cancellation state through the shared
-apply-run helpers. Pass the `CancellationToken` into Core services explicitly;
-do not reach back into nullable view-model fields from apply lambdas.
-Apply command target construction should go through `ApplyRunRequest`, so
-`MainPageViewModel` chooses all vs one monitor without embedding
-ready-source-service lambdas inline. `ApplyRunRequest` should reject missing
-service/session/monitor inputs and capture a validated monitor key before the
-async Apply call starts, not read row state later from inside the lambda.
-`ApplyRunState` owns `CancellationTokenSource` lifetime for the view model; keep
-begin/cancel/dispose mechanics there instead of adding CTS fields back to
-`MainPageViewModel`.
-`MainPageViewModel.RunApplyAsync` rejects missing Apply delegates and terminal
-UI state before starting/presenting runs, keeping future Apply-controller
-extraction from inheriting nullable command seams.
+Apply targets use one `ApplyWorkflowRequest` interface for all-ready-sources or
+one ready monitor. `ApplyWorkflow` acquires the exclusive `ShellWorkspace`
+lease, passes its token to Core, allows one cancellation request, returns typed
+technical outcomes, and disposes the lease once. Cancellation preserves the
+`ApplySessionResult` carried by Core; partial failures remain normal completed
+technical outcomes and never roll back successful monitors.
 Repeated dependent-property notifications should use `ViewModelNotificationGroups`,
 the shared multi-property notification helper, or a focused semantic helper such
 as selected-source warning notification, not open-coded `OnPropertyChanged`
@@ -793,10 +805,9 @@ Shell initialization, current-session refresh, row/session refresh, modal close
 dispatch, and notification helpers currently live in
 `MainPageViewModel.Shell.cs`. Keep shell-level orchestration there while the
 main partial remains focused on construction and services.
-Source-generated property-change hooks live in focused
-`MainPageViewModel.Changes.*.cs` partials. Keep those reactive glue methods near
-their workflow so the main partial stays limited to construction and service
-wiring.
+The remaining root source-generated property-change hooks live in
+`MainPageViewModel.Changes.Settings.cs`. Extracted Apply, Preset, and monitor
+editor ViewModels own their own reactive hooks.
 
 Modal overlay backgrounds should use the app-level `WallerModalOverlayBrush`
 resource. Do not repeat hard-coded scrim colors in page XAML.
@@ -847,37 +858,26 @@ region copy never announces anonymous monitor work.
 Unknown Apply error codes should use `LocalizedText.UnknownApplyError`, not raw
 error codes and not the generic validation `CheckValue` copy. The error-text
 guard blocks generic/raw Apply error fallbacks in `LocalizedText.Apply.cs`.
-`ApplyTextPresenter` is the view-model-side adapter for apply text; keep
-preparing/progress/result/cancel/failure projection there instead of calling
-multiple `LocalizedText` apply members throughout `MainPageViewModel`.
-Apply run completion UI projection goes through `ApplyRunUiState`; keep
-success/cancel/failure progress clearing and status selection out of catch
-blocks. Exception-to-UI-state mapping also belongs in `ApplyRunUiState`, not in
-`MainPageViewModel.RunApplyAsync`.
-`ApplyRunUiState` rejects successful results without an updated session and
-requires final status copy, so command handlers cannot present impossible Apply
-completion states.
+`ApplyTextPresenter` is the `ApplyViewModel` adapter for preparing, progress,
+result, cancellation, and failure copy. The workflow contains no localized
+text. `ApplyViewModel` owns Apply commands and progress state, projects the
+typed outcome, and replaces `ShellWorkspace.ActiveSession` through one result
+handler when a technical result exists.
 Workflow result DTOs with user-facing status copy should validate through
 `WorkflowStatusText`; keep blank-status policy there instead of repeating
 `ThrowIfNullOrWhiteSpace` in Apply, image-pick, or disconnected-monitor result
 records.
-Apply command methods, progress updates, cancellation, and run-state projection
-currently live in `MainPageViewModel.Apply.cs`. Keep Apply-only UI
-orchestration there while the code moves toward a focused Apply surface.
-`ApplyTextPresenter` owns Apply progress/result text projection and rejects
-missing progress/result DTOs before localization methods read them.
+ShellHeader and StatusFooter receive `ApplyViewModel` directly for Apply command,
+permission, progress, and cancellation bindings. They do not route those
+controls through `MainPageViewModel`.
 When apply returns a replacement `ActiveSession`, present it through the shared
 session-surface refresh helper so monitor rows, selected monitor state, and
 session summary notifications stay together.
-`PresetTextPresenter` is the equivalent adapter for preset save/load/manage
-status text; keep preset-specific prompt/result projection there while the
-Manage Presets commands still live in `MainPageViewModel`. Preset names passed
-to presenter format methods normalize through `PresetNames`, so status copy
-cannot preserve blank or untrimmed Preset names.
-Preset save/load/selection commands and helper flow live in focused
-`MainPageViewModel.Presets.*.cs` partials: `.Save.cs` owns save/save-as,
-`.Load.cs` owns selected-Preset load/refresh/persisted visual memory, and
-`.Selection.cs` owns selected-session application and active rename projection.
+`PresetTextPresenter` adapts Preset workflow outcomes to localized status text.
+`PresetWorkflow` owns catalog, selection, save, rename, duplicate, and delete;
+`PresetsViewModel` owns the matching commands and bindable state. Preset names
+passed to presenter format methods normalize through `PresetNames`, so status
+copy cannot preserve blank or untrimmed Preset names.
 `PresetNames.Validate` rejects null/blank names, and `PresetFactory` public
 entrypoints reject null session/identity/preset inputs before building local
 Preset JSON payloads.
@@ -885,12 +885,9 @@ Preset JSON payloads.
 `PresetAssignments.Normalize` rejects null assignments before matcher/store
 normalization paths run. `PresetStore` and `PresetFilePolicy.NormalizeForSave`
 reject invalid save boundaries before local preset persistence touches disk.
-Manage Presets modal commands live in focused
-`MainPageViewModel.PresetManagement.*.cs` partials: the base file owns open/close,
-`.Mutate.cs` owns rename/duplicate, `.Delete.cs` owns delete confirmation, and
-`.List.cs` owns managed-list refresh/failure presentation. Keep
-Preset and Manage Presets responsibilities separate while the code moves toward
-focused Presets surfaces or view models.
+Manage Presets commands and delete-confirmation state live in
+`PresetsViewModel.Manage.cs`; catalog and save responsibilities stay in the
+matching `PresetsViewModel` partials.
 Keep public Apply DTOs in focused files (`ApplySessionResult`, `ApplyProgress`,
 `ApplyPreflightResult`) so `WallpaperApplyService` and `ApplyPreflight` remain
 orchestration, not grab bags of contracts.
@@ -902,14 +899,8 @@ Edit validation exception messages should follow the same pattern: pass the
 parameter names or source-path error codes in command handlers.
 `MonitorEditTextPresenter` owns editor and disconnected-monitor status text
 projection for image selection, missing image paths, validation failures,
-pending changes, forget, and reassign actions. Keep those calls there while the
-editor still lives inside `MainPageViewModel`. It validates selected-image names,
-monitor names, and edit validation errors before formatting status copy, keeping
-command handlers free of display-string cleanup.
-Editor, source-selection, placement, selected-assignment, option-refresh, and
-disconnected-monitor command flow lives in focused
-`MainPageViewModel.Editor.*.cs` partials. Keep editor-only orchestration in that
-file family while the code moves toward a focused editor surface.
+pending changes, Forget, and Reassign. `MonitorEditorWorkflow` owns the technical
+edit transitions; `MonitorEditorViewModel` owns the editor surface and commands.
 `ShellStatusTextPresenter` owns shell-level status text for current-session
 load/refresh, Settings open/save, local-data write failures, and rendered-cache
 clear summaries. Keep broad shell/status messages there so a future
@@ -920,24 +911,12 @@ surface blank status text.
 Settings command, load, and option-refresh methods currently live in
 `MainPageViewModel.Settings.cs`. Keep additional Settings-only orchestration in
 that partial until the surface is ready to become a focused `SettingsViewModel`.
-`MainPageTextPresenters` is the construction point for MainPage presenter
-instances; keep shared `LocalizedText` provider wiring there while command and
-surface responsibilities continue splitting out of `MainPageViewModel`.
 Presenter provider validation goes through `LocalizedTextSource`: null delegates
 and null localized-text results should fail at presenter construction/source
 read time, not inside individual status/progress command projections.
-`MainPageViewModel` should hold that presenter group as one dependency; private
-aliases can preserve existing command readability while deeper command extraction
-continues.
-Main-page derived UI surface properties live in focused
-`MainPageViewModel.Surface.*.cs` partials. Keep visibility, interaction-state,
-presenter aliases, selected-monitor display, session summary, and
-requested-theme projections in the matching workflow partial; keep
-`MainPageViewModel.cs` focused on construction and services.
-Main-page observable collections and `[ObservableProperty]` state live in
-focused `MainPageViewModel.State.*.cs` partials. Keep new bindable state in the
-matching workflow partial so source-generated property hooks and UI projections
-stay in their own files.
+`MainPageViewModel` receives the focused presenters and child ViewModels from
+`WallerAppComposition`. Its remaining surface/state partials cover shell,
+monitor workspace, modals, and Settings only.
 `scripts\TestWinUICodeGuards.ps1` enforces these boundaries: do not bypass it
 by adding bindable state/surface projections back to `MainPageViewModel.cs`, by
 recreating monolithic state/surface/change-hook files, or by adding
@@ -945,21 +924,19 @@ domain-specific localized projection methods back to `LocalizedText.cs`.
 Repeated textual DTO/boundary contract checks in that script should go through
 `Test-TextContracts`; add new contract tables instead of duplicating file-read,
 positional-pattern, and required-snippet loops.
-Local app-data root construction belongs in `WallerAppDataPaths`; Presets,
-Settings, and rendered-cache stores should receive paths through
-`WallerLocalDataStores`. In packaged WinUI runs, Windows resolves
-`Environment.SpecialFolder.LocalApplicationData` to package
-`LocalCache\Local`, so app-managed JSON lives under the package family cache.
-Rendered PNGs are different: Windows `IDesktopWallpaper` reads outside the
-package virtualization boundary, so `RenderedRoot` uses
-`%USERPROFILE%\.waller` and the rendered store writes to `.waller\rendered`.
-The WinUI code guard blocks direct `LocalApplicationData` lookups elsewhere and
-keeps `RootFor(...)` validating blank local app-data paths before composing the
-app folder.
-`scripts\TestLocalDataPolicy.ps1` guards the update-stable local-data shape:
-default root comes from `Environment.SpecialFolder.LocalApplicationData`, the
-app folder remains `Waller`, Presets/Settings receive the package-local root,
-and rendered wallpapers receive the shell-readable user-profile cache root.
+`LocalDataLayout` is the pure local-data policy. It receives fully qualified
+local-app-data and user-profile paths, rejects invalid inputs, and produces the
+typed private app-data and shell-readable rendered-cache roots.
+`WallerAppDataPaths` is the App-side Windows environment adapter; it is the only
+component that reads `Environment.SpecialFolder.LocalApplicationData` and the
+visible user profile. In packaged WinUI runs, Windows resolves local app data to
+package `LocalCache\Local`, so app-managed JSON remains under that package
+cache. Rendered PNGs stay under `%USERPROFILE%\.waller\rendered` because
+`IDesktopWallpaper` must read them outside package virtualization.
+`WallerLocalDataStores` constructs Presets, Settings, and rendered-cache stores
+from one `LocalDataLayout`. `scripts\TestLocalDataPolicy.ps1` guards only that
+high-level wiring; executable Workflows tests cover deterministic packaged and
+unpackaged layouts plus invalid inputs.
 `WallerAppServices`, `WallerLocalDataStores`, and the internal
 `MainPageViewModel` service constructor reject missing dependencies before
 startup composition reaches initialization, Apply, Presets, Settings, or
@@ -1103,22 +1080,10 @@ well as `MainPage.xaml`; composition-boundary rules still apply only to
 `MainPage.xaml` so owner controls such as `EditPanel` and `ShellHeader` can
 contain their own internal controls.
 
-Selected-monitor editor command ownership is split by domain:
-`MainPageViewModel.Editor.Source.cs` owns image picking, swatch selection, source
-selection projection, and source-editor visibility refresh;
-`MainPageViewModel.Editor.Placement.cs` owns reset-position and offset writes;
-`MainPageViewModel.Editor.Selection.cs` owns monitor selection and assignment
-hydration; `MainPageViewModel.Editor.Assignment.cs` owns editor-field writes
-back into the active session; `MainPageViewModel.Editor.Disconnected.cs` owns
-forget/reassign actions for stale Preset assignments; and
-`MainPageViewModel.Editor.Options.cs` owns localized editor option selection.
-WinUI code guards block recreating the monolithic
-`MainPageViewModel.Editor.cs` partial.
-Source-generated change hooks are also split by domain:
-`MainPageViewModel.Changes.Apply.cs`, `.Editor.cs`, `.Modals.cs`, `.Presets.cs`,
-and `.Settings.cs`. Keep generated-property reactions near the workflow they
-refresh instead of recreating a monolithic `MainPageViewModel.Changes.cs`; the
-WinUI code guard blocks that file from returning.
+Selected-monitor editor command ownership belongs to
+`MonitorEditorViewModel.Actions.cs`; its source-generated reactions belong to
+`MonitorEditorViewModel.Changes.cs`. The WinUI guard blocks the removed root
+editor and change-hook partial families from returning.
 
 Monitor/disconnected-row display formatting belongs in focused helpers:
 localized resolution, bounds, and status copy goes through `LocalizedText`,
@@ -1161,64 +1126,15 @@ do not silently shift visible UI copy.
 Header Active Session summary formatting also belongs in `LocalizedText`; the
 main view model should pass session/preset state, not assemble suffix text
 inline.
-Active Preset session transitions should go through `ActivePresetSession`:
-save, rename-active, delete-active, and Current setup selection must share the
-same `BasedOnPreset`, dirty-state, and missing-assignment policy.
-`ActivePresetSession.IsBasedOn` rejects missing sessions and empty Preset ids
-before rename/delete-active checks, matching the shared `PresetIds` policy used
-by menu and store commands.
-Renaming the active Preset should use `ActivePresetSession.RenameActive`, which
-returns the updated session plus selected-Preset record/name draft projection.
-`ActivePresetRename` rejects missing sessions, missing selected Preset records,
-and blank name drafts so active-rename projection cannot half-update Preset UI
-state during the future Preset view-model split. It normalizes name drafts
-through `PresetNames`, matching Core model/factory policy before editable fields
-are updated.
-Preset dropdown selection state should go through `SelectedPresetSessionLoader`
-and `SelectedPresetSessionFactory` before mutating `MainPageViewModel`, so
-Current setup selection, loaded Preset selection, missing-Preset refresh, and
-deleted-active-Preset cleanup share session/draft/visual-memory projection
-rules. `SelectedPresetLoadResult` should own loaded selection projection and
-status text/list-refresh policy selection, so dropdown load handlers do not
-switch on result kind to pick copy, nullable session state, or stale-list cleanup.
-`SelectedPresetSession` rejects missing sessions and null name-draft values, and
-`SelectedPresetSessionFactory.FromPreset` rejects missing matcher/preset inputs
-before applying a Preset to the active session.
-`SelectedPresetLoadResult` rejects unknown load kinds through `DefinedEnumValue`,
-missing selections for loaded/current branches, selections on missing-Preset
-branches, and normalizes loaded/missing Preset display names through
-`PresetMenuDisplayName`. `SelectedPresetSessionLoader` rejects missing
-store/matcher/session/item inputs before async load work starts.
-Preset dropdown async loads must be versioned by the view model so slower stale
-loads cannot overwrite a newer user selection or programmatic menu refresh.
-Fire-and-forget Preset dropdown loads must catch unexpected loader failures and
-surface localized `PresetTextPresenter` status text; do not leave unobserved
-task exceptions behind the combo box.
-`SelectedPresetLoadResult.StatusText` must reject missing presenters and throw
-for unknown load kinds; an impossible Preset-load state should fail at the
-projection boundary instead of surfacing as blank status text.
-After a Preset save succeeds, use the shared post-save helper in
-`MainPageViewModel` to mark the active session saved, refresh the Preset menu,
-persist visual selection memory, and refresh the session surface together.
-Save vs Save as selected-record/name-draft projection should go through
-`PresetSaveCompletion`, so command handlers do not duplicate which fields are
-updated after each save mode.
-`PresetSaveCompletion` rejects missing selected Preset records and blank
-post-save name drafts, keeping Save and Save As completion state complete before
-the menu/session refresh runs. Non-null post-save name drafts normalize through
-`PresetNames`, matching Core model/factory policy before editable fields are
-updated.
-Preset save and Save as construction should go through `PresetSessionSave`, so
-`PresetFactory`, `PresetStore.SaveAsync`, and recoverable write-failure mapping
-stay out of shell command handlers.
-Save command handlers should consume saved Presets through
-`PresetSessionSaveResult.TryGetPreset`, keeping result-shape checks with the
-result DTO.
-`PresetSessionSaveResult` enforces success-with-Preset/failure-without-Preset,
-and `PresetSessionSave` rejects missing store/session/preset/name inputs before
-local JSON writes begin. Save As names normalize through `PresetNames` before
-`PresetFactory.CreateFromSession` runs. `TestWinUICodeGuards.ps1` blocks
-removing these App DTO guards while the tests remain Core-focused.
+Active Preset transitions live in `PresetWorkflow` and `PresetsViewModel`.
+Current setup selection preserves the current monitor list, loaded Presets use
+Core `PresetMatcher`, save completion uses `ActiveSession.WithSavedPreset`, and
+active rename updates `BasedOnPreset` once. Async dropdown selection remains
+versioned so stale loads cannot overwrite a newer choice. Visual selection
+memory is persisted through the shared `UserSettingsWorkflow` writer.
+Save and Save As construction use Core `PresetFactory` inside `PresetWorkflow`;
+recoverable file-system failures become `PresetOperationStatus.WriteFailed`
+instead of App-side exception handling.
 Manage Presets command inputs go through `ManagedPresetCommandInput`,
 `ManagedPresetSelection`, and `PresetDeleteConfirmation`. These App DTO/helpers
 reject empty Preset ids, invalid delete targets, missing command text presenters,
@@ -1493,45 +1409,49 @@ WinUI `ElementTheme` projection from `AppThemePreference` goes through
 `ThemePreferenceMapper` must reject unsupported theme preferences instead of
 mapping them to `ElementTheme.Default`; persisted invalid Settings still
 normalize through Core policy before reaching runtime UI state.
-Settings preference projection goes through `SettingsPreferenceDraft`, and
-load/save orchestration goes through `SettingsPreferenceStore`; writes still use
+Settings preference projection goes through `SettingsPreferenceDraft`. All
+reads and read-modify-write operations go through the process-level
+`UserSettingsWorkflow`; its FIFO queue is the only runtime writer. Writes use
 `UserSettings.WithPreferences` so theme, language, and last selected Preset move
 together while window placement is preserved.
 `SettingsPreferenceDraft` rejects unknown theme enum values and unsupported
 language codes at the App boundary. Core `UserSettingsPolicy` still owns
 normalizing persisted Settings payloads after JSON load; the App draft contract
 keeps unsupported UI/request state from entering modal save/load flows.
-Settings save command input should go through `SettingsSaveRequest`, so selected
+Settings save command input goes through `SettingsSaveRequest`, so selected
 theme/language/Preset-to-draft projection can move with a future
-`SettingsViewModel`. Persisting that request should go through
-`SettingsPreferenceStore.SaveRequestAsync`; command handlers should not reach
-into request internals before saving.
-`SettingsSaveRequest` should own applying its draft to loaded Settings and
-exposing its last-selected-Preset id; external callers should not persist raw
-Settings drafts directly.
+`SettingsViewModel`. `MainPageLocalState` sends its validated values to
+`UserSettingsWorkflow.UpdatePreferencesAsync`; command handlers do not access
+the store or persist raw Settings drafts.
 Settings save should return `SettingsPreferenceSaveResult` so UI state updates
 consume explicit saved visual-memory and write-failure output instead of
 re-reading draft fields or mapping local-data exceptions after persistence.
-`SettingsPreferenceSaveResult` enforces failure-without-Preset-memory output, and
-`SettingsPreferenceStore` rejects missing stores/requests/status presenters before
-save result handling reaches `MainPageViewModel`.
+`SettingsPreferenceSaveResult` enforces failure-without-Preset-memory output,
+and `MainPageLocalState` rejects missing workflow/store dependencies before save
+result handling reaches `MainPageViewModel`.
 Status text and saved visual-memory projection should stay on
 `SettingsPreferenceSaveResult`, so `MainPageViewModel.SaveSettings` only
 constructs the request, invokes the store, and applies the result.
 Preset visual-memory writes go through `UserSettings.WithLastSelectedPreset` so
 commands that only update dropdown memory cannot accidentally alter theme,
-language, or window placement. App-side callers should use
-`SettingsPreferenceStore` for silent best-effort visual-memory persistence and
-recoverable local-data failure handling.
+language, or window placement. App-side callers use
+`UserSettingsWorkflow.UpdateLastSelectedPresetAsync` for silent best-effort
+visual-memory persistence and typed recoverable failures.
 `UserSettingsStore` rejects blank local-data roots, and `UserSettingsPolicy.Normalize`
 rejects null settings before JSON persistence runs. Keep Settings path validation
 consistent with Preset store validation so local app-data failures happen at the
 store boundary, not inside lower-level file helpers.
 
-Window placement updates go through `UserSettings.WithWindowPlacement` so width,
-height, x, and y are written as one complete settings update. MainWindow treats
-placement restore/save as best-effort and uses `LocalDataErrorPolicy` to ignore
-recoverable local settings failures during startup/shutdown.
+Window placement updates go through
+`UserSettingsWorkflow.UpdateWindowPlacementAsync`, which applies
+`UserSettings.WithWindowPlacement` inside the same serialized writer. Width,
+height, x, and y persist as one update without overwriting preferences or Preset
+memory.
+`WallerAppComposition.CreateAsync` awaits `MainWindow.RestorePlacementAsync`
+before App activation. `MainWindow` observes `AppWindow.Closing`, cancels the
+first close, and reuses one save task. After a saved or typed recoverable result,
+it destroys the window and exits the application; no `Closed` async handler or
+discarded restore task remains.
 
 Editor placement offsets go through `EditorOffsetPercent.NormalizeX/Y` before
 they are stored in the editor draft and through `ToPlacementOffsetX/Y` before

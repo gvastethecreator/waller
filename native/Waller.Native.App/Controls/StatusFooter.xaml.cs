@@ -12,6 +12,12 @@ public sealed partial class StatusFooter : UserControl
         typeof(StatusFooter),
         new PropertyMetadata(null));
 
+    public static readonly DependencyProperty ApplyProperty = DependencyProperty.Register(
+        nameof(Apply),
+        typeof(ApplyViewModel),
+        typeof(StatusFooter),
+        new PropertyMetadata(null));
+
     public StatusFooter()
     {
         InitializeComponent();
@@ -21,5 +27,11 @@ public sealed partial class StatusFooter : UserControl
     {
         get => (MainPageViewModel?)GetValue(ViewModelProperty);
         set => SetValue(ViewModelProperty, value);
+    }
+
+    public ApplyViewModel? Apply
+    {
+        get => (ApplyViewModel?)GetValue(ApplyProperty);
+        set => SetValue(ApplyProperty, value);
     }
 }

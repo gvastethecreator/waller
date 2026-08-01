@@ -47,6 +47,10 @@ try {
         powershell -ExecutionPolicy Bypass -File .\scripts\TestModalKeyboardContract.ps1
     }
 
+    Invoke-Step "App composition contract" {
+        powershell -ExecutionPolicy Bypass -File .\scripts\TestAppComposition.ps1
+    }
+
     Invoke-Step "Shell command contract" {
         powershell -ExecutionPolicy Bypass -File .\scripts\TestShellCommandContract.ps1
     }
@@ -65,6 +69,26 @@ try {
 
     Invoke-Step "Local data policy guard" {
         powershell -ExecutionPolicy Bypass -File .\scripts\TestLocalDataPolicy.ps1
+    }
+
+    Invoke-Step "UserSettings workflow guard" {
+        powershell -ExecutionPolicy Bypass -File .\scripts\TestUserSettingsWorkflow.ps1
+    }
+
+    Invoke-Step "Window lifecycle guard" {
+        powershell -ExecutionPolicy Bypass -File .\scripts\TestWindowLifecycle.ps1
+    }
+
+    Invoke-Step "Preset workflow guard" {
+        powershell -ExecutionPolicy Bypass -File .\scripts\TestPresetWorkflow.ps1
+    }
+
+    Invoke-Step "Monitor editor workflow guard" {
+        powershell -ExecutionPolicy Bypass -File .\scripts\TestMonitorEditorWorkflow.ps1
+    }
+
+    Invoke-Step "Apply workflow guard" {
+        powershell -ExecutionPolicy Bypass -File .\scripts\TestApplyWorkflow.ps1
     }
 
     Invoke-Step "Error text code guards" {
@@ -130,6 +154,12 @@ try {
             $stepArgs = @("-ProjectPath", $projectPath)
             if ($DisableNuGetAudit) { $stepArgs += "-DisableNuGetAudit" }
             powershell -ExecutionPolicy Bypass -File .\scripts\SmokeLaunch.ps1 @stepArgs
+        }
+
+        Invoke-Step "Window lifecycle smoke" {
+            $stepArgs = @("-ProjectPath", $projectPath, "-SkipBuild")
+            if ($DisableNuGetAudit) { $stepArgs += "-DisableNuGetAudit" }
+            powershell -ExecutionPolicy Bypass -File .\scripts\SmokeWindowLifecycle.ps1 @stepArgs
         }
 
         if ($SurfaceSmoke) {

@@ -5,6 +5,14 @@ Testing strategy starts in Core and grows outward.
 Repo instruction: run checks at the end of a task round, not after every small
 edit.
 
+## Latest Complete Gate
+
+On 2026-08-01 the final architecture gate passed with all static guards,
+Debug and Release x64 builds at 0 warnings/errors, 517/517 tests, packaged
+launch, window lifecycle, surface, Settings roundtrip, monitor-editor, and
+restore-safe Apply smoke. Apply changed and restored three solid-color monitor
+backgrounds.
+
 ## Current Commands
 
 From `native/`:
@@ -59,7 +67,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Verify.ps1 -SurfaceSmoke -Set
 Adds a restore-safe packaged Apply run. It captures current wallpapers, invokes
 `ApplyAllButton`, verifies successful status, observes rendered PNGs under
 `%USERPROFILE%\.waller\rendered`, verifies wallpaper paths changed, then
-restores the original wallpaper paths.
+restores the original image paths or the all-solid-color desktop state. Mixed
+image and solid-color monitor states are rejected before mutation.
 
 Full local verification without launch smoke:
 
@@ -1360,15 +1369,16 @@ powershell -ExecutionPolicy Bypass -File .\scripts\UninstallDevPackage.ps1 -Unin
 
 ## Current Tests
 
-Current file:
+Current modules:
 
 ```text
-Waller.Native.Tests\CoreArchitectureTests.cs
+Waller.Native.Tests\Core\{Apply,Models,Presets,Rendering,Sessions,Settings,Storage,Topology,Windows}
+Waller.Native.Tests\Workflows\
 ```
 
 Coverage:
 
-- sample monitor detector creates Active Session
+- Tests-only sample monitor detector creates Active Session
 - empty monitor detector creates an empty Active Session for production fallback
 - assignment updates mark monitor/session dirty
 - unchanged assignment updates do not mark monitor/session dirty

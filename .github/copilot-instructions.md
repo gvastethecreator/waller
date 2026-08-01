@@ -1,31 +1,26 @@
-# Project Guidelines
+# Waller project guidelines
 
-## Domain language
+## Product language
 
-- Use the vocabulary in `src/CONTEXT.md`: **Monitor**, **Wallpaper Source**, **Wallpaper Draft**, **Wallpaper Session**, **Profile**, **Preview**, and **Identify Overlay**.
-- Prefer those terms in code, tests, and documentation instead of generic alternatives like `screen`, `config`, or `thumbnail`.
+- Use the canonical terms in `CONTEXT.md`: Monitor, Active Session, Current Setup, Wallpaper Source, Monitor Assignment, Placement, Rendered Wallpaper, Preset, Save, Apply, and Preview.
+- Do not reintroduce the retired Wallpaper Session/Profile vocabulary into active code or documentation.
 
 ## Architecture
 
-- Frontend orchestration should flow through `src/hooks/useWallpaperSession.ts` and `src/lib/wallpaperSession.ts`.
-- Keep pure frontend rules in focused modules such as `profileComposition`, `previewRegistry`, `wallpaperSessionState`, and `wallpaperSource`.
-- Keep Tauri IPC concentrated in `src/lib/tauri.ts`; avoid calling Tauri APIs directly from components.
-- Rust/Tauri commands live in `src-tauri/src/lib.rs`; blocking filesystem or Win32 work must remain behind `run_blocking`/`spawn_blocking`.
-- When changing wallpaper markers, fit modes, or profile limits, keep the TypeScript and Rust validation layers aligned.
+- `native/Waller.Native.Core` owns domain models, workflows, rendering, persistence contracts, and testable policy.
+- `native/Waller.Native.App` owns WinUI composition, UI projection, package identity, pickers, and Windows adapters.
+- Keep dependency direction `App -> Core`; Core must not reference App, XAML, or WinUI.
+- Keep Windows-only behavior explicit. Do not add fake cross-platform abstractions.
+- Route feature work through public workflow seams instead of growing `MainPageViewModel` orchestration.
 
 ## Verification
 
-- Run `bun run verify` for code changes from the repository root.
-- For dependency changes, run `bun run deps:tauri:check` and then `bun run verify`.
-- For packaging or release-sensitive work, also run `bun run build`.
+- Run `.\scripts\Invoke-Native.ps1 -Task Verify -SkipSmoke` for native code and build changes.
+- Add surface, Settings, Apply, Release, or Package proof only when the changed risk needs it.
+- Never run Apply smoke without acknowledging that it temporarily changes the current user's wallpapers and restores them in `finally`.
 
-## Documentation
+## Documentation and safety
 
-- Treat documentation as part of the deliverable.
-- Update `README.md` and the relevant files in `docs/` whenever architecture, scripts, dependencies, workflows, or user-visible flows change.
-- Keep `docs/INDEX.md` free of stale or missing links.
-
-## Platform conventions
-
-- This project is Windows-only today; do not introduce fake cross-platform abstractions unless the task explicitly requires them.
-- Keep security posture conservative: minimal Tauri capabilities, no global Tauri injection, validated inputs at IPC boundaries.
+- Keep `README.md`, `CONTEXT.md`, `docs/INDEX.md`, and the relevant native docs aligned.
+- Do not track generated output, certificates, secrets, copied user data, or local absolute paths.
+- Repository cleanup must not read, migrate, or delete Waller user data.

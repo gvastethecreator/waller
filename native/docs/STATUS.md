@@ -1,18 +1,21 @@
 # Waller Native Status
 
-Date: 2026-06-04
+Date: 2026-08-01
 
 ## Status Summary
 
-The native project now has a real solution structure and enough code to start
-moving in small slices.
-
-The native MVP is close to stable: it has real Windows monitor/current-wallpaper
-detection, native image picking, PNG rendering, placement modes, real packaged
-Apply wiring, restore-safe Apply smoke coverage, and package/local-data guards.
+WinUI is the definitive product. The Tauri and duplicate prototype trees are
+retired from the active repository. App, Workflows, Core, and Tests now have
+explicit ownership and one composition root.
 
 Latest verification:
 
+- 2026-08-01: the ten-ticket architecture batch passed its complete final gate.
+  All static guards passed; Debug and Release x64 built with 0 warnings and 0
+  errors; 517/517 tests passed; packaged launch, window lifecycle, surface,
+  Settings roundtrip, monitor-editor, and Apply smokes passed. Apply changed and
+  restored 3 solid-color monitor backgrounds. Store publication, production
+  signing, clean-machine qualification, and ARM64 runtime remain external gates.
 - 2026-07-23: the topology/theme/clipping pass builds cleanly and passes all
   470 core tests, XAML accessibility/theme lint, WinUI code guards, and core
   code guards. `SmokeSurface.ps1 -DisableNuGetAudit` passed Shell 5/5,

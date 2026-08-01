@@ -84,6 +84,14 @@ function Wait-WallerElementByAutomationId {
         Start-Sleep -Milliseconds 150
     }
 
+    $automationIds = $Root.FindAll(
+        [System.Windows.Automation.TreeScope]::Descendants,
+        [System.Windows.Automation.Condition]::TrueCondition) |
+        ForEach-Object { $_.Current.AutomationId } |
+        Where-Object { -not [string]::IsNullOrWhiteSpace($_) } |
+        Sort-Object -Unique
+    Write-Host "Visible AutomationIds: $($automationIds -join ', ')" -ForegroundColor Yellow
+
     throw "UI Automation element not found: $AutomationId."
 }
 
@@ -137,8 +145,15 @@ function Invoke-WallerElementByAutomationId {
 function Open-WallerMoreMenu {
     param([System.Windows.Automation.AutomationElement]$Root)
 
-    Invoke-WallerElementByAutomationId -Root $Root -AutomationId "MoreButton"
-    Start-Sleep -Milliseconds 250
+    for ($attempt = 0; $attempt -lt 2; $attempt++) {
+        Invoke-WallerElementByAutomationId -Root $Root -AutomationId "MoreButton"
+        Start-Sleep -Milliseconds 350
+        if (Find-WallerElementByAutomationId -Root $Root -AutomationId "SettingsButton") {
+            return
+        }
+    }
+
+    throw "More menu did not expose its commands."
 }
 
 function Set-WallerSettingsPathFromLaunch {
@@ -465,6 +480,24 @@ try {
         -Root $window `
         -AutomationIds $requiredAutomationIds `
         -ScopeName "Shell"
+
+    $monitorList = Wait-WallerElementByAutomationId -Root $window -AutomationId "MonitorList"
+    $monitorItems = $monitorList.FindAll(
+        [System.Windows.Automation.TreeScope]::Children,
+        [System.Windows.Automation.Condition]::TrueCondition)
+    if ($monitorItems.Count -gt 0) {
+        Assert-WallerElementsPresent `
+            -Root $window `
+            -AutomationIds @(
+                "SourceComboBox",
+                "FitComboBox",
+                "AnchorComboBox",
+                "ResetPositionButton") `
+            -ScopeName "Monitor editor"
+    }
+    else {
+        Write-Host "Monitor editor smoke skipped: no monitors detected."
+    }
 
     Open-WallerMoreMenu -Root $window
     Invoke-WallerElementByAutomationId -Root $window -AutomationId "SettingsButton"

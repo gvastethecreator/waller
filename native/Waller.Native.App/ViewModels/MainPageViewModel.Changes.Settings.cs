@@ -51,14 +51,10 @@ public sealed partial class MainPageViewModel
     partial void OnSelectedLanguageChanged(string value)
     {
         RefreshSettingOptions();
-        RefreshEditorOptions();
-        var refresh = LocalizedSurfaceRefresh.Refresh(
-            Presets,
-            SelectedPreset,
-            Monitors,
-            MissingMonitors,
-            Text);
-        SelectedPreset = refresh.SelectedPreset;
+        Apply.RefreshLocalizedSurface();
+        Editor.RefreshLocalizedSurface();
+        Presets.RefreshLocalizedSurface();
+        LocalizedSurfaceRefresh.Refresh(Monitors, MissingMonitors, Text);
         NotifyPropertiesChanged(ViewModelNotificationGroups.LanguageRefreshSurface);
     }
 }

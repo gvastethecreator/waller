@@ -1,10 +1,13 @@
 using CommunityToolkit.Mvvm.ComponentModel;
 using Waller.Native.App.Platform;
 using Waller.Native.Core.Models;
-using Waller.Native.Core.Presets;
-using Waller.Native.Core.Sessions;
 using Waller.Native.Core.Settings;
 using Waller.Native.Core.Windows;
+using Waller.Native.Workflows.Apply;
+using Waller.Native.Workflows.MonitorEditing;
+using Waller.Native.Workflows.Presets;
+using Waller.Native.Workflows.Settings;
+using Waller.Native.Workflows.Shell;
 
 namespace Waller.Native.App.ViewModels;
 
@@ -12,34 +15,21 @@ public sealed partial class MainPageViewModel : ObservableObject
 {
     private readonly IMonitorDetector primaryMonitorDetector;
     private readonly IMonitorDetector fallbackMonitorDetector;
-    private readonly IImageFilePicker imageFilePicker;
-    private readonly WallpaperApplyService applyService;
     private readonly MainPageLocalState localState;
-    private readonly PresetMatcher presetMatcher = new();
-    private readonly ActiveSessionEditor sessionEditor = new();
-    private readonly ApplyRunState applyRunState = new();
-    private readonly MainPageTextPresenters textPresenters;
-    private ActiveSession activeSession = ActiveSession.FromMonitors([]);
-    private Preset? selectedPresetRecord;
-    private bool isChangingPresetSelection;
-    private int selectedPresetLoadVersion;
-    private bool isRefreshingEditor;
-    private bool isRefreshingColor;
-    private Guid? lastSelectedPresetId;
-    private PresetDeleteConfirmation? pendingDeletePreset;
+    private readonly IShellWorkspace workspace;
+    private readonly ShellStatusTextPresenter shellText;
 
-    public MainPageViewModel()
-        : this(WallerAppServices.CreateDefault())
-    {
-    }
-
-    private MainPageViewModel(WallerAppServices services)
+    internal MainPageViewModel(WallerAppServices services)
         : this(
             services.PrimaryMonitorDetector,
             services.FallbackMonitorDetector,
             services.ImageFilePicker,
-            services.ApplyService,
-            services.LocalData)
+            services.Apply,
+            services.LocalData,
+            services.MonitorEditor,
+            services.Presets,
+            services.UserSettings,
+            services.Workspace)
     {
     }
 
@@ -47,22 +37,60 @@ public sealed partial class MainPageViewModel : ObservableObject
         IMonitorDetector primaryMonitorDetector,
         IMonitorDetector fallbackMonitorDetector,
         IImageFilePicker imageFilePicker,
-        WallpaperApplyService applyService,
-        WallerLocalDataStores localData)
+        ApplyWorkflow applyWorkflow,
+        WallerLocalDataStores localData,
+        MonitorEditorWorkflow monitorEditorWorkflow,
+        PresetWorkflow presetWorkflow,
+        UserSettingsWorkflow userSettings,
+        IShellWorkspace workspace)
     {
         ArgumentNullException.ThrowIfNull(primaryMonitorDetector);
         ArgumentNullException.ThrowIfNull(fallbackMonitorDetector);
         ArgumentNullException.ThrowIfNull(imageFilePicker);
-        ArgumentNullException.ThrowIfNull(applyService);
+        ArgumentNullException.ThrowIfNull(applyWorkflow);
         ArgumentNullException.ThrowIfNull(localData);
+        ArgumentNullException.ThrowIfNull(monitorEditorWorkflow);
+        ArgumentNullException.ThrowIfNull(presetWorkflow);
+        ArgumentNullException.ThrowIfNull(userSettings);
+        ArgumentNullException.ThrowIfNull(workspace);
 
         this.primaryMonitorDetector = primaryMonitorDetector;
         this.fallbackMonitorDetector = fallbackMonitorDetector;
-        this.imageFilePicker = imageFilePicker;
-        this.applyService = applyService;
-        localState = new MainPageLocalState(localData);
-        textPresenters = new MainPageTextPresenters(() => Text);
+        this.workspace = workspace;
+        localState = new MainPageLocalState(localData, userSettings);
+        shellText = new ShellStatusTextPresenter(() => Text);
+        Apply = new ApplyViewModel(
+            applyWorkflow,
+            workspace,
+            () => Text,
+            status => StatusText = status,
+            RefreshSessionSurface,
+            NotifyCommandStateChanged);
+        Editor = new MonitorEditorViewModel(
+            monitorEditorWorkflow,
+            imageFilePicker,
+            workspace,
+            Monitors,
+            () => Text,
+            status => StatusText = status,
+            RefreshSessionSurface);
+        Presets = new PresetsViewModel(
+            presetWorkflow,
+            userSettings,
+            workspace,
+            () => Text,
+            status => StatusText = status,
+            RefreshSessionSurface,
+            NotifySessionSummaryChanged,
+            NotifyModalStateChanged);
         RefreshSettingOptions();
-        RefreshEditorOptions();
     }
+
+    private ActiveSession activeSession => workspace.ActiveSession;
+
+    public ApplyViewModel Apply { get; }
+
+    public MonitorEditorViewModel Editor { get; }
+
+    public PresetsViewModel Presets { get; }
 }

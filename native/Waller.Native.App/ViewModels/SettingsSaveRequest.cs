@@ -23,5 +23,7 @@ internal sealed class SettingsSaveRequest
 
     public Guid? LastSelectedPresetId => draft.LastSelectedPresetId;
 
-    public UserSettings ApplyTo(UserSettings settings) => draft.ApplyTo(settings);
+    public AppThemePreference Theme => draft.Theme;
+
+    public string Language => draft.Language;
 }

@@ -475,8 +475,8 @@ foreach ($file in $xamlFiles) {
     if ($relativePath -eq "Waller.Native.App\Controls\ManagePresetsModal.xaml") {
         $hasNoPresetText = $false
         foreach ($textBlock in $xaml.SelectNodes("//*[local-name()='TextBlock']")) {
-            if ($textBlock.GetAttribute("Text") -like "*Text.NoPresetsSaved*" -and
-                $textBlock.GetAttribute("Visibility") -like "*ManagePresetEmptyVisibility*") {
+            if (($textBlock.GetAttribute("Text")) -like "*Text.NoPresetsSaved*" -and
+                ($textBlock.GetAttribute("Visibility")) -like "*ManagedPresetEmptyVisibility*") {
                 $hasNoPresetText = $true
                 break
             }
@@ -654,7 +654,7 @@ if ($monitorWorkspaceMissingEmptyState.Count -gt 0) {
 }
 
 if ($managePresetsMissingEmptyState.Count -gt 0) {
-    Write-Host "Manage Presets modal missing no-presets empty text bound to ManagePresetEmptyVisibility:" -ForegroundColor Red
+    Write-Host "Manage Presets modal missing no-presets empty text bound to ManagedPresetEmptyVisibility:" -ForegroundColor Red
     foreach ($state in $managePresetsMissingEmptyState) {
         Write-Host " - $state" -ForegroundColor Red
     }
