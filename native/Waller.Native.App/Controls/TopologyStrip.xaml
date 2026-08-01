@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="Waller.Native.App.Controls.TopologyStrip"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Waller.Native.App.Controls"
+    xmlns:vm="using:Waller.Native.App.ViewModels">
+
+    <Border
+        Padding="32,18"
+        BorderThickness="0"
+        Background="{ThemeResource WallerStageBrush}"
+        Visibility="{Binding ViewModel.TopologyVisibility, ElementName=Root}">
+        <Grid RowSpacing="8">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+            <TextBlock
+                HorizontalAlignment="Center"
+                Text="{Binding ViewModel.Text.SelectMonitorToEdit, ElementName=Root}"
+                Style="{StaticResource BodyStrongTextBlockStyle}" />
+            <Viewbox
+                Grid.Row="1"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Center"
+                Stretch="Uniform">
+                <ItemsControl
+                    Width="{Binding ViewModel.TopologyWidth, ElementName=Root}"
+                    Height="{Binding ViewModel.TopologyHeight, ElementName=Root}"
+                    ItemsSource="{Binding ViewModel.TopologyMonitors, ElementName=Root}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <controls:TopologyPanel />
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="vm:MonitorRowViewModel">
+                            <Button
+                                Width="{x:Bind TopologyWidth}"
+                                Height="{x:Bind TopologyHeight}"
+                                Padding="0"
+                                HorizontalContentAlignment="Stretch"
+                                VerticalContentAlignment="Stretch"
+                                Background="{ThemeResource ControlFillColorTransparentBrush}"
+                                BorderThickness="0"
+                                Command="{Binding ViewModel.Editor.SelectMonitorCommand, ElementName=Root}"
+                                CommandParameter="{Binding}"
+                                AutomationProperties.AutomationId="TopologyMonitorButton"
+                                AutomationProperties.Name="{x:Bind TopologyAccessibleName, Mode=OneWay}"
+                                ToolTipService.ToolTip="{x:Bind TopologyAccessibleName, Mode=OneWay}">
+                                <Border
+                                    CornerRadius="{ThemeResource ControlCornerRadius}"
+                                    BorderBrush="{x:Bind TopologyBorderBrush, Mode=OneWay}"
+                                    BorderThickness="{x:Bind TopologyBorderThickness, Mode=OneWay}"
+                                    Background="{ThemeResource ControlFillColorTransparentBrush}"
+                                    Opacity="{x:Bind TopologyOpacity, Mode=OneWay}">
+                                    <Grid>
+                                        <controls:SourcePreview
+                                            AutomationProperties.Name="{x:Bind SourceSummary, Mode=OneWay}"
+                                            PreviewBadgeText="{x:Bind Session.Monitor.Identity.DisplayIndex, Mode=OneWay}"
+                                            PreviewBadgeVisibility="Visible"
+                                            PreviewWidth="{x:Bind TopologyWidth}"
+                                            PreviewHeight="{x:Bind TopologyHeight}"
+                                            PreviewBrush="{x:Bind SourcePreviewBrush, Mode=OneWay}"
+                                            PreviewImageBrush="{x:Bind SourcePreviewImageBrush, Mode=OneWay}"
+                                            PreviewImageVisibility="{x:Bind SourcePreviewImageVisibility, Mode=OneWay}"
+                                            PreviewText="{x:Bind SourceSummary, Mode=OneWay}"
+                                            PreviewTextVisibility="{x:Bind SourcePreviewTextVisibility, Mode=OneWay}"
+                                            PreviewTextTrimming="CharacterEllipsis" />
+                                        <Grid Padding="12">
+                                            <Border
+                                                HorizontalAlignment="Right"
+                                                VerticalAlignment="Bottom"
+                                                Padding="6,2"
+                                                Background="{ThemeResource WallerPreviewLabelBrush}"
+                                                CornerRadius="{ThemeResource ControlCornerRadius}"
+                                                Visibility="{x:Bind TopologyResolutionVisibility, Mode=OneWay}">
+                                                <TextBlock
+                                                    Foreground="{ThemeResource WallerPreviewLabelTextBrush}"
+                                                    Text="{x:Bind Resolution}"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    Visibility="{x:Bind TopologyResolutionVisibility, Mode=OneWay}"
+                                                    Style="{StaticResource CaptionTextBlockStyle}" />
+                                            </Border>
+                                        </Grid>
+                                    </Grid>
+                                </Border>
+                            </Button>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </Viewbox>
+        </Grid>
+    </Border>
+</UserControl>

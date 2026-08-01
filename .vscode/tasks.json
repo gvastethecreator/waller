@@ -1,120 +1,70 @@
 {
-    "version": "2.0.0",
-    "tasks": [
-        {
-            "label": "wallpaper: tauri dev",
-            "type": "shell",
-            "command": "bun",
-            "args": [
-                "run",
-                "dev"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "isBackground": true,
-            "problemMatcher": []
-        },
-        {
-            "label": "wallpaper: tauri build",
-            "type": "shell",
-            "command": "bun",
-            "args": [
-                "run",
-                "build"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "group": "build",
-            "problemMatcher": []
-        },
-        {
-            "label": "wallpaper: cargo check",
-            "type": "shell",
-            "command": "cargo",
-            "args": [
-                "check"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}/src-tauri"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "wallpaper: cargo test (lib)",
-            "type": "shell",
-            "command": "cargo",
-            "args": [
-                "test",
-                "--lib"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}/src-tauri"
-            },
-            "group": "test",
-            "problemMatcher": []
-        },
-        {
-            "label": "wallpaper: smoke tests",
-            "type": "shell",
-            "command": "cargo",
-            "args": [
-                "test",
-                "--lib",
-                "profiles::tests::profile_roundtrip_save_load_list_delete",
-                "tests::get_image_data_url_reads_file_and_returns_data_url"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}/src-tauri"
-            },
-            "group": "test",
-            "problemMatcher": []
-        },
-        {
-            "label": "wallpaper: test + check",
-            "type": "shell",
-            "command": "cargo test --lib; cargo check",
-            "options": {
-                "cwd": "${workspaceFolder}/src-tauri"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "wallpaper: kill running app",
-            "type": "shell",
-            "command": "taskkill",
-            "args": [
-                "/F",
-                "/IM",
-                "waller.exe"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "wallpaper: full verify",
-            "dependsOrder": "sequence",
-            "dependsOn": [
-                "wallpaper: bun verify",
-                "wallpaper: tauri build"
-            ],
-            "problemMatcher": []
-        },
-        {
-            "label": "wallpaper: bun verify",
-            "type": "shell",
-            "command": "bun",
-            "args": [
-                "run",
-                "verify"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}"
-            },
-            "problemMatcher": []
-        }
-    ]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "waller: verify",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\Invoke-Native.ps1",
+        "-Task",
+        "Verify",
+        "-SkipSmoke"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": { "kind": "test", "isDefault": true },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "waller: run",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\Invoke-Native.ps1",
+        "-Task",
+        "Run"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": { "kind": "build", "isDefault": true },
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "waller: release build",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\Invoke-Native.ps1",
+        "-Task",
+        "Release"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": "build",
+      "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "waller: development MSIX",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\Invoke-Native.ps1",
+        "-Task",
+        "Package"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "group": "build",
+      "problemMatcher": "$msCompile"
+    }
+  ]
 }

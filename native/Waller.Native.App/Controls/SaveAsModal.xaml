@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="Waller.Native.App.Controls.SaveAsModal"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Waller.Native.App.Controls">
+
+    <Grid
+        Background="{ThemeResource WallerModalOverlayBrush}"
+        Visibility="{Binding ViewModel.SaveAsVisibility, ElementName=Root}">
+        <Border
+            MaxWidth="420"
+            Padding="20"
+            Margin="24"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Center"
+            CornerRadius="{ThemeResource OverlayCornerRadius}"
+            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+            BorderThickness="1"
+            Background="{ThemeResource SolidBackgroundFillColorBaseBrush}">
+            <Grid RowSpacing="16">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel>
+                        <TextBlock
+                            Text="{Binding ViewModel.Text.SaveAs, ElementName=Root}"
+                            Style="{StaticResource SubtitleTextBlockStyle}" />
+                        <TextBlock
+                            Text="{Binding ViewModel.Text.SaveAsPresetSubtitle, ElementName=Root}"
+                            Style="{StaticResource CaptionTextBlockStyle}" />
+                    </StackPanel>
+                    <Button
+                        Grid.Column="1"
+                        Command="{Binding ViewModel.CloseSaveAsCommand, ElementName=Root}"
+                        AutomationProperties.AutomationId="CloseSaveAsButton"
+                        AutomationProperties.Name="{Binding ViewModel.Text.Close, ElementName=Root}"
+                        ToolTipService.ToolTip="{Binding ViewModel.Text.Close, ElementName=Root}"
+                        TabIndex="2">
+                        <FontIcon Glyph="&#xE711;" Style="{StaticResource WallerButtonIconStyle}" />
+                    </Button>
+                </Grid>
+
+                <TextBox
+                    x:Name="SaveAsPresetNameTextBox"
+                    Grid.Row="1"
+                    AutomationProperties.AutomationId="SaveAsPresetNameTextBox"
+                    AutomationProperties.Name="{Binding ViewModel.Text.PresetName, ElementName=Root}"
+                    Header="{Binding ViewModel.Text.PresetName, ElementName=Root}"
+                    IsEnabled="{Binding ViewModel.CanUseModalActions, ElementName=Root}"
+                    Text="{Binding ViewModel.SaveAsPresetNameDraft, ElementName=Root, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    TabIndex="0" />
+
+                <Button
+                    Grid.Row="2"
+                    HorizontalAlignment="Right"
+                    Command="{Binding ViewModel.ConfirmSaveAsCommand, ElementName=Root}"
+                    AutomationProperties.AutomationId="ConfirmSaveAsButton"
+                    AutomationProperties.Name="{Binding ViewModel.Text.SaveAs, ElementName=Root}"
+                    IsEnabled="{Binding ViewModel.CanUseModalActions, ElementName=Root}"
+                    ToolTipService.ToolTip="{Binding ViewModel.Text.SaveAs, ElementName=Root}"
+                    TabIndex="1">
+                    <controls:IconText Glyph="&#xE74E;" Text="{Binding ViewModel.Text.SaveAs, ElementName=Root}" />
+                </Button>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>

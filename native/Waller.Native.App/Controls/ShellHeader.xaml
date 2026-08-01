@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="Waller.Native.App.Controls.ShellHeader"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Waller.Native.App.Controls">
+
+    <Border
+        Padding="20,17"
+        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+        BorderThickness="0,0,0,1">
+        <Grid ColumnSpacing="16" VerticalAlignment="Center">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="160" />
+                <ColumnDefinition Width="220" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <ComboBox
+                Grid.Column="1"
+                Width="200"
+                AutomationProperties.AutomationId="PresetComboBox"
+                AutomationProperties.Name="{Binding Presets.Text.Preset, ElementName=Root}"
+                DisplayMemberPath="Name"
+                IsEnabled="{Binding Presets.CanUseShellCommands, ElementName=Root}"
+                ItemsSource="{Binding Presets.Items, ElementName=Root}"
+                SelectedItem="{Binding Presets.SelectedPreset, ElementName=Root, Mode=TwoWay}" />
+
+            <ScrollViewer
+                Grid.Column="3"
+                HorizontalScrollBarVisibility="Auto"
+                HorizontalScrollMode="Auto"
+                VerticalScrollBarVisibility="Disabled"
+                VerticalScrollMode="Disabled">
+            <Grid ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Button
+                    Grid.Column="0"
+                    Width="96"
+                    AutomationProperties.AutomationId="MoreButton"
+                    AutomationProperties.Name="{Binding ViewModel.Text.More, ElementName=Root}"
+                    IsEnabled="{Binding ViewModel.CanUseShellCommands, ElementName=Root}"
+                    ToolTipService.ToolTip="{Binding ViewModel.Text.More, ElementName=Root}">
+                    <controls:IconText Glyph="&#xE712;" Text="{Binding ViewModel.Text.More, ElementName=Root}" />
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem
+                                Text="{x:Bind Presets.Text.Save, Mode=OneWay}"
+                                Command="{x:Bind Presets.SaveCommand, Mode=OneWay}"
+                                AutomationProperties.AutomationId="SaveButton"
+                                AutomationProperties.Name="{x:Bind Presets.Text.Save, Mode=OneWay}"
+                                IsEnabled="{x:Bind Presets.CanUseShellCommands, Mode=OneWay}">
+                                <MenuFlyoutItem.KeyboardAccelerators>
+                                    <KeyboardAccelerator Key="S" Modifiers="Control" />
+                                </MenuFlyoutItem.KeyboardAccelerators>
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE74E;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem
+                                Text="{x:Bind Presets.Text.SaveAs, Mode=OneWay}"
+                                Command="{x:Bind Presets.SaveAsCommand, Mode=OneWay}"
+                                AutomationProperties.AutomationId="SaveAsButton"
+                                AutomationProperties.Name="{x:Bind Presets.Text.SaveAs, Mode=OneWay}"
+                                IsEnabled="{x:Bind Presets.CanUseShellCommands, Mode=OneWay}">
+                                <MenuFlyoutItem.KeyboardAccelerators>
+                                    <KeyboardAccelerator Key="S" Modifiers="Control,Shift" />
+                                </MenuFlyoutItem.KeyboardAccelerators>
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE792;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem
+                                Text="{x:Bind Presets.Text.Manage, Mode=OneWay}"
+                                Command="{x:Bind Presets.ManagePresetsCommand, Mode=OneWay}"
+                                AutomationProperties.AutomationId="ManagePresetsButton"
+                                AutomationProperties.Name="{x:Bind Presets.Text.Manage, Mode=OneWay}"
+                                IsEnabled="{x:Bind Presets.CanUseShellCommands, Mode=OneWay}">
+                                <MenuFlyoutItem.KeyboardAccelerators>
+                                    <KeyboardAccelerator Key="M" Modifiers="Control" />
+                                </MenuFlyoutItem.KeyboardAccelerators>
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE713;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem
+                                Text="{x:Bind ViewModel.Text.Settings, Mode=OneWay}"
+                                Command="{x:Bind ViewModel.OpenSettingsCommand, Mode=OneWay}"
+                                AutomationProperties.AutomationId="SettingsButton"
+                                AutomationProperties.Name="{x:Bind ViewModel.Text.Settings, Mode=OneWay}"
+                                IsEnabled="{x:Bind ViewModel.CanUseShellCommands, Mode=OneWay}">
+                                <MenuFlyoutItem.KeyboardAccelerators>
+                                    <KeyboardAccelerator Key="I" Modifiers="Control" />
+                                </MenuFlyoutItem.KeyboardAccelerators>
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE713;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                            <MenuFlyoutItem
+                                Text="{x:Bind ViewModel.Text.Refresh, Mode=OneWay}"
+                                Command="{x:Bind ViewModel.RefreshCommand, Mode=OneWay}"
+                                AutomationProperties.AutomationId="RefreshButton"
+                                AutomationProperties.Name="{x:Bind ViewModel.Text.Refresh, Mode=OneWay}"
+                                IsEnabled="{x:Bind ViewModel.CanStartApply, Mode=OneWay}">
+                                <MenuFlyoutItem.KeyboardAccelerators>
+                                    <KeyboardAccelerator Key="R" Modifiers="Control" />
+                                </MenuFlyoutItem.KeyboardAccelerators>
+                                <MenuFlyoutItem.Icon>
+                                    <FontIcon Glyph="&#xE72C;" />
+                                </MenuFlyoutItem.Icon>
+                            </MenuFlyoutItem>
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
+
+                <Button
+                    Grid.Column="1"
+                    Width="176"
+                    Background="{ThemeResource WallerPrimaryBrush}"
+                    BorderBrush="{ThemeResource WallerPrimaryBrush}"
+                    Command="{Binding Apply.ApplyAllCommand, ElementName=Root}"
+                    AutomationProperties.AutomationId="ApplyAllButton"
+                    AutomationProperties.Name="{Binding Apply.Text.ApplyAll, ElementName=Root}"
+                    Foreground="{ThemeResource WallerPrimaryTextBrush}"
+                    IsEnabled="{Binding Apply.CanStartApply, ElementName=Root}"
+                    ToolTipService.ToolTip="{Binding Apply.Text.ApplyAll, ElementName=Root}">
+                    <Button.KeyboardAccelerators>
+                        <KeyboardAccelerator Key="Enter" Modifiers="Control" />
+                    </Button.KeyboardAccelerators>
+                    <controls:IconText Glyph="&#xE73E;" Text="{Binding Apply.Text.ApplyAll, ElementName=Root}" />
+                </Button>
+            </Grid>
+            </ScrollViewer>
+        </Grid>
+    </Border>
+</UserControl>

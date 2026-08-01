@@ -1,0 +1,346 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="Waller.Native.App.Controls.EditPanel"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Waller.Native.App.Controls"
+    xmlns:vm="using:Waller.Native.App.ViewModels">
+
+    <Border
+        CornerRadius="{ThemeResource OverlayCornerRadius}"
+        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+        BorderThickness="1"
+        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+        Visibility="{Binding ViewModel.EditPanelVisibility, ElementName=Root}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="58" />
+                <RowDefinition Height="1" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Grid Padding="18,0" ColumnSpacing="12">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+
+                <Grid
+                    Width="30"
+                    Height="30"
+                    VerticalAlignment="Center">
+                    <Ellipse Fill="{ThemeResource WallerSelectionBrush}" />
+                    <TextBlock
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Foreground="{ThemeResource WallerSelectionTextBrush}"
+                        Text="{Binding ViewModel.SelectedMonitorDisplayIndex, ElementName=Root}"
+                        Style="{StaticResource BodyStrongTextBlockStyle}" />
+                </Grid>
+
+                <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="1">
+                    <TextBlock
+                        Text="{Binding ViewModel.SelectedMonitorDisplayName, ElementName=Root}"
+                        TextTrimming="CharacterEllipsis"
+                        Style="{StaticResource BodyStrongTextBlockStyle}" />
+                    <TextBlock
+                        Text="{Binding ViewModel.SelectedMonitorResolution, ElementName=Root}"
+                        Style="{StaticResource CaptionTextBlockStyle}" />
+                </StackPanel>
+
+                <Button
+                    Grid.Column="2"
+                    VerticalAlignment="Center"
+                    Command="{Binding ViewModel.ResetPositionCommand, ElementName=Root}"
+                    AutomationProperties.AutomationId="ResetPositionButton"
+                    AutomationProperties.Name="{Binding ViewModel.Text.ResetPosition, ElementName=Root}"
+                    IsEnabled="{Binding ViewModel.CanEditPlacement, ElementName=Root}"
+                    ToolTipService.ToolTip="{Binding ViewModel.Text.ResetPosition, ElementName=Root}"
+                    TabIndex="10">
+                    <controls:IconText Glyph="&#xE777;" Text="{Binding ViewModel.Text.ResetPosition, ElementName=Root}" />
+                </Button>
+            </Grid>
+
+            <Border
+                Grid.Row="1"
+                Background="{ThemeResource CardStrokeColorDefaultBrush}" />
+
+            <ScrollViewer
+                x:Name="SourceEditorHost"
+                Grid.Row="2"
+                MinHeight="226"
+                MaxHeight="226"
+                HorizontalScrollBarVisibility="Disabled"
+                HorizontalScrollMode="Disabled"
+                VerticalScrollBarVisibility="Auto"
+                VerticalScrollMode="Auto">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="1.12*" />
+                    <ColumnDefinition Width="1*" />
+                    <ColumnDefinition Width="1*" />
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Margin="20,10" Spacing="7">
+                    <TextBlock
+                        Text="{Binding ViewModel.Text.Source, ElementName=Root}"
+                        Style="{StaticResource BodyStrongTextBlockStyle}" />
+
+                    <ListView
+                        Height="38"
+                        HorizontalAlignment="Left"
+                        AutomationProperties.AutomationId="SourceComboBox"
+                        AutomationProperties.Name="{Binding ViewModel.Text.Source, ElementName=Root}"
+                        IsEnabled="{Binding ViewModel.CanEditMonitorAssignment, ElementName=Root}"
+                        ItemsSource="{Binding ViewModel.SourceOptions, ElementName=Root}"
+                        SelectedItem="{Binding ViewModel.SelectedSourceOption, ElementName=Root, Mode=TwoWay}"
+                        SelectionMode="Single"
+                        ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                        ScrollViewer.HorizontalScrollMode="Disabled"
+                        ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                        ScrollViewer.VerticalScrollMode="Disabled"
+                        TabIndex="0">
+                        <ListView.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <StackPanel Orientation="Horizontal" />
+                            </ItemsPanelTemplate>
+                        </ListView.ItemsPanel>
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="MinHeight" Value="36" />
+                                <Setter Property="MinWidth" Value="82" />
+                                <Setter Property="Padding" Value="12,6" />
+                                <Setter Property="HorizontalContentAlignment" Value="Center" />
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding DisplayName}" />
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+
+                    <Grid x:Name="SelectedSourcePreviewHost"
+                        Height="78"
+                        HorizontalAlignment="Stretch">
+                        <controls:SourcePreview
+                            AutomationProperties.Name="{Binding ViewModel.SelectedMonitor.SourceSummary, ElementName=Root}"
+                            PreviewWidth="{Binding ActualWidth, ElementName=SelectedSourcePreviewHost}"
+                            PreviewHeight="78"
+                            PreviewBrush="{Binding ViewModel.SelectedMonitor.SourcePreviewBrush, ElementName=Root}"
+                            PreviewImageBrush="{Binding ViewModel.SelectedMonitor.SourcePreviewImageBrush, ElementName=Root}"
+                            PreviewImageVisibility="{Binding ViewModel.SelectedMonitor.SourcePreviewImageVisibility, ElementName=Root}"
+                            PreviewText="{Binding ViewModel.SelectedMonitor.SourceSummary, ElementName=Root}"
+                            PreviewTextVisibility="{Binding ViewModel.SelectedMonitor.SourcePreviewTextVisibility, ElementName=Root}"
+                            PreviewTextTrimming="CharacterEllipsis" />
+                    </Grid>
+
+                    <Grid Visibility="{Binding ViewModel.ImageSourceEditorVisibility, ElementName=Root}" ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBox
+                            AutomationProperties.AutomationId="ImagePathTextBox"
+                            AutomationProperties.Name="{Binding ViewModel.Text.ImagePath, ElementName=Root}"
+                            IsEnabled="{Binding ViewModel.CanEditMonitorAssignment, ElementName=Root}"
+                            PlaceholderText="{Binding ViewModel.Text.ImagePath, ElementName=Root}"
+                            Text="{Binding ViewModel.EditImagePath, ElementName=Root, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                            TabIndex="1" />
+                        <Button
+                            Grid.Column="1"
+                            Command="{Binding ViewModel.ChooseImageCommand, ElementName=Root}"
+                            AutomationProperties.AutomationId="ChooseImageButton"
+                            AutomationProperties.Name="{Binding ViewModel.Text.ChooseImage, ElementName=Root}"
+                            IsEnabled="{Binding ViewModel.CanUseShellCommands, ElementName=Root}"
+                            ToolTipService.ToolTip="{Binding ViewModel.Text.ChooseImage, ElementName=Root}"
+                            TabIndex="2">
+                            <FontIcon Glyph="&#xE8E5;" />
+                        </Button>
+                    </Grid>
+
+                    <TextBox
+                        AutomationProperties.AutomationId="ColorHexTextBox"
+                        AutomationProperties.Name="{Binding ViewModel.Text.Color, ElementName=Root}"
+                        IsEnabled="{Binding ViewModel.CanEditMonitorAssignment, ElementName=Root}"
+                        MaxLength="7"
+                        PlaceholderText="#RRGGBB"
+                        Text="{Binding ViewModel.EditColorHex, ElementName=Root, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                        Visibility="{Binding ViewModel.ColorSourceEditorVisibility, ElementName=Root}"
+                        TabIndex="3" />
+
+                    <InfoBar
+                        AutomationProperties.Name="{Binding ViewModel.SelectedSourceWarning, ElementName=Root}"
+                        AutomationProperties.LiveSetting="Polite"
+                        IsOpen="True"
+                        Severity="Warning"
+                        Message="{Binding ViewModel.SelectedSourceWarning, ElementName=Root}"
+                        Visibility="{Binding ViewModel.SelectedSourceWarningVisibility, ElementName=Root}" />
+                </StackPanel>
+
+                <Border
+                    Grid.Column="1"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1,0,0,0">
+                    <StackPanel
+                        Margin="20,10"
+                        Spacing="8"
+                        Visibility="{Binding ViewModel.ColorSourceEditorVisibility, ElementName=Root}">
+                        <TextBlock
+                            Text="{Binding ViewModel.Text.Color, ElementName=Root}"
+                            Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <ItemsControl ItemsSource="{Binding ViewModel.ColorSwatches, ElementName=Root}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <ItemsWrapGrid
+                                        Orientation="Vertical"
+                                        MaximumRowsOrColumns="2" />
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:ColorSwatchOption">
+                                    <Button
+                                        Width="38"
+                                        Height="38"
+                                        Margin="0,0,8,8"
+                                        Padding="0"
+                                        AutomationProperties.AutomationId="ColorSwatchButton"
+                                        AutomationProperties.Name="{x:Bind Hex, Mode=OneTime}"
+                                        Background="{x:Bind Brush, Mode=OneTime}"
+                                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                        Command="{Binding ViewModel.SelectColorSwatchCommand, ElementName=Root}"
+                                        CommandParameter="{Binding}"
+                                        IsEnabled="{Binding ViewModel.CanEditMonitorAssignment, ElementName=Root}"
+                                        ToolTipService.ToolTip="{x:Bind Hex, Mode=OneTime}"
+                                        TabIndex="5" />
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                        <Expander Header="{Binding ViewModel.Text.Color, ElementName=Root}">
+                            <ColorPicker
+                                AutomationProperties.AutomationId="ColorPicker"
+                                AutomationProperties.Name="{Binding ViewModel.Text.Color, ElementName=Root}"
+                                Color="{Binding ViewModel.EditColor, ElementName=Root, Mode=TwoWay}"
+                                IsEnabled="{Binding ViewModel.CanEditMonitorAssignment, ElementName=Root}"
+                                IsAlphaEnabled="False"
+                                IsColorChannelTextInputVisible="False"
+                                IsHexInputVisible="True"
+                                TabIndex="4" />
+                        </Expander>
+                    </StackPanel>
+                </Border>
+
+                <Border
+                    Grid.Column="2"
+                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                    BorderThickness="1,0,0,0">
+                    <StackPanel
+                        Margin="20,10"
+                        Spacing="8">
+                        <TextBlock
+                            Text="{Binding ViewModel.Text.Fit, ElementName=Root}"
+                            Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <ComboBox
+                            HorizontalAlignment="Stretch"
+                            AutomationProperties.AutomationId="FitComboBox"
+                            AutomationProperties.Name="{Binding ViewModel.Text.Fit, ElementName=Root}"
+                            DisplayMemberPath="DisplayName"
+                            IsEnabled="{Binding ViewModel.CanEditPlacement, ElementName=Root}"
+                            ItemsSource="{Binding ViewModel.FitOptions, ElementName=Root}"
+                            SelectedItem="{Binding ViewModel.SelectedFitOption, ElementName=Root, Mode=TwoWay}"
+                            TabIndex="6" />
+
+                        <TextBlock
+                            Margin="0,2,0,0"
+                            Text="{Binding ViewModel.Text.Anchor, ElementName=Root}"
+                            Style="{StaticResource BodyStrongTextBlockStyle}" />
+                        <ListView
+                            Width="156"
+                            Height="110"
+                            HorizontalAlignment="Left"
+                            AutomationProperties.AutomationId="AnchorComboBox"
+                            AutomationProperties.Name="{Binding ViewModel.Text.Anchor, ElementName=Root}"
+                            IsEnabled="{Binding ViewModel.CanEditPlacement, ElementName=Root}"
+                            ItemsSource="{Binding ViewModel.AnchorOptions, ElementName=Root}"
+                            SelectedItem="{Binding ViewModel.SelectedAnchorOption, ElementName=Root, Mode=TwoWay}"
+                            SelectionMode="Single"
+                            ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                            ScrollViewer.HorizontalScrollMode="Disabled"
+                            ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                            ScrollViewer.VerticalScrollMode="Disabled"
+                            TabIndex="7">
+                            <ListView.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <ItemsWrapGrid
+                                        Orientation="Horizontal"
+                                        MaximumRowsOrColumns="3" />
+                                </ItemsPanelTemplate>
+                            </ListView.ItemsPanel>
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="Width" Value="50" />
+                                    <Setter Property="Height" Value="35" />
+                                    <Setter Property="MinWidth" Value="0" />
+                                    <Setter Property="MinHeight" Value="0" />
+                                    <Setter Property="Padding" Value="4,2" />
+                                    <Setter Property="HorizontalContentAlignment" Value="Center" />
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate>
+                                    <FontIcon
+                                        AutomationProperties.Name="{Binding DisplayName}"
+                                        FontFamily="Segoe UI Symbol"
+                                        Glyph="{Binding Glyph}"
+                                        Style="{StaticResource WallerButtonIconStyle}"
+                                        ToolTipService.ToolTip="{Binding DisplayName}" />
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+
+                        <Expander
+                            Header="{Binding ViewModel.Text.PositionX, ElementName=Root}"
+                            IsEnabled="{Binding ViewModel.CanEditPlacement, ElementName=Root}">
+                        <Grid ColumnSpacing="10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <NumberBox
+                                AutomationProperties.AutomationId="OffsetXNumberBox"
+                                AutomationProperties.Name="{Binding ViewModel.Text.PositionX, ElementName=Root}"
+                                Header="{Binding ViewModel.Text.PositionX, ElementName=Root}"
+                                IsEnabled="{Binding ViewModel.CanEditPlacement, ElementName=Root}"
+                                LargeChange="25"
+                                Maximum="100"
+                                Minimum="-100"
+                                SmallChange="5"
+                                SpinButtonPlacementMode="Inline"
+                                TabIndex="8"
+                                ValidationMode="InvalidInputOverwritten"
+                                Value="{Binding ViewModel.EditOffsetXPercent, ElementName=Root, Mode=TwoWay}" />
+                            <NumberBox
+                                Grid.Column="1"
+                                AutomationProperties.AutomationId="OffsetYNumberBox"
+                                AutomationProperties.Name="{Binding ViewModel.Text.PositionY, ElementName=Root}"
+                                Header="{Binding ViewModel.Text.PositionY, ElementName=Root}"
+                                IsEnabled="{Binding ViewModel.CanEditPlacement, ElementName=Root}"
+                                LargeChange="25"
+                                Maximum="100"
+                                Minimum="-100"
+                                SmallChange="5"
+                                SpinButtonPlacementMode="Inline"
+                                TabIndex="9"
+                                ValidationMode="InvalidInputOverwritten"
+                                Value="{Binding ViewModel.EditOffsetYPercent, ElementName=Root, Mode=TwoWay}" />
+                        </Grid>
+                        </Expander>
+                    </StackPanel>
+                </Border>
+            </Grid>
+            </ScrollViewer>
+        </Grid>
+    </Border>
+</UserControl>

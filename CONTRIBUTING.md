@@ -1,84 +1,51 @@
 # Contributing to Waller
 
-Thanks for your interest in Waller. This project follows a small set of conventions so
-contributions stay easy to review and align with the **Wallpaper Session** seam.
+Waller is a Windows-only WinUI 3 application. Keep changes aligned with the native product and the terms in [`CONTEXT.md`](./CONTEXT.md).
 
 ## Before you start
 
-- Read [`README.md`](./README.md), [`docs/INDEX.md`](./docs/INDEX.md), and
-  [`src/CONTEXT.md`](./src/CONTEXT.md) first.
-- Use the project vocabulary: **Monitor**, **Wallpaper Source**, **Wallpaper Draft**,
-  **Wallpaper Session**, **Profile**, **Preview**, and **Identify Overlay**.
-- Waller is Windows-only by design. Do not introduce fake cross-platform abstractions
-  unless a task explicitly requires them.
+- Read [`README.md`](./README.md), [`CONTEXT.md`](./CONTEXT.md), [`docs/INDEX.md`](./docs/INDEX.md), and [`native/docs/ARCHITECTURE.md`](./native/docs/ARCHITECTURE.md).
+- Preserve the dependency direction `Waller.Native.App -> Waller.Native.Core`.
+- Keep domain and workflow behavior in Core when it does not require WinUI or package identity.
+- Keep Windows and WinUI adapters in App.
+- Do not add cross-platform abstractions to this Windows-only product without a concrete requirement.
 
 ## Local setup
 
-Requirements:
+Install the pinned SDK into the workspace if the host does not already provide it:
 
-- Windows 10/11
-- [Bun](https://bun.sh/) `1.3.x`
-- Stable Rust toolchain (`x86_64-pc-windows-msvc`)
-- Microsoft Visual C++ Build Tools if your environment is not already set up for
-  native crates
-
-```sh
-bun install
-bun run dev
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\BootstrapDotnet.ps1
 ```
 
-## Development loop
+Run the packaged app:
 
-For code changes:
-
-```sh
-bun run verify
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Invoke-Native.ps1 -Task Run
 ```
 
-For dependency changes, run the alignment check first and then verify:
+## Verification
 
-```sh
-bun run deps:tauri:check
-bun run verify
+Use the narrowest check that can falsify the change while developing. Before handing off a native code or build change, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\Invoke-Native.ps1 -Task Verify -SkipSmoke
 ```
 
-For packaging or release-sensitive work, also run:
-
-```sh
-bun run build
-```
-
-Useful entry points:
-
-- `src/hooks/useWallpaperSession.ts` and `src/lib/wallpaperSession.ts` — frontend seam
-- `src/lib/tauri.ts` — typed Tauri IPC adapter
-- `src-tauri/src/lib.rs` — backend command boundary
-- `src-tauri/src/wallpaper.rs` and `src-tauri/src/wallpaper_value.rs` — native logic
-- `src-tauri/src/profiles.rs` — local profile persistence
+Add packaged surface, Settings roundtrip, or Apply smoke only when the changed risk needs it. Apply smoke temporarily changes and then restores the current user's wallpapers.
 
 ## Pull request checklist
 
-- [ ] Tests cover the change. Add or update the closest seam-level test
-      (`src/lib/*.test.ts` or `src-tauri/src/*`).
-- [ ] Both sides of the JS/Rust boundary stay aligned for any change in
-      Wallpaper Source, fit mode, Profile, Preview, or Identify Overlay semantics.
-- [ ] `bun run verify` passes locally.
-- [ ] `README.md`, `docs/INDEX.md`, and the relevant `docs/*.md` files are still
-      accurate.
-- [ ] No new tracked build output, editor-specific config, secrets, or local
-      absolute paths.
+- [ ] The change uses Monitor, Active Session, Preset, Wallpaper Source, Monitor Assignment, Save, and Apply consistently.
+- [ ] App/Core boundaries remain explicit and callers use public seams.
+- [ ] A behavior change extends the nearest existing test or guard when that adds distinct evidence.
+- [ ] The relevant root and native documentation remains accurate.
+- [ ] `Invoke-Native.ps1 -Task Verify -SkipSmoke` passes.
+- [ ] Packaging-sensitive changes also pass a Release build or development MSIX check.
+- [ ] No generated output, certificate, secret, user data, or local absolute path is tracked.
 
 ## Reporting issues
 
-Use [GitHub Issues](https://github.com/gvastethecreator/waller/issues). Include:
+Use [GitHub Issues](https://github.com/gvastethecreator/waller/issues) for normal defects. Include the package version from `native/Waller.Native.App/Package.appxmanifest`, Windows build and architecture, reproducible steps, expected behavior, and actual behavior.
 
-- Waller version (from `src-tauri/tauri.conf.json`)
-- Windows build number
-- Reproducible steps and expected vs. actual behavior
-- Relevant log lines from the **View Logs** modal or
-  `%APPDATA%/WallpaperManager/logs/app.log`
-
-## Code of conduct
-
-Be respectful. This is a small, focused desktop tool — we value clarity,
-traceability, and reversible decisions over speed.
+Report vulnerabilities privately as described in [`SECURITY.md`](./SECURITY.md).
