@@ -128,6 +128,26 @@ foreach ($node in $project.GetElementsByTagName("Content")) {
     }
 }
 
+$expectedRuntimeIdentifiers = [ordered]@{
+    x86 = "win-x86"
+    x64 = "win-x64"
+    ARM64 = "win-arm64"
+}
+$runtimeIdentifierNodes = @($project.SelectNodes("//*[local-name()='RuntimeIdentifier']"))
+foreach ($mapping in $expectedRuntimeIdentifiers.GetEnumerator()) {
+    $platform = $mapping.Key
+    $expectedRuntimeIdentifier = $mapping.Value
+    $platformNode = $runtimeIdentifierNodes |
+        Where-Object {
+            $_.GetAttribute("Condition") -match "'\$\(Platform\)'\s*==\s*'$([regex]::Escape($platform))'"
+        } |
+        Select-Object -First 1
+
+    if (-not $platformNode -or $platformNode.InnerText -ne $expectedRuntimeIdentifier) {
+        Add-Error "Project Platform '$platform' must select RuntimeIdentifier '$expectedRuntimeIdentifier'."
+    }
+}
+
 foreach ($reference in $manifestAssetReferences) {
     $normalized = $reference.Replace("/", "\")
     $exactIncluded = $projectContentReferences.Contains($normalized)
