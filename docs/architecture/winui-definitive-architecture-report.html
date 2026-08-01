@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Waller · Arquitectura WinUI definitiva</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b0d10;
+      --panel: #13171c;
+      --panel-2: #191f26;
+      --line: #2b343e;
+      --text: #f4f7fa;
+      --muted: #aeb8c3;
+      --accent: #7dd3fc;
+      --good: #86efac;
+      --warn: #fcd34d;
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Segoe UI Variable", "Segoe UI", system-ui, sans-serif;
+      line-height: 1.55;
+    }
+    a { color: var(--accent); }
+    .wrap { width: min(1180px, calc(100% - 40px)); margin: 0 auto; }
+    header { padding: 72px 0 36px; border-bottom: 1px solid var(--line); }
+    .eyebrow { margin: 0 0 12px; color: var(--accent); font-weight: 700; letter-spacing: .12em; text-transform: uppercase; font-size: .78rem; }
+    h1 { max-width: 860px; margin: 0; font-size: clamp(2.4rem, 6vw, 5.8rem); line-height: .98; letter-spacing: -.055em; }
+    .lede { max-width: 760px; margin: 28px 0 0; color: var(--muted); font-size: 1.2rem; }
+    .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 36px 0 0; }
+    .metric, .card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); }
+    .metric { padding: 20px; }
+    .metric strong { display: block; color: var(--good); font-size: 2rem; letter-spacing: -.04em; }
+    .metric span { color: var(--muted); font-size: .92rem; }
+    main { padding: 50px 0 80px; }
+    section { margin: 0 0 54px; }
+    h2 { margin: 0 0 18px; font-size: 1.8rem; letter-spacing: -.025em; }
+    h3 { margin: 0 0 8px; font-size: 1.05rem; }
+    p { margin: 0 0 14px; }
+    .architecture { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: 12px; align-items: stretch; }
+    .architecture .card { padding: 24px; position: relative; }
+    .architecture .core { grid-column: 2; }
+    .architecture .tests { grid-column: 1 / -1; }
+    .label { display: inline-block; margin-bottom: 12px; color: var(--accent); font-size: .75rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .card p { color: var(--muted); }
+    .ticket-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; counter-reset: ticket; }
+    .ticket { padding: 22px; counter-increment: ticket; }
+    .ticket h3::before { content: counter(ticket, decimal-leading-zero) " · "; color: var(--accent); }
+    .ticket .proof { margin-top: 14px; color: var(--good); font-size: .9rem; font-weight: 650; }
+    .proof-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+    .proof-card { padding: 20px; }
+    .proof-card strong { display: block; color: var(--good); margin-bottom: 6px; }
+    .proof-card span { color: var(--muted); font-size: .92rem; }
+    pre { overflow-x: auto; margin: 18px 0; padding: 18px; border: 1px solid var(--line); border-radius: 12px; background: #080a0c; color: #d6e5ef; }
+    ul { margin: 0; padding-left: 1.2rem; }
+    li + li { margin-top: 8px; }
+    .risk { border-left: 4px solid var(--warn); padding: 22px 24px; background: color-mix(in srgb, var(--warn) 7%, var(--panel)); border-radius: 0 var(--radius) var(--radius) 0; }
+    footer { border-top: 1px solid var(--line); padding: 26px 0 40px; color: var(--muted); font-size: .9rem; }
+
+    @media (max-width: 820px) {
+      .metrics, .proof-grid { grid-template-columns: repeat(2, 1fr); }
+      .architecture, .ticket-grid { grid-template-columns: 1fr; }
+      .architecture .core, .architecture .tests { grid-column: auto; }
+    }
+    @media (max-width: 520px) {
+      .wrap { width: min(100% - 24px, 1180px); }
+      header { padding-top: 44px; }
+      .metrics, .proof-grid { grid-template-columns: 1fr; }
+    }
+    @media print {
+      :root { color-scheme: light; --bg: #fff; --panel: #fff; --panel-2: #f6f7f8; --line: #ccd2d8; --text: #111827; --muted: #4b5563; --accent: #0369a1; --good: #166534; --warn: #92400e; }
+      header { padding-top: 24px; }
+      .ticket, .card, .metric { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <p class="eyebrow">Informe final · 01 agosto 2026</p>
+      <h1>Waller ya tiene una sola arquitectura.</h1>
+      <p class="lede">WinUI 3 es el producto definitivo. Tauri y el prototipo duplicado salieron del árbol activo; App, Workflows, Core y Tests tienen ownership explícito y prueba real.</p>
+      <div class="metrics" aria-label="Métricas finales">
+        <div class="metric"><strong>10/10</strong><span>tickets completados</span></div>
+        <div class="metric"><strong>517/517</strong><span>pruebas aprobadas</span></div>
+        <div class="metric"><strong>0</strong><span>warnings y errores Release</span></div>
+        <div class="metric"><strong>3/3</strong><span>monitores Apply restaurados</span></div>
+      </div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section aria-labelledby="architecture-title">
+      <p class="eyebrow">Arquitectura resultante</p>
+      <h2 id="architecture-title">Dependencias en una sola dirección</h2>
+      <div class="architecture">
+        <article class="card">
+          <span class="label">Presentación</span>
+          <h3>Waller.Native.App</h3>
+          <p>WinUI, ViewModels enfocados, composición y adapters de plataforma.</p>
+        </article>
+        <article class="card">
+          <span class="label">Casos de uso</span>
+          <h3>Waller.Native.Workflows</h3>
+          <p>ShellWorkspace, Presets, editor, Apply, Settings, datos locales y ventana; sin XAML.</p>
+        </article>
+        <article class="card core">
+          <span class="label">Dominio</span>
+          <h3>Waller.Native.Core</h3>
+          <p>Modelos, persistencia, render y contratos Windows.</p>
+        </article>
+        <article class="card tests">
+          <span class="label">Prueba</span>
+          <h3>Waller.Native.Tests</h3>
+          <p>Nueve módulos Core y siete suites directas de Workflows, sin depender de una ventana.</p>
+        </article>
+      </div>
+    </section>
+
+    <section aria-labelledby="tickets-title">
+      <p class="eyebrow">Contrato completado</p>
+      <h2 id="tickets-title">Diez mejoras, diez cierres verificables</h2>
+      <div class="ticket-grid">
+        <article class="card ticket"><h3>WinUI definitivo</h3><p>Raíz, comandos, CI, release y documentación apuntan a WinUI. Tauri y el prototipo quedan solo en Git.</p><div class="proof">470 pruebas iniciales + Release x64</div></article>
+        <article class="card ticket"><h3>Workflows y ShellWorkspace</h3><p>Active Session, modales y lease Apply tienen un dueño único fuera de XAML.</p><div class="proof">8 transiciones públicas</div></article>
+        <article class="card ticket"><h3>Composición única</h3><p>WallerAppComposition comparte un grafo entre ventana, página y adapters; desaparecen los globals.</p><div class="proof">Guarda + packaged launch</div></article>
+        <article class="card ticket"><h3>Datos locales tipados</h3><p>LocalDataLayout separa JSON privado de rendered PNGs accesibles por Windows Shell.</p><div class="proof">9 escenarios + roundtrip</div></article>
+        <article class="card ticket"><h3>Settings serializado</h3><p>UserSettingsWorkflow aplica FIFO y evita que theme, idioma, Preset y geometría se pisen.</p><div class="proof">6 escenarios + single-writer</div></article>
+        <article class="card ticket"><h3>Lifecycle observable</h3><p>La geometría se restaura antes de activar y el cierre guarda una vez, destruye y termina.</p><div class="proof">5 escenarios + runtime</div></article>
+        <article class="card ticket"><h3>Presets enfocados</h3><p>PresetWorkflow y PresetsViewModel poseen catálogo, selección y mutaciones.</p><div class="proof">5 escenarios + surface smoke</div></article>
+        <article class="card ticket"><h3>Editor enfocado</h3><p>MonitorEditorWorkflow y su ViewModel poseen edición, validación, Forget y Reassign.</p><div class="proof">7 escenarios + editor 4/4</div></article>
+        <article class="card ticket"><h3>Apply enfocado</h3><p>ApplyWorkflow y ApplyViewModel separan ejecución técnica, cancelación, lease y copy localizado.</p><div class="proof">7 escenarios + Apply 3/3</div></article>
+        <article class="card ticket"><h3>Prueba por ownership</h3><p>El monolito Core se divide por dominio; los guardas verifican fronteras y no snippets reemplazados.</p><div class="proof">517/517 + gate completo</div></article>
+      </div>
+    </section>
+
+    <section aria-labelledby="proof-title">
+      <p class="eyebrow">Evidencia final</p>
+      <h2 id="proof-title">Producto empaquetado, no solo análisis estático</h2>
+      <pre><code>powershell -ExecutionPolicy Bypass -File .\scripts\Invoke-Native.ps1 `
+  -Task Verify -SurfaceSmoke -SettingsRoundTrip -ApplySmoke `
+  -ReleaseBuild -DisableNuGetAudit -Platform x64</code></pre>
+      <div class="proof-grid">
+        <article class="card proof-card"><strong>Build y tests</strong><span>Debug y Release x64 con 0 warnings/errors; 517 passed, 0 failed, 0 skipped.</span></article>
+        <article class="card proof-card"><strong>Lifecycle</strong><span>Restore, close-save, destroy y proceso terminado.</span></article>
+        <article class="card proof-card"><strong>UI Automation</strong><span>Shell 5/5, editor 4/4, Settings 5/5, Save As 3/3, Manage 6/6.</span></article>
+        <article class="card proof-card"><strong>Settings</strong><span>Theme=1 y Language=es persistidos y archivo previo restaurado.</span></article>
+        <article class="card proof-card"><strong>Apply real</strong><span>3 succeeded, 0 failed, 3 PNGs y 3 fondos restaurados.</span></article>
+        <article class="card proof-card"><strong>Guardas</strong><span>XAML, localización, composición, workflows, Core, package, firma y seguridad.</span></article>
+      </div>
+    </section>
+
+    <section aria-labelledby="cleanup-title">
+      <p class="eyebrow">Limpieza</p>
+      <h2 id="cleanup-title">Lo duplicado salió del camino activo</h2>
+      <ul>
+        <li>Retirados <code>src/</code>, <code>src-tauri/</code>, manifests Node/Rust y automatización Tauri.</li>
+        <li>Retirado <code>prototypes/winui-native/</code>; <code>native/</code> es la única solución.</li>
+        <li>Retirados partials y helpers raíz sustituidos por workflows y child ViewModels.</li>
+        <li><code>SampleMonitorDetector</code> vive solo en Tests.</li>
+        <li>No se migraron ni borraron Presets, Settings o wallpapers del usuario.</li>
+      </ul>
+    </section>
+
+    <section aria-labelledby="risk-title">
+      <div class="risk">
+        <p class="eyebrow">Riesgo residual</p>
+        <h2 id="risk-title">Gates externos todavía pendientes</h2>
+        <p>No se ejecutaron publicación en Store, firma de producción, instalación/actualización en máquina limpia ni runtime ARM64. La verificación local cubrió x64; las guardas de package y firma no sustituyen esos gates.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap">SPEC-WALLER-WINUI-DEFINITIVE · ARC-01—ARC-10 completados · Sin commit, push o PR.</div>
+  </footer>
+</body>
+</html>

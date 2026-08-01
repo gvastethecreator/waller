@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Page
+    x:Class="Waller.Native.App.MainPage"
+    x:Name="PageRoot"
+    RequestedTheme="{x:Bind ViewModel.RequestedTheme, Mode=OneWay}"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Waller.Native.App.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+
+    <Grid
+        RowSpacing="0"
+        Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <controls:ShellHeader
+            Apply="{x:Bind ViewModel.Apply, Mode=OneWay}"
+            Presets="{x:Bind ViewModel.Presets, Mode=OneWay}"
+            ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
+
+        <controls:MonitorWorkspace
+            Grid.Row="1"
+            ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
+
+        <controls:StatusFooter
+            Grid.Row="2"
+            Apply="{x:Bind ViewModel.Apply, Mode=OneWay}"
+            ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
+
+        <controls:SaveAsModal
+            x:Name="SaveAsModal"
+            Grid.RowSpan="3"
+            ViewModel="{x:Bind ViewModel.Presets, Mode=OneWay}" />
+
+        <controls:ManagePresetsModal
+            x:Name="ManagePresetsModal"
+            Grid.RowSpan="3"
+            ViewModel="{x:Bind ViewModel.Presets, Mode=OneWay}" />
+
+        <controls:SettingsModal
+            x:Name="SettingsModal"
+            Grid.RowSpan="3"
+            ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
+    </Grid>
+</Page>

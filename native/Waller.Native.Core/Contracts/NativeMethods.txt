@@ -1,0 +1,18 @@
+// Future CsWin32 contract.
+// Current code uses manual IDesktopWallpaper COM interop so development can
+// continue without package restore/network access.
+
+IDesktopWallpaper
+EnumDisplayMonitors
+GetMonitorInfo
+GetSystemMetrics
+GetDpiForWindow
+GetDpiForMonitor
+MonitorFromWindow
+RECT
+MONITORINFO
+MONITORINFOEX
+SM_XVIRTUALSCREEN
+SM_YVIRTUALSCREEN
+SM_CXVIRTUALSCREEN
+SM_CYVIRTUALSCREEN

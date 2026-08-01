@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<UserControl
+    x:Class="Waller.Native.App.Controls.MonitorRow"
+    x:Name="Root"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Waller.Native.App.Controls">
+
+    <Border
+        Margin="0,0,0,8"
+        Padding="12"
+        CornerRadius="{ThemeResource OverlayCornerRadius}"
+        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+        BorderThickness="1"
+        Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+        AutomationProperties.Name="{Binding Row.DisplayName, ElementName=Root}">
+        <Grid ColumnSpacing="12">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="112" />
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+
+            <controls:SourcePreview
+                PreviewBrush="{Binding Row.SourcePreviewBrush, ElementName=Root}"
+                PreviewImageBrush="{Binding Row.SourcePreviewImageBrush, ElementName=Root}"
+                PreviewImageVisibility="{Binding Row.SourcePreviewImageVisibility, ElementName=Root}"
+                PreviewText="{Binding Row.SourceSummary, ElementName=Root}"
+                PreviewTextVisibility="{Binding Row.SourcePreviewTextVisibility, ElementName=Root}"
+                AutomationProperties.Name="{Binding Row.SourceSummary, ElementName=Root}" />
+
+            <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+            <TextBlock
+                Text="{Binding Row.DisplayName, ElementName=Root}"
+                TextTrimming="CharacterEllipsis"
+                ToolTipService.ToolTip="{Binding Row.DisplayName, ElementName=Root}"
+                Style="{StaticResource BodyStrongTextBlockStyle}" />
+            <TextBlock
+                Text="{Binding Row.Resolution, ElementName=Root}"
+                TextTrimming="CharacterEllipsis"
+                ToolTipService.ToolTip="{Binding Row.Resolution, ElementName=Root}"
+                Style="{StaticResource CaptionTextBlockStyle}" />
+            <TextBlock
+                Text="{Binding Row.PlacementSummary, ElementName=Root}"
+                TextTrimming="CharacterEllipsis"
+                ToolTipService.ToolTip="{Binding Row.PlacementSummary, ElementName=Root}"
+                Style="{StaticResource CaptionTextBlockStyle}" />
+            <TextBlock
+                Text="{Binding Row.StatusSummary, ElementName=Root}"
+                TextTrimming="CharacterEllipsis"
+                ToolTipService.ToolTip="{Binding Row.StatusSummary, ElementName=Root}"
+                Style="{StaticResource CaptionTextBlockStyle}" />
+            </StackPanel>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+            <Button
+                Command="{Binding EditCommand, ElementName=Root}"
+                CommandParameter="{Binding Row, ElementName=Root}"
+                AutomationProperties.AutomationId="MonitorEditButton"
+                AutomationProperties.Name="{Binding Row.EditAccessibleName, ElementName=Root}"
+                ToolTipService.ToolTip="{Binding EditText, ElementName=Root}">
+                <controls:IconText Glyph="&#xE70F;" Text="{Binding EditText, ElementName=Root}" />
+            </Button>
+            <Button
+                Command="{Binding ApplyCommand, ElementName=Root}"
+                CommandParameter="{Binding Row, ElementName=Root}"
+                AutomationProperties.AutomationId="MonitorApplyButton"
+                AutomationProperties.Name="{Binding Row.ApplyAccessibleName, ElementName=Root}"
+                IsEnabled="{Binding CanApply, ElementName=Root}"
+                ToolTipService.ToolTip="{Binding ApplyText, ElementName=Root}">
+                <controls:IconText Glyph="&#xE73E;" Text="{Binding ApplyText, ElementName=Root}" />
+            </Button>
+            </StackPanel>
+        </Grid>
+    </Border>
+</UserControl>

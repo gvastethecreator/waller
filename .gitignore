@@ -1,36 +1,47 @@
-# Node/Bun
-node_modules/
-.vite/
-dist/
-coverage/
+# .NET / Visual Studio
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+.vs/
+*.user
+*.suo
+*.binlog
 
-# Bun lockfile should be versioned (do not ignore bun.lock)
+# MSIX / publish output
+AppPackages/
+BundleArtifacts/
+publish/
+artifacts/
+*.msix
+*.msixupload
+*.appx
+*.appxbundle
+*.appxupload
+*.pfx
+*.cer
 
-# Rust/Tauri build artifacts
-src-tauri/target/
-src-tauri/gen/schemas/*.tmp
+# Test output
+[Tt]est[Rr]esult*/
+*.trx
+*.coverage
+*.coveragexml
 
-# VS Code: keep project-level tasks.json, ignore personal settings.json
-.vscode/*.code-workspace
-.vscode/settings.json
-src/.vscode/settings.json
+# Workspace-local toolchains
+.scratch/toolchains/
 
 # OS / editor files
+.vscode/*.code-workspace
+.vscode/settings.json
 .DS_Store
 Thumbs.db
 *.log
 *.swp
 *~
 
-# Optional local env files
+# Optional local environment files
 .env
 .env.local
 
-# Temporary working files
-tmp/
-
-# Generated coverage reports
-src/coverage/
-
-# Local agent skill libraries (not part of the project)
+# Local agent libraries
 .agents/
