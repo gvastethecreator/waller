@@ -8,7 +8,7 @@ public sealed partial class EditPanel : UserControl
 {
     public static readonly DependencyProperty ViewModelProperty = DependencyProperty.Register(
         nameof(ViewModel),
-        typeof(MainPageViewModel),
+        typeof(MonitorEditorViewModel),
         typeof(EditPanel),
         new PropertyMetadata(null));
 
@@ -17,9 +17,9 @@ public sealed partial class EditPanel : UserControl
         InitializeComponent();
     }
 
-    public MainPageViewModel? ViewModel
+    public MonitorEditorViewModel? ViewModel
     {
-        get => (MainPageViewModel?)GetValue(ViewModelProperty);
+        get => (MonitorEditorViewModel?)GetValue(ViewModelProperty);
         set => SetValue(ViewModelProperty, value);
     }
 }

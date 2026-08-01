@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.Input;
+using Waller.Native.Workflows.Shell;
 
 namespace Waller.Native.App.ViewModels;
 
@@ -12,14 +13,16 @@ public sealed partial class MainPageViewModel
             return;
         }
 
-        IsSettingsOpen = true;
-        StatusText = shellText.SettingsOpened;
+        if (TryOpenModal(ShellModal.Settings))
+        {
+            StatusText = shellText.SettingsOpened;
+        }
     }
 
     [RelayCommand]
     private void CloseSettings()
     {
-        IsSettingsOpen = false;
+        TryCloseModal(ShellModal.Settings);
     }
 
     [RelayCommand]
@@ -33,12 +36,12 @@ public sealed partial class MainPageViewModel
         var request = SettingsSaveRequest.FromSelection(
             SelectedThemePreference,
             SelectedLanguage,
-            SelectedPreset);
+            Presets.SelectedPreset);
         var result = await localState.SaveSettingsAsync(request);
         StatusText = result.StatusText(shellText);
         if (result.TryGetSavedLastSelectedPresetId(out var savedLastSelectedPresetId))
         {
-            lastSelectedPresetId = savedLastSelectedPresetId;
+            Presets.SetLastSelectedPresetId(savedLastSelectedPresetId);
         }
     }
 
@@ -59,7 +62,7 @@ public sealed partial class MainPageViewModel
         var draft = await localState.LoadSettingsDraftAsync();
         SelectedThemePreference = draft.Theme;
         SelectedLanguage = draft.Language;
-        lastSelectedPresetId = draft.LastSelectedPresetId;
+        Presets.SetLastSelectedPresetId(draft.LastSelectedPresetId);
     }
 
     private void RefreshSettingOptions()

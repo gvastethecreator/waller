@@ -5,6 +5,18 @@ namespace Waller.Native.App.Platform;
 
 public sealed class ImageFilePicker : IImageFilePicker
 {
+    private readonly nint ownerWindowHandle;
+
+    public ImageFilePicker(nint ownerWindowHandle)
+    {
+        if (ownerWindowHandle == 0)
+        {
+            throw new ArgumentOutOfRangeException(nameof(ownerWindowHandle));
+        }
+
+        this.ownerWindowHandle = ownerWindowHandle;
+    }
+
     public async Task<string?> PickImagePathAsync(CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();
@@ -20,7 +32,7 @@ public sealed class ImageFilePicker : IImageFilePicker
             picker.FileTypeFilter.Add(extension);
         }
 
-        WinRT.Interop.InitializeWithWindow.Initialize(picker, App.WindowHandle);
+        WinRT.Interop.InitializeWithWindow.Initialize(picker, ownerWindowHandle);
 
         var file = await picker.PickSingleFileAsync();
         return file?.Path;

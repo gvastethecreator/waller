@@ -8,7 +8,7 @@ public sealed partial class SaveAsModal : UserControl
 {
     public static readonly DependencyProperty ViewModelProperty = DependencyProperty.Register(
         nameof(ViewModel),
-        typeof(MainPageViewModel),
+        typeof(PresetsViewModel),
         typeof(SaveAsModal),
         new PropertyMetadata(null));
 
@@ -17,9 +17,9 @@ public sealed partial class SaveAsModal : UserControl
         InitializeComponent();
     }
 
-    public MainPageViewModel? ViewModel
+    public PresetsViewModel? ViewModel
     {
-        get => (MainPageViewModel?)GetValue(ViewModelProperty);
+        get => (PresetsViewModel?)GetValue(ViewModelProperty);
         set => SetValue(ViewModelProperty, value);
     }
 

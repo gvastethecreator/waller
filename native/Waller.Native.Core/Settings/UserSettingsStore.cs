@@ -27,6 +27,28 @@ public sealed class UserSettingsStore(string rootDirectory)
         }
     }
 
+    public async Task<UserSettings> LoadForUpdateAsync(CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+
+        try
+        {
+            var settings = await LocalJsonFile.ReadAsync(
+                settingsPath,
+                WallerJsonContext.Default.UserSettings,
+                cancellationToken);
+            return UserSettingsPolicy.Normalize(settings ?? UserSettings.Default);
+        }
+        catch (FileNotFoundException)
+        {
+            return UserSettings.Default;
+        }
+        catch (DirectoryNotFoundException)
+        {
+            return UserSettings.Default;
+        }
+    }
+
     public async Task SaveAsync(UserSettings settings, CancellationToken cancellationToken = default)
     {
         cancellationToken.ThrowIfCancellationRequested();

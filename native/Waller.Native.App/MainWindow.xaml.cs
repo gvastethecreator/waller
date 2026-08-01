@@ -1,7 +1,8 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Windowing;
-using Waller.Native.App.Platform;
 using Waller.Native.Core.Settings;
+using Waller.Native.Workflows.Settings;
+using Waller.Native.Workflows.Windowing;
 using Windows.Graphics;
 using Windows.UI;
 
@@ -17,10 +18,14 @@ namespace Waller.Native.App;
 /// </summary>
 public sealed partial class MainWindow : Window
 {
-    private readonly UserSettingsStore settingsStore = WallerLocalDataStores.CreateDefault().Settings;
+    private readonly WindowPlacementWorkflow windowPlacement;
+    private Task? closeTask;
+    private bool destroyRequested;
 
-    public MainWindow()
+    internal MainWindow(WindowPlacementWorkflow windowPlacement)
     {
+        ArgumentNullException.ThrowIfNull(windowPlacement);
+        this.windowPlacement = windowPlacement;
         InitializeComponent();
 
         ExtendsContentIntoTitleBar = true;
@@ -28,21 +33,18 @@ public sealed partial class MainWindow : Window
 
         AppWindow.SetIcon("Assets/AppIcon.ico");
 
-        // Navigate the root frame to the main page on startup.
-        RootFrame.Navigated += OnRootFrameNavigated;
-        RootFrame.Navigate(typeof(MainPage));
-
-        _ = RestoreWindowPlacementAsync();
-        Closed += async (_, _) => await SaveWindowPlacementAsync();
+        AppWindow.Closing += OnAppWindowClosing;
     }
 
-    private void OnRootFrameNavigated(object sender, Microsoft.UI.Xaml.Navigation.NavigationEventArgs args)
+    internal void Attach(MainPage page)
     {
-        if (RootFrame.Content is not MainPage page)
+        ArgumentNullException.ThrowIfNull(page);
+        if (RootFrame.Content is not null)
         {
-            return;
+            throw new InvalidOperationException("MainWindow content is already attached.");
         }
 
+        RootFrame.Content = page;
         page.RequestedThemeChanged += OnRequestedThemeChanged;
         ApplyWindowTheme(page.ViewModel.RequestedTheme);
     }
@@ -79,44 +81,43 @@ public sealed partial class MainWindow : Window
         titleBar.ButtonPressedForegroundColor = foreground;
     }
 
-    private async Task RestoreWindowPlacementAsync()
+    internal async Task RestorePlacementAsync(CancellationToken cancellationToken = default)
     {
-        try
-        {
-            var settings = await settingsStore.LoadAsync();
-            var workArea = DisplayArea
-                .GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary)
-                .WorkArea;
-            var placement = WindowPlacementPolicy.Resolve(
-                settings,
-                workArea.X,
-                workArea.Y,
-                workArea.Width,
-                workArea.Height);
+        var workArea = DisplayArea
+            .GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Primary)
+            .WorkArea;
+        var placement = await windowPlacement.RestoreAsync(
+            new WindowWorkArea(workArea.X, workArea.Y, workArea.Width, workArea.Height),
+            cancellationToken);
 
-            AppWindow.Resize(new SizeInt32(placement.Width, placement.Height));
-            AppWindow.Move(new PointInt32(placement.X, placement.Y));
-        }
-        catch (Exception error) when (LocalDataErrorPolicy.IsRecoverableWindowPlacement(error))
-        {
-        }
+        AppWindow.Resize(new SizeInt32(placement.Width, placement.Height));
+        AppWindow.Move(new PointInt32(placement.X, placement.Y));
     }
 
-    private async Task SaveWindowPlacementAsync()
+    private async void OnAppWindowClosing(AppWindow sender, AppWindowClosingEventArgs args)
     {
-        try
+        if (destroyRequested)
         {
-            var settings = await settingsStore.LoadAsync();
-            var position = AppWindow.Position;
-            var size = AppWindow.Size;
-            await settingsStore.SaveAsync(settings.WithWindowPlacement(
-                size.Width,
-                size.Height,
-                position.X,
-                position.Y));
+            return;
         }
-        catch (Exception error) when (LocalDataErrorPolicy.IsRecoverableWindowPlacement(error))
+
+        args.Cancel = true;
+        closeTask ??= SavePlacementAndDestroyAsync();
+        await closeTask;
+    }
+
+    private async Task SavePlacementAndDestroyAsync()
+    {
+        var position = AppWindow.Position;
+        var size = AppWindow.Size;
+        var result = await windowPlacement.SaveAsync(
+            new WindowPlacement(size.Width, size.Height, position.X, position.Y));
+
+        if (result.Succeeded || result.Error == UserSettingsUpdateError.LocalStorageUnavailable)
         {
+            destroyRequested = true;
+            AppWindow.Destroy();
+            Application.Current.Exit();
         }
     }
 }

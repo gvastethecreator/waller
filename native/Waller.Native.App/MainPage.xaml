@@ -19,7 +19,10 @@
             <RowDefinition Height="Auto" />
         </Grid.RowDefinitions>
 
-        <controls:ShellHeader ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
+        <controls:ShellHeader
+            Apply="{x:Bind ViewModel.Apply, Mode=OneWay}"
+            Presets="{x:Bind ViewModel.Presets, Mode=OneWay}"
+            ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
 
         <controls:MonitorWorkspace
             Grid.Row="1"
@@ -27,17 +30,18 @@
 
         <controls:StatusFooter
             Grid.Row="2"
+            Apply="{x:Bind ViewModel.Apply, Mode=OneWay}"
             ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
 
         <controls:SaveAsModal
             x:Name="SaveAsModal"
             Grid.RowSpan="3"
-            ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
+            ViewModel="{x:Bind ViewModel.Presets, Mode=OneWay}" />
 
         <controls:ManagePresetsModal
             x:Name="ManagePresetsModal"
             Grid.RowSpan="3"
-            ViewModel="{x:Bind ViewModel, Mode=OneWay}" />
+            ViewModel="{x:Bind ViewModel.Presets, Mode=OneWay}" />
 
         <controls:SettingsModal
             x:Name="SettingsModal"

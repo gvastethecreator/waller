@@ -311,7 +311,7 @@
                             <NumberBox
                                 AutomationProperties.AutomationId="OffsetXNumberBox"
                                 AutomationProperties.Name="{Binding ViewModel.Text.PositionX, ElementName=Root}"
-                                Header="X"
+                                Header="{Binding ViewModel.Text.PositionX, ElementName=Root}"
                                 IsEnabled="{Binding ViewModel.CanEditPlacement, ElementName=Root}"
                                 LargeChange="25"
                                 Maximum="100"
@@ -325,7 +325,7 @@
                                 Grid.Column="1"
                                 AutomationProperties.AutomationId="OffsetYNumberBox"
                                 AutomationProperties.Name="{Binding ViewModel.Text.PositionY, ElementName=Root}"
-                                Header="Y"
+                                Header="{Binding ViewModel.Text.PositionY, ElementName=Root}"
                                 IsEnabled="{Binding ViewModel.CanEditPlacement, ElementName=Root}"
                                 LargeChange="25"
                                 Maximum="100"

@@ -15,14 +15,17 @@ namespace Waller.Native.App;
 /// </summary>
 public sealed partial class MainPage : Page
 {
-    public MainPageViewModel ViewModel { get; } = new();
+    public MainPageViewModel ViewModel { get; }
 
     internal event Action<ElementTheme>? RequestedThemeChanged;
 
-    public MainPage()
+    internal MainPage(MainPageViewModel viewModel)
     {
+        ArgumentNullException.ThrowIfNull(viewModel);
+        ViewModel = viewModel;
         InitializeComponent();
         ViewModel.PropertyChanged += OnViewModelPropertyChanged;
+        ViewModel.Presets.PropertyChanged += OnPresetsPropertyChanged;
         KeyDown += OnKeyDown;
         Loaded += OnLoaded;
     }
@@ -57,16 +60,23 @@ public sealed partial class MainPage : Page
             case nameof(ViewModel.RequestedTheme):
                 RequestedThemeChanged?.Invoke(ViewModel.RequestedTheme);
                 break;
-            case nameof(ViewModel.ManagePresetsVisibility) when ViewModel.IsManagePresetsOpen:
-                FocusWhenReady(ManagePresetsModal.FocusPresetList);
-                break;
-            case nameof(ViewModel.SaveAsVisibility) when ViewModel.IsSaveAsOpen:
-                FocusWhenReady(SaveAsModal.FocusPresetName);
-                break;
             case nameof(ViewModel.SettingsVisibility) when ViewModel.IsSettingsOpen:
                 FocusWhenReady(SettingsModal.FocusTheme);
                 break;
-            case nameof(ViewModel.DeleteConfirmationVisibility) when ViewModel.IsDeleteConfirmationOpen:
+        }
+    }
+
+    private void OnPresetsPropertyChanged(object? sender, PropertyChangedEventArgs args)
+    {
+        switch (args.PropertyName)
+        {
+            case nameof(PresetsViewModel.ManagePresetsVisibility) when ViewModel.Presets.IsManagePresetsOpen:
+                FocusWhenReady(ManagePresetsModal.FocusPresetList);
+                break;
+            case nameof(PresetsViewModel.SaveAsVisibility) when ViewModel.Presets.IsSaveAsOpen:
+                FocusWhenReady(SaveAsModal.FocusPresetName);
+                break;
+            case nameof(PresetsViewModel.DeleteConfirmationVisibility) when ViewModel.Presets.IsDeleteConfirmationOpen:
                 FocusWhenReady(ManagePresetsModal.FocusConfirmDelete);
                 break;
         }

@@ -38,7 +38,7 @@
                             AutomationProperties.Name="{Binding ViewModel.Text.Monitors, ElementName=Root}"
                             ContainerContentChanging="OnMonitorListContainerContentChanging"
                             ItemsSource="{Binding ViewModel.Monitors, ElementName=Root}"
-                            SelectedItem="{Binding ViewModel.SelectedMonitor, ElementName=Root, Mode=TwoWay}"
+                            SelectedItem="{Binding ViewModel.Editor.SelectedMonitor, ElementName=Root, Mode=TwoWay}"
                             SelectionMode="Single">
                             <ListView.ItemContainerStyle>
                                 <Style TargetType="ListViewItem">
@@ -118,9 +118,9 @@
                                     <DataTemplate x:DataType="vm:MissingMonitorRowViewModel">
                                         <controls:MissingMonitorRow
                                             Row="{Binding}"
-                                            ReassignCommand="{Binding ViewModel.ReassignMissingMonitorCommand, ElementName=Root}"
-                                            ForgetCommand="{Binding ViewModel.ForgetMissingMonitorCommand, ElementName=Root}"
-                                            CanEdit="{Binding ViewModel.CanEditMonitorAssignment, ElementName=Root}"
+                                            ReassignCommand="{Binding ViewModel.Editor.ReassignMissingMonitorCommand, ElementName=Root}"
+                                            ForgetCommand="{Binding ViewModel.Editor.ForgetMissingMonitorCommand, ElementName=Root}"
+                                            CanEdit="{Binding ViewModel.Editor.CanEditMonitorAssignment, ElementName=Root}"
                                             ReassignText="{Binding ViewModel.Text.Reassign, ElementName=Root}"
                                             ForgetText="{Binding ViewModel.Text.Forget, ElementName=Root}" />
                                     </DataTemplate>
@@ -155,7 +155,7 @@
                 Margin="16,0,16,16"
                 VerticalScrollBarVisibility="Auto"
                 VerticalScrollMode="Auto">
-                <controls:EditPanel ViewModel="{Binding ViewModel, ElementName=Root}" />
+                <controls:EditPanel ViewModel="{Binding ViewModel.Editor, ElementName=Root}" />
             </ScrollViewer>
         </Grid>
     </Grid>

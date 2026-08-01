@@ -1,18 +1,8 @@
-using CommunityToolkit.Mvvm.ComponentModel;
+using Waller.Native.Workflows.Shell;
 
 namespace Waller.Native.App.ViewModels;
 
 public sealed partial class MainPageViewModel
 {
-    [ObservableProperty]
-    public partial bool IsSaveAsOpen { get; set; }
-
-    [ObservableProperty]
-    public partial bool IsManagePresetsOpen { get; set; }
-
-    [ObservableProperty]
-    public partial bool IsDeleteConfirmationOpen { get; set; }
-
-    [ObservableProperty]
-    public partial bool IsSettingsOpen { get; set; }
+    public bool IsSettingsOpen => workspace.IsModalOpen(ShellModal.Settings);
 }

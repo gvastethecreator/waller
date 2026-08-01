@@ -38,29 +38,29 @@
                 HorizontalAlignment="Right"
                 Orientation="Horizontal"
                 Spacing="8"
-                Visibility="{Binding ViewModel.ApplyProgressVisibility, ElementName=Root}">
+                Visibility="{Binding Apply.ProgressVisibility, ElementName=Root}">
                 <ProgressRing
                     Width="20"
                     Height="20"
                     AutomationProperties.AutomationId="ApplyProgressRing"
-                    AutomationProperties.Name="{Binding ViewModel.ApplyProgressText, ElementName=Root}"
-                    IsActive="{Binding ViewModel.IsApplying, ElementName=Root}" />
+                    AutomationProperties.Name="{Binding Apply.ProgressText, ElementName=Root}"
+                    IsActive="{Binding Apply.IsApplying, ElementName=Root}" />
                 <TextBlock
                     MaxWidth="360"
                     VerticalAlignment="Center"
                     AutomationProperties.AutomationId="ApplyProgressText"
-                    AutomationProperties.Name="{Binding ViewModel.ApplyProgressText, ElementName=Root}"
+                    AutomationProperties.Name="{Binding Apply.ProgressText, ElementName=Root}"
                     AutomationProperties.LiveSetting="Polite"
-                    Text="{Binding ViewModel.ApplyProgressText, ElementName=Root}"
+                    Text="{Binding Apply.ProgressText, ElementName=Root}"
                     TextTrimming="CharacterEllipsis"
-                    ToolTipService.ToolTip="{Binding ViewModel.ApplyProgressText, ElementName=Root}" />
+                    ToolTipService.ToolTip="{Binding Apply.ProgressText, ElementName=Root}" />
                 <Button
-                    Command="{Binding ViewModel.CancelApplyCommand, ElementName=Root}"
+                    Command="{Binding Apply.CancelApplyCommand, ElementName=Root}"
                     AutomationProperties.AutomationId="CancelApplyButton"
-                    AutomationProperties.Name="{Binding ViewModel.Text.CancelApply, ElementName=Root}"
-                    IsEnabled="{Binding ViewModel.IsApplying, ElementName=Root}"
-                    ToolTipService.ToolTip="{Binding ViewModel.Text.CancelApply, ElementName=Root}">
-                    <controls:IconText Glyph="&#xE711;" Text="{Binding ViewModel.Text.CancelApply, ElementName=Root}" />
+                    AutomationProperties.Name="{Binding Apply.Text.CancelApply, ElementName=Root}"
+                    IsEnabled="{Binding Apply.IsApplying, ElementName=Root}"
+                    ToolTipService.ToolTip="{Binding Apply.Text.CancelApply, ElementName=Root}">
+                    <controls:IconText Glyph="&#xE711;" Text="{Binding Apply.Text.CancelApply, ElementName=Root}" />
                 </Button>
             </StackPanel>
         </Grid>

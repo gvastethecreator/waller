@@ -1,10 +1,10 @@
 # Waller Native
 
-Fresh WinUI 3 / .NET implementation of Waller.
+Definitive WinUI 3 / .NET implementation of Waller.
 
-This folder is intentionally separate from the current Tauri app. The goal is
-to build the new native Windows app from zero while using the existing Waller
-codebase as behavior reference.
+The repository root provides the supported bootstrap, run, verification, and
+release entry points. This folder owns the native solution and its detailed
+operational scripts.
 
 ## Current Status
 
@@ -13,6 +13,7 @@ Implemented now:
 - `Waller.Native.slnx` solution.
 - `Waller.Native.App` WinUI packaged app.
 - `Waller.Native.Core` Windows-only domain/core project.
+- `Waller.Native.Workflows` XAML-free application workflow project.
 - `Waller.Native.Tests` xUnit project.
 - Minimal Fluent shell:
   - header with Preset dropdown and commands
@@ -20,7 +21,8 @@ Implemented now:
   - monitor list
   - right-side monitor edit panel
   - status bar
-- In-memory Active Session flow using sample monitor data.
+- Active Session initialized from the real Windows desktop. Deterministic sample
+  monitors exist only in the Tests fixture assembly.
 - Real Windows monitor/current wallpaper detection through `IDesktopWallpaper`.
 - Windows detection COM reads stay behind an internal reader adapter so monitor
   mapping can be tested without querying Windows.
@@ -62,9 +64,8 @@ Implemented now:
 - Preset dropdown backed by local JSON.
 - Save / Save as for local Presets.
 - Manage Presets modal with rename, duplicate, and delete confirmation.
-- Preset save/load/selection command flow lives in focused
-  `MainPageViewModel.Presets.*.cs` partials, while Manage Presets modal flow
-  lives in focused `MainPageViewModel.PresetManagement.*.cs` partials.
+- `PresetWorkflow` owns catalog, selection, save, rename, duplicate, and delete;
+  `PresetsViewModel` owns the complete Preset UI surface.
 - Delete confirmation freezes Manage Presets mutation controls so the selected
   target cannot change behind Confirm delete.
 - Delete confirmation captures the target Preset and names it in the warning.
@@ -78,11 +79,9 @@ Implemented now:
 - Settings app-data actions are disabled/ignored while Apply runs.
 - Apply progress indicator.
 - Cancel Apply command while Apply is running.
-- Apply commands, progress, cancellation, and run-state UI projection live in
-  `MainPageViewModel.Apply.cs`, keeping Apply-only orchestration grouped.
-- Apply cancellation token lifetime is isolated in a small view-model helper.
-- Apply status/progress/result text projection is isolated in a small
-  view-model helper.
+- `ApplyWorkflow` owns execution, cancellation, the exclusive shell lease, and
+  typed technical outcomes. `ApplyViewModel` owns localized Apply commands,
+  progress, and result projection.
 - Workflow result status text validation goes through `WorkflowStatusText`, so
   Apply, image-pick, and disconnected-monitor result DTOs share the same
   non-blank status contract.
@@ -124,9 +123,8 @@ Implemented now:
   XAML.
 - Image picker display names trim through one App helper before source-selection
   status text consumes them.
-- Editor source, placement, selection, assignment, option refresh, and
-  disconnected-monitor command flow lives in focused
-  `MainPageViewModel.Editor.*.cs` partials.
+- `MonitorEditorWorkflow` owns validated monitor edits, Forget, and Reassign;
+  `MonitorEditorViewModel` owns editor state, commands, and change hooks.
 - Editor draft source reconstruction rejects unsupported source-kind enum values
   instead of turning invalid edit state into Empty.
 - Shell/session/settings/cache status text projection is isolated in a small
@@ -175,28 +173,15 @@ Implemented now:
   the OS current culture.
 - Localized text presenters share one validated text-source helper, so null
   presenter providers fail before status/progress projection reaches commands.
-- Main view-model dependent-property groups are centralized in
-  `ViewModelNotificationGroups` before further modal/editor splits.
+- Remaining root dependent-property groups are centralized in
+  `ViewModelNotificationGroups`.
 - Shell initialization, current-session refresh, row/session refresh, modal
   close dispatch, and notification helpers live in
   `MainPageViewModel.Shell.cs`.
-- Main-page derived UI projections live in focused
-  `MainPageViewModel.Surface.*.cs` partials for editor, modals, monitor
-  workspace, Presets, Settings, and shell.
-- Main-page observable collections and `[ObservableProperty]` state live in
-  focused `MainPageViewModel.State.*.cs` partials for Apply, editor, modals,
-  monitor workspace, Presets, and Settings.
-- Source-generated property-change hooks live in focused
-  `MainPageViewModel.Changes.*.cs` partials for Apply, editor, modals, Presets,
-  and Settings.
-- Editor source picking/color commands live in
-  `MainPageViewModel.Editor.Source.cs`; placement reset/offset helpers,
-  monitor selection/hydration, assignment writes, option selection, and
-  disconnected-monitor edits live in focused `MainPageViewModel.Editor.*.cs`
-  partials.
-- Manage Presets modal commands live in focused
-  `MainPageViewModel.PresetManagement.*.cs` partials, separate from save/load
-  Preset flow.
+- Root surface/state partials now cover shell, monitor workspace, modals, and
+  Settings only. Apply, Presets, and monitor editing are child ViewModels.
+- The remaining root source-generated change hooks are Settings-specific;
+  extracted child ViewModels own their own reactive state.
 - First empty-monitor state and icon-only Settings tooltip/accessibility label.
 - Disconnected monitors section for Preset assignments that do not match
   current hardware.
@@ -367,9 +352,6 @@ Waller Native is:
 
 Key product decisions live in:
 
-- `..\docs\prototypes\winui\PRODUCT_DECISIONS.md`
-- `..\docs\prototypes\winui\NATIVE_ARCHITECTURE.md`
-
 ## Solution Layout
 
 ```text
@@ -378,6 +360,7 @@ native/
   BuildAndRun.ps1
   Waller.Native.App/
   Waller.Native.Core/
+  Waller.Native.Workflows/
   Waller.Native.Tests/
   docs/
 ```
@@ -423,9 +406,19 @@ Owns:
 Core is intentionally Windows-only. This keeps the native app simple and avoids
 fake cross-platform abstractions for a Windows wallpaper tool.
 
+### Waller.Native.Workflows
+
+XAML-free use-case and shell state layer. It depends only on Core.
+
+`ShellWorkspace` owns the Active Session, the valid modal stack, and the
+exclusive cancelable Apply lease. `PresetWorkflow`, `MonitorEditorWorkflow`,
+`ApplyWorkflow`, `UserSettingsWorkflow`, and `WindowPlacementWorkflow` own their
+public use cases. App projects the state; tests exercise the same transitions
+without creating a window.
+
 ### Waller.Native.Tests
 
-Core tests.
+Core and Workflows tests.
 
 Target:
 
@@ -435,8 +428,8 @@ Target:
 - renderer math
 - settings persistence
 
-Avoid UI tests here. UI automation can be added later as a separate WinUI UI
-test slice.
+Packaged UI Automation stays in `scripts/` because it exercises the real WinUI
+package boundary rather than the in-process xUnit assembly.
 
 ## Build
 
@@ -474,8 +467,9 @@ partials, keeps placement fit/anchor/offset copy in the localized catalog
 instead of `PlacementText.cs`, and keeps concrete English/Spanish catalog
 values out of the base selector file. It also blocks unnamed language-catalog
 arguments so new localized strings are tied to explicit record fields.
-Local app-data root construction stays centralized in `WallerAppDataPaths`; the
-WinUI code guard blocks direct `LocalApplicationData` lookups elsewhere.
+`LocalDataLayout` owns the pure path policy. `WallerAppDataPaths` supplies its
+Windows environment inputs, and the WinUI code guard blocks direct
+`LocalApplicationData` lookups elsewhere.
 
 Without launch smoke:
 
@@ -682,18 +676,26 @@ Target app data root:
 %LOCALAPPDATA%\Waller
 ```
 
-Target structure:
+Target structure for private app data:
 
 ```text
 %LOCALAPPDATA%\Waller\
   presets\
-  rendered\
   settings.json
+```
+
+Rendered wallpaper cache:
+
+```text
+%USERPROFILE%\.waller\
+  rendered\
 ```
 
 Rules:
 
-- `WallerAppDataPaths` is the App-side source of truth for the root path.
+- `LocalDataLayout` is the executable source of truth for typed roots.
+- `WallerAppDataPaths` is the App-side Windows environment adapter.
+- `WallerLocalDataStores` constructs every store from one layout.
 - `WallerAppServices` owns default runtime service wiring for the WinUI app.
 - Presets are app-managed local JSON.
 - No manual JSON import/export in MVP.

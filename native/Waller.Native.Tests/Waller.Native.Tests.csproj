@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Waller.Native.Core\Waller.Native.Core.csproj" />
+    <ProjectReference Include="..\Waller.Native.Workflows\Waller.Native.Workflows.csproj" />
   </ItemGroup>
 
 </Project>

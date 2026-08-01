@@ -2,42 +2,27 @@
 
 ## Reporting a vulnerability
 
-Please do **not** open a public issue for security problems.
+Do not open a public issue for a security problem. Use [GitHub Security Advisories](https://github.com/gvastethecreator/waller/security/advisories/new) and include:
 
-Use [GitHub Security Advisories](https://github.com/gvastethecreator/waller/security/advisories/new)
-to report a vulnerability privately. Include:
-
-- Waller version (from `src-tauri/tauri.conf.json`)
+- Waller package version from `native/Waller.Native.App/Package.appxmanifest`
 - Windows build and architecture
-- Reproduction steps and impact
-- A minimal proof of concept if available
+- reproduction steps and impact
+- a minimal proof of concept when available
 
-You can expect an acknowledgement within a reasonable timeframe. We will coordinate
-a fix and a release before any public disclosure.
+## Current boundary
 
-## Security posture of the current release
+Waller is a packaged WinUI 3 desktop application with full-trust access required for Windows wallpaper integration.
 
-Waller is a Windows desktop application that uses Tauri 2, a Rust backend, and a
-React/TypeScript frontend rendered inside the system WebView. The current
-posture includes:
+- The app reads monitor data and applies wallpapers through `IDesktopWallpaper`.
+- It reads only image paths selected by the user or stored in a local Preset.
+- Presets and settings remain in package-local app data.
+- Rendered PNGs are written to `%USERPROFILE%\.waller\rendered` because the Windows shell must read them.
+- The current product has no account, telemetry, updater, remote service, embedded web runtime, or application network client.
+- JSON input, paths, enum values, package identity, and workflow status are validated at native boundaries.
+- Apply smoke restores the previous wallpapers in `finally`; ordinary verification does not alter user data.
 
-- `withGlobalTauri = false` in `src-tauri/tauri.conf.json`
-- A minimal capability set in `src-tauri/capabilities/default.json`
-- A strict Content Security Policy that only allows local resources, the IPC
-  endpoints, and the local Vite dev server during development
-- All Tauri IPC commands validate their inputs and return typed
-  `CommandError` payloads
-- Blocking native work is isolated behind `run_blocking` / `spawn_blocking`
-- No telemetry, no auto-update, no network calls outside the local dev server
+Development certificates and generated packages are ignored. Never commit `.pfx`, `.cer`, MSIX output, production signing material, secrets, or copied user data.
 
-Waller reads user-selected image paths and the monitor inventory reported by
-`IDesktopWallpaper`. It does not exfiltrate any other system data.
+## Changes that require security review
 
-## What to update if you change the security boundary
-
-- Edit `src-tauri/capabilities/default.json` only when a feature genuinely
-  requires new permissions. Keep the capability list as small as possible.
-- Edit the CSP in `src-tauri/tauri.conf.json` when a new origin or `data:`
-  source must be reachable from the WebView.
-- Re-run `bun run verify` and a manual `bun run build` after any change to
-  capabilities, the CSP, or the Tauri configuration.
+Review and document changes that add network access, new package capabilities, shell execution, new file-system roots, untrusted data parsing, update/install behavior, or production signing. Run the native verification gate and the smallest relevant packaged smoke before release handoff.
