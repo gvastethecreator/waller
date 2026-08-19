@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "product": "Waller",
+  "reservationStatus": "pending",
+  "packageIdentity": {
+    "name": null,
+    "publisher": null,
+    "publisherDisplayName": null,
+    "packageFamilyName": null,
+    "packageSid": null
+  },
+  "store": {
+    "productId": null,
+    "deepLink": null,
+    "webStoreUrl": null
+  },
+  "developmentIdentity": {
+    "name": "1EB1FFC3-B778-402F-85FA-F6C6BF1EA9A4",
+    "publisher": "CN=Waller",
+    "publisherDisplayName": "Waller"
+  },
+  "notes": [
+    "Set reservationStatus to reserved only after copying the exact identity values from Partner Center.",
+    "packageFamilyName and packageSid are derived values and must not be added to Package.appxmanifest.",
+    "Use native/scripts/SetStoreIdentity.ps1 to apply the reserved values without trailing whitespace."
+  ]
+}
