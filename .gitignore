@@ -33,8 +33,9 @@ node_modules/
 src-tauri/target/
 **/node_modules/
 
-# Workspace-local toolchains
-.scratch/toolchains/
+# Local operator storage and workspace-local toolchains
+.scratch/
+.local/
 
 # OS / editor files
 .vscode/*.code-workspace

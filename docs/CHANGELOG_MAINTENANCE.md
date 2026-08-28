@@ -1,5 +1,13 @@
 # Maintenance changelog
 
+## 2026-08-28
+
+- Ignored `.scratch/` and `.local/` as local operator storage. Untracked
+  `.scratch/planning/.gitignore` so the public tree does not carry scratch.
+- Archived completed architecture tickets and the closed 2026-08-12
+  modernization note into local `.scratch/archive/` batches. Removed empty
+  scratch directories. The local .NET SDK toolchain remains regenerable.
+
 ## 2026-08-15
 
 - Updated Windows App SDK to 2.4.0, BuildTools.WinApp to 0.6.0, Microsoft.NET.Test.Sdk to 18.9.0, and the xUnit Visual Studio runner to 4.0.0. Freshness and vulnerability checks use an isolated NuGet cache after the shared machine cache exposed an incomplete package.

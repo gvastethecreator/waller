@@ -1,4 +1,0 @@
-# Local durable agent execution state.
-# Remove this file if this repo intentionally tracks active plans.
-*
-!.gitignore
