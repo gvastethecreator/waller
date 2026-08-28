@@ -12,6 +12,8 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
+. "$PSScriptRoot\PackageManifest.ps1"
+
 $nativeRoot = Split-Path -Parent $PSScriptRoot
 $repoRoot = Split-Path -Parent $nativeRoot
 $manifestPath = Join-Path $nativeRoot 'Waller.Native.App\Package.appxmanifest'
@@ -98,7 +100,7 @@ if ($errors.Count -gt 0) {
 }
 
 $storeIdentity = Get-Content -LiteralPath $identityPath -Raw | ConvertFrom-Json
-[xml] $manifest = Get-Content -LiteralPath $manifestPath -Raw
+[xml] $manifest = Read-WallerPackageManifest -ManifestPath $manifestPath
 $manifestText = $manifest.OuterXml
 
 $ns = [System.Xml.XmlNamespaceManager]::new($manifest.NameTable)

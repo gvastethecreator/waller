@@ -4,7 +4,7 @@ Waller is a Windows-only WinUI 3 application. Keep changes aligned with the nati
 
 ## Before you start
 
-- Read [`README.md`](./README.md), [`CONTEXT.md`](./CONTEXT.md), [`docs/INDEX.md`](./docs/INDEX.md), and [`native/docs/ARCHITECTURE.md`](./native/docs/ARCHITECTURE.md).
+- Read [`README.md`](./README.md), [`CONTEXT.md`](./CONTEXT.md), [`AGENTS.md`](./AGENTS.md), [`docs/INDEX.md`](./docs/INDEX.md), and [`native/docs/ARCHITECTURE.md`](./native/docs/ARCHITECTURE.md).
 - Preserve the dependency direction `App -> Workflows -> Core`, with `App -> Core` only for UI adapters and models.
 - Keep domain models, rendering, and Windows contracts in Core; keep multi-step product use cases in Workflows.
 - Keep Windows and WinUI adapters, composition, and UI projection in App.

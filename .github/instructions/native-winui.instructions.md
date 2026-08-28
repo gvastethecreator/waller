@@ -10,6 +10,8 @@ applyTo:
 ---
 # Native WinUI rules
 
+Follow [`AGENTS.md`](../../AGENTS.md). Path-specific extras:
+
 - Keep Core independent from App, XAML, WinUI controls, and package identity.
 - Keep Workflows dependent only on Core; no XAML or WinUI types in Workflows.
 - Keep view models focused on UI projection; move multi-step product behavior behind Workflows seams.

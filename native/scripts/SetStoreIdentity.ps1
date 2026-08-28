@@ -24,6 +24,8 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
+. "$PSScriptRoot\PackageManifest.ps1"
+
 $nativeRoot = Split-Path -Parent $PSScriptRoot
 $repoRoot = Split-Path -Parent $nativeRoot
 $manifestPath = Join-Path $nativeRoot 'Waller.Native.App\Package.appxmanifest'
@@ -71,7 +73,7 @@ if ($StoreId -notmatch '^[A-Z0-9]{12}$') {
     throw "Store ID must contain 12 uppercase letters or digits: $StoreId"
 }
 
-[xml] $manifest = Get-Content -LiteralPath $manifestPath -Raw
+[xml] $manifest = Read-WallerPackageManifest -ManifestPath $manifestPath
 $namespaceManager = [System.Xml.XmlNamespaceManager]::new($manifest.NameTable)
 $namespaceManager.AddNamespace('f', 'http://schemas.microsoft.com/appx/manifest/foundation/windows10')
 $identityNode = $manifest.SelectSingleNode('/f:Package/f:Identity', $namespaceManager)

@@ -2,6 +2,13 @@
 
 ## 2026-08-28
 
+- Added `AGENTS.md` as the canonical agent file and pointed Copilot catalogs
+  at it. Reordered VS Code tasks to Run, Verify, Release, Package, deps, audit.
+- Bumped `Microsoft.Windows.SDK.BuildTools` to 10.0.28000.2705 and
+  `Microsoft.Windows.SDK.BuildTools.WinApp` to 0.6.1. No vulnerable packages
+  were reported.
+- Routed Store packaging scripts through `Read-WallerPackageManifest` so the
+  package-script guards pass.
 - Ignored `.scratch/` and `.local/` as local operator storage. Untracked
   `.scratch/planning/.gitignore` so the public tree does not carry scratch.
 - Archived completed architecture tickets and the closed 2026-08-12

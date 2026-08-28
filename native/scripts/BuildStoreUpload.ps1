@@ -26,6 +26,8 @@ param(
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
+. "$PSScriptRoot\PackageManifest.ps1"
+
 $nativeRoot = Split-Path -Parent $PSScriptRoot
 $repoRoot = Split-Path -Parent $nativeRoot
 $projectPath = Join-Path $nativeRoot 'Waller.Native.App\Waller.Native.App.csproj'
@@ -145,7 +147,7 @@ if ($LASTEXITCODE -ne 0) {
     throw 'The reserved Partner Center identity is required before building a Store upload.'
 }
 
-[xml] $manifest = Get-Content -LiteralPath $manifestPath -Raw
+[xml] $manifest = Read-WallerPackageManifest -ManifestPath $manifestPath
 $publisher = [string] $manifest.Package.Identity.Publisher
 $packageName = [string] $manifest.Package.Identity.Name
 $packageVersion = [string] $manifest.Package.Identity.Version

@@ -6,6 +6,7 @@ Waller's definitive product is the WinUI 3 solution under `native/`. This index 
 
 - [`../README.md`](../README.md) — product, setup, root commands, local data, and release gates
 - [`../CONTEXT.md`](../CONTEXT.md) — canonical product vocabulary
+- [`../AGENTS.md`](../AGENTS.md) — agent rules for architecture, verification, and safety
 - [`../CONTRIBUTING.md`](../CONTRIBUTING.md) — contribution and verification workflow
 - [`../SECURITY.md`](../SECURITY.md) — native trust boundary and vulnerability reporting
 - [`DEPENDENCY_UPDATES.md`](./DEPENDENCY_UPDATES.md) — current NuGet versions and upstream release notes
