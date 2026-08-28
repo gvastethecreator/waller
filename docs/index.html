@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Waller is a native Windows wallpaper manager for independent multi-monitor layouts and reusable local presets." />
+    <meta name="theme-color" content="#171713" />
+    <title>Waller — one workspace for every monitor</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="Waller home">Waller</a>
+      <nav aria-label="Primary navigation">
+        <a href="#workspace">Workspace</a>
+        <a href="#proof">Proof</a>
+        <a href="https://github.com/gvastethecreator/waller">GitHub</a>
+      </nav>
+    </header>
+
+    <main id="top">
+      <section class="hero" aria-labelledby="hero-title">
+        <div class="hero-copy">
+          <p class="eyebrow">Native WinUI 3 · Windows 10/11</p>
+          <h1 id="hero-title">One wallpaper workspace for every monitor.</h1>
+          <p class="lede">Compose independent images, colours, fit modes, and anchors. Save the arrangement as a local preset. Apply only when it is ready.</p>
+          <div class="actions">
+            <a class="primary" href="https://github.com/gvastethecreator/waller/releases/latest">View latest release</a>
+            <a class="secondary" href="https://github.com/gvastethecreator/waller#run">Build from source</a>
+          </div>
+        </div>
+        <figure class="hero-frame">
+          <img src="assets/screenshots/monitor-workspace.png" alt="Waller arranging three fictional monitors in one workspace" width="1536" height="1024" />
+          <figcaption>Isolated proof workspace · no desktop changes</figcaption>
+        </figure>
+      </section>
+
+      <section class="principles" aria-label="Product principles">
+        <article><strong>Per monitor</strong><span>Image, colour, empty source, fit, anchor, and offset.</span></article>
+        <article><strong>Local first</strong><span>Presets and settings remain on the Windows device.</span></article>
+        <article><strong>Deliberate apply</strong><span>Saving a preset never changes the desktop.</span></article>
+      </section>
+
+      <section class="workspace" id="workspace" aria-labelledby="workspace-title">
+        <div class="section-heading">
+          <p class="eyebrow">The working model</p>
+          <h2 id="workspace-title">A map, an editor, and a clear commit point.</h2>
+        </div>
+        <ol class="sequence">
+          <li><span>01</span><div><h3>Detect</h3><p>Read the connected Windows topology into one editable Active Session.</p></div></li>
+          <li><span>02</span><div><h3>Compose</h3><p>Choose a source and placement for each display without touching Windows.</p></div></li>
+          <li><span>03</span><div><h3>Save or apply</h3><p>Keep reusable presets local, then render and apply only on command.</p></div></li>
+        </ol>
+      </section>
+
+      <section class="proof" id="proof" aria-labelledby="proof-title">
+        <div class="section-heading">
+          <p class="eyebrow">Runtime proof</p>
+          <h2 id="proof-title">The real app, exercised with fictional data.</h2>
+          <p>These captures come from an isolated WinUI package. The demo did not inspect personal presets or apply a wallpaper.</p>
+        </div>
+        <div class="gallery">
+          <figure><img src="assets/screenshots/english-settings.png" alt="Waller English settings modal" width="1536" height="1024" /><figcaption>English-only settings</figcaption></figure>
+          <figure><img src="assets/screenshots/preset-manager.png" alt="Waller local preset manager" width="1536" height="1024" /><figcaption>Local preset manager</figcaption></figure>
+          <figure><img src="assets/screenshots/save-preset.png" alt="Waller save preset dialog" width="1536" height="1024" /><figcaption>Save without applying</figcaption></figure>
+        </div>
+      </section>
+
+      <section class="final-cta" aria-labelledby="cta-title">
+        <p class="eyebrow">Open source · MIT</p>
+        <h2 id="cta-title">Make the whole desk feel intentional.</h2>
+        <div class="actions">
+          <a class="primary" href="https://github.com/gvastethecreator/waller">Explore the repository</a>
+          <a class="secondary" href="https://github.com/sponsors/gvastethecreator">Sponsor development</a>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <span>Waller</span>
+      <span>Native Windows wallpaper management</span>
+    </footer>
+  </body>
+</html>

@@ -24,7 +24,6 @@ internal static class LocalizedOptionCatalog
         return
         [
             new(AppLanguages.English, localizedText.LanguageEnglish),
-            new(AppLanguages.Spanish, localizedText.LanguageSpanish),
         ];
     }
 

@@ -39,7 +39,7 @@ public sealed partial record LocalizedText
         DeleteSelectedPreset: "Delete selected preset?",
         DeleteSelectedPresetFormat: "Delete {0}?",
         ConfirmDelete: "Confirm delete",
-        SettingsSubtitle: "Theme, language, and local cache.",
+        SettingsSubtitle: "Theme and local cache.",
         Theme: "Theme",
         Language: "Language",
         ThemeSystem: "System",

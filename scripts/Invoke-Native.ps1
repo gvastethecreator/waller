@@ -50,9 +50,10 @@ try {
             $scriptPath = Join-Path $nativeRoot "scripts\Verify.ps1"
         }
         "Run" {
+            $taskArgs += ".\Waller.Native.App\Waller.Native.App.csproj"
             if ($SkipRun) { $taskArgs += "-SkipRun" }
             if ($Detach) { $taskArgs += "-Detach" }
-            $taskArgs += "/p:Platform=$Platform"
+            $taskArgs += @("/p:Platform=$Platform", "/p:SelfContained=true")
             $scriptPath = Join-Path $nativeRoot "BuildAndRun.ps1"
         }
         "Release" {

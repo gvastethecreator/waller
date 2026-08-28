@@ -5,9 +5,10 @@ namespace Waller.Native.Core.Settings;
 public static class AppLanguages
 {
     public const string English = "en";
+    // Kept only to migrate persisted settings from builds that offered Spanish.
     public const string Spanish = "es";
 
-    public static IReadOnlyList<string> Supported { get; } = [English, Spanish];
+    public static IReadOnlyList<string> Supported { get; } = [English];
 
     public static string NormalizeOrDefault(string? language)
     {
@@ -23,7 +24,7 @@ public static class AppLanguages
 
         if (string.Equals(language, Spanish, StringComparison.OrdinalIgnoreCase))
         {
-            return Spanish;
+            return English;
         }
 
         return null;

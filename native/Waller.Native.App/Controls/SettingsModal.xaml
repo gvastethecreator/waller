@@ -25,7 +25,6 @@
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
-                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
                 <Grid ColumnSpacing="12">
@@ -73,24 +72,14 @@
                     OnContent="{Binding ViewModel.Text.ThemeDark, ElementName=Root}"
                     TabIndex="1" />
 
-                <ComboBox
-                    Grid.Row="3"
-                    AutomationProperties.AutomationId="SettingsLanguageComboBox"
-                    AutomationProperties.Name="{Binding ViewModel.Text.Language, ElementName=Root}"
-                    Header="{Binding ViewModel.Text.Language, ElementName=Root}"
-                    DisplayMemberPath="DisplayName"
-                    ItemsSource="{Binding ViewModel.LanguageOptions, ElementName=Root}"
-                    SelectedItem="{Binding ViewModel.SelectedLanguageOption, ElementName=Root, Mode=TwoWay}"
-                    TabIndex="2" />
-
-                <StackPanel Grid.Row="4" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
+                <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8" HorizontalAlignment="Right">
                     <Button
                         Command="{Binding ViewModel.ClearRenderedCacheCommand, ElementName=Root}"
                         AutomationProperties.AutomationId="ClearRenderedCacheButton"
                         AutomationProperties.Name="{Binding ViewModel.Text.ClearCache, ElementName=Root}"
                         IsEnabled="{Binding ViewModel.CanUseModalActions, ElementName=Root}"
                         ToolTipService.ToolTip="{Binding ViewModel.Text.ClearCache, ElementName=Root}"
-                        TabIndex="3">
+                        TabIndex="2">
                         <controls:IconText Glyph="&#xE74D;" Text="{Binding ViewModel.Text.ClearCache, ElementName=Root}" />
                     </Button>
                     <Button
@@ -99,7 +88,7 @@
                         AutomationProperties.Name="{Binding ViewModel.Text.SaveSettings, ElementName=Root}"
                         IsEnabled="{Binding ViewModel.CanUseModalActions, ElementName=Root}"
                         ToolTipService.ToolTip="{Binding ViewModel.Text.SaveSettings, ElementName=Root}"
-                        TabIndex="4">
+                        TabIndex="3">
                         <controls:IconText Glyph="&#xE74E;" Text="{Binding ViewModel.Text.SaveSettings, ElementName=Root}" />
                     </Button>
                 </StackPanel>

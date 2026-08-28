@@ -7,11 +7,12 @@
 
 ## Architecture
 
-- `native/Waller.Native.Core` owns domain models, workflows, rendering, persistence contracts, and testable policy.
+- `native/Waller.Native.Core` owns domain models, rendering, persistence contracts, and Windows-facing policy.
+- `native/Waller.Native.Workflows` owns XAML-free multi-step product use cases (Preset, Apply, monitor editing, settings, shell).
 - `native/Waller.Native.App` owns WinUI composition, UI projection, package identity, pickers, and Windows adapters.
-- Keep dependency direction `App -> Core`; Core must not reference App, XAML, or WinUI.
+- Keep dependency direction `App -> Workflows -> Core`, with `App -> Core` for adapters and models; Core and Workflows must not reference App, XAML, or WinUI.
 - Keep Windows-only behavior explicit. Do not add fake cross-platform abstractions.
-- Route feature work through public workflow seams instead of growing `MainPageViewModel` orchestration.
+- Route feature work through public Workflows seams instead of growing `MainPageViewModel` orchestration.
 
 ## Verification
 

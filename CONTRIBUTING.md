@@ -5,9 +5,9 @@ Waller is a Windows-only WinUI 3 application. Keep changes aligned with the nati
 ## Before you start
 
 - Read [`README.md`](./README.md), [`CONTEXT.md`](./CONTEXT.md), [`docs/INDEX.md`](./docs/INDEX.md), and [`native/docs/ARCHITECTURE.md`](./native/docs/ARCHITECTURE.md).
-- Preserve the dependency direction `Waller.Native.App -> Waller.Native.Core`.
-- Keep domain and workflow behavior in Core when it does not require WinUI or package identity.
-- Keep Windows and WinUI adapters in App.
+- Preserve the dependency direction `App -> Workflows -> Core`, with `App -> Core` only for UI adapters and models.
+- Keep domain models, rendering, and Windows contracts in Core; keep multi-step product use cases in Workflows.
+- Keep Windows and WinUI adapters, composition, and UI projection in App.
 - Do not add cross-platform abstractions to this Windows-only product without a concrete requirement.
 
 ## Local setup
@@ -37,7 +37,7 @@ Add packaged surface, Settings roundtrip, or Apply smoke only when the changed r
 ## Pull request checklist
 
 - [ ] The change uses Monitor, Active Session, Preset, Wallpaper Source, Monitor Assignment, Save, and Apply consistently.
-- [ ] App/Core boundaries remain explicit and callers use public seams.
+- [ ] App/Workflows/Core boundaries remain explicit and callers use public seams.
 - [ ] A behavior change extends the nearest existing test or guard when that adds distinct evidence.
 - [ ] The relevant root and native documentation remains accurate.
 - [ ] `Invoke-Native.ps1 -Task Verify -SkipSmoke` passes.

@@ -505,7 +505,6 @@ try {
         -Root $window `
         -AutomationIds @(
             "SettingsThemeComboBox",
-            "SettingsLanguageComboBox",
             "ClearRenderedCacheButton",
             "SaveSettingsButton",
             "CloseSettingsButton") `
@@ -515,15 +514,9 @@ try {
         Select-WallerComboBoxItemByName `
             -Root $window `
             -AutomationId "SettingsThemeComboBox" `
-            -Names @("Light", "Claro")
-        Select-WallerComboBoxItemByName `
-            -Root $window `
-            -AutomationId "SettingsLanguageComboBox" `
-            -Names @("Spanish", "Español") `
-            -UseLastItemKeyboardFallback `
-            -SkipSelectionVerification
+            -Names @("Light")
         Invoke-WallerElementByAutomationId -Root $window -AutomationId "SaveSettingsButton"
-        $settings = Wait-WallerSettingsJson -ExpectedTheme "1" -ExpectedLanguage "es"
+        $settings = Wait-WallerSettingsJson -ExpectedTheme "1" -ExpectedLanguage "en"
         [pscustomobject]@{
             SettingsRoundTrip = "Passed"
             Theme = $settings.Theme

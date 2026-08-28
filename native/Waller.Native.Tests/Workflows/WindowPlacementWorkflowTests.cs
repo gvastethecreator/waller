@@ -73,7 +73,7 @@ public sealed class WindowPlacementWorkflowTests
             Assert.Equal((1400, 860, -120, 75),
                 (loaded.WindowWidth, loaded.WindowHeight, loaded.WindowX, loaded.WindowY));
             Assert.Equal(AppThemePreference.Light, loaded.Theme);
-            Assert.Equal("es", loaded.Language);
+            Assert.Equal("en", loaded.Language);
             Assert.Equal(presetId, loaded.LastSelectedPresetId);
         }
         finally

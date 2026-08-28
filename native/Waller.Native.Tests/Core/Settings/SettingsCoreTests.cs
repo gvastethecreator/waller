@@ -16,12 +16,12 @@ public sealed partial class CoreArchitectureTests
     public void AppLanguages_NormalizesSupportedLanguageCodes()
     {
         Assert.Equal(AppLanguages.English, AppLanguages.NormalizeOrDefault("EN"));
-        Assert.Equal(AppLanguages.Spanish, AppLanguages.NormalizeOrDefault("es"));
+        Assert.Equal(AppLanguages.English, AppLanguages.NormalizeOrDefault("es"));
         Assert.Equal(AppLanguages.English, AppLanguages.NormalizeOrDefault("fr"));
         Assert.Contains(AppLanguages.English, AppLanguages.Supported);
-        Assert.Contains(AppLanguages.Spanish, AppLanguages.Supported);
+        Assert.DoesNotContain(AppLanguages.Spanish, AppLanguages.Supported);
         Assert.Equal("en", AppLanguages.CultureFor("EN").Name);
-        Assert.Equal("es", AppLanguages.CultureFor("ES").Name);
+        Assert.Equal("en", AppLanguages.CultureFor("ES").Name);
         Assert.Equal("en", AppLanguages.CultureFor("fr").Name);
     }
 
@@ -43,7 +43,7 @@ public sealed partial class CoreArchitectureTests
             var loaded = await store.LoadAsync();
 
             Assert.Equal(AppThemePreference.Dark, loaded.Theme);
-            Assert.Equal("es", loaded.Language);
+            Assert.Equal("en", loaded.Language);
             Assert.Equal(settings.LastSelectedPresetId, loaded.LastSelectedPresetId);
         }
         finally
@@ -175,7 +175,7 @@ public sealed partial class CoreArchitectureTests
             var tempFiles = Directory.EnumerateFiles(root, "*.tmp").ToList();
 
             Assert.Equal(AppThemePreference.Dark, loaded.Theme);
-            Assert.Equal("es", loaded.Language);
+            Assert.Equal("en", loaded.Language);
             Assert.Empty(tempFiles);
         }
         finally
@@ -277,7 +277,7 @@ public sealed partial class CoreArchitectureTests
     }
 
     [Fact]
-    public async Task UserSettingsStore_SavesCanonicalLanguageCode()
+    public async Task UserSettingsStore_MigratesLegacyLanguageToEnglish()
     {
         var root = Path.Combine(Path.GetTempPath(), $"waller-settings-tests-{Guid.NewGuid():N}");
         try
@@ -287,7 +287,7 @@ public sealed partial class CoreArchitectureTests
 
             var loaded = await store.LoadAsync();
 
-            Assert.Equal("es", loaded.Language);
+            Assert.Equal("en", loaded.Language);
         }
         finally
         {
@@ -434,7 +434,7 @@ public sealed partial class CoreArchitectureTests
         });
 
         Assert.Equal(UserSettings.Default.Theme, normalized.Theme);
-        Assert.Equal(AppLanguages.Spanish, normalized.Language);
+        Assert.Equal(AppLanguages.English, normalized.Language);
         Assert.Equal(UserSettingsPolicy.MinWindowWidth, normalized.WindowWidth);
         Assert.Equal(UserSettingsPolicy.MinWindowHeight, normalized.WindowHeight);
         Assert.Null(normalized.WindowX);
@@ -555,7 +555,7 @@ public sealed partial class CoreArchitectureTests
             presetId);
 
         Assert.Equal(AppThemePreference.Dark, updated.Theme);
-        Assert.Equal(AppLanguages.Spanish, updated.Language);
+        Assert.Equal(AppLanguages.English, updated.Language);
         Assert.Equal(presetId, updated.LastSelectedPresetId);
         Assert.Equal(1280, updated.WindowWidth);
         Assert.Equal(720, updated.WindowHeight);
@@ -586,7 +586,7 @@ public sealed partial class CoreArchitectureTests
             "ES",
             lastSelectedPresetId: null);
 
-        Assert.Equal(AppLanguages.Spanish, updated.Language);
+        Assert.Equal(AppLanguages.English, updated.Language);
     }
 
     [Fact]
@@ -638,7 +638,7 @@ public sealed partial class CoreArchitectureTests
         var updated = current.WithLastSelectedPreset(presetId);
 
         Assert.Equal(AppThemePreference.Dark, updated.Theme);
-        Assert.Equal(AppLanguages.Spanish, updated.Language);
+        Assert.Equal(AppLanguages.English, updated.Language);
         Assert.Equal(presetId, updated.LastSelectedPresetId);
         Assert.Equal(1280, updated.WindowWidth);
         Assert.Equal(720, updated.WindowHeight);

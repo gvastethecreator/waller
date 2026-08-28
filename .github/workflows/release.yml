@@ -11,15 +11,17 @@ permissions:
 jobs:
   build-and-release:
     name: WinUI build artifact (Windows x64)
-    runs-on: windows-latest
+    runs-on: windows-2025
     timeout-minutes: 35
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Setup pinned .NET SDK
-        uses: actions/setup-dotnet@v4
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
 
@@ -53,13 +55,13 @@ jobs:
           "PATH=$archive" >> $env:GITHUB_OUTPUT
 
       - name: Upload workflow artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: Waller-${{ steps.version.outputs.VERSION }}-windows-x64-build
           path: ${{ steps.archive.outputs.PATH }}
 
       - name: Create draft GitHub release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           name: Waller v${{ steps.version.outputs.VERSION }}
           draft: true

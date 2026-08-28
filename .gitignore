@@ -26,6 +26,12 @@ artifacts/
 *.trx
 *.coverage
 *.coveragexml
+coverage/
+
+# Retired web/Tauri leftovers (history only; do not reintroduce as product)
+node_modules/
+src-tauri/target/
+**/node_modules/
 
 # Workspace-local toolchains
 .scratch/toolchains/

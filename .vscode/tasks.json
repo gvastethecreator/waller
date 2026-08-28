@@ -2,7 +2,7 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "waller: verify",
+      "label": "✅ verify",
       "type": "shell",
       "command": "powershell",
       "args": [
@@ -19,7 +19,7 @@
       "problemMatcher": "$msCompile"
     },
     {
-      "label": "waller: run",
+      "label": "▶️ run",
       "type": "shell",
       "command": "powershell",
       "args": [
@@ -35,7 +35,7 @@
       "problemMatcher": "$msCompile"
     },
     {
-      "label": "waller: release build",
+      "label": "📦 release",
       "type": "shell",
       "command": "powershell",
       "args": [
@@ -51,7 +51,7 @@
       "problemMatcher": "$msCompile"
     },
     {
-      "label": "waller: development MSIX",
+      "label": "📦 package",
       "type": "shell",
       "command": "powershell",
       "args": [
@@ -65,6 +65,32 @@
       "options": { "cwd": "${workspaceFolder}" },
       "group": "build",
       "problemMatcher": "$msCompile"
+    },
+    {
+      "label": "⬆️ deps",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\Check-Dependencies.ps1"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
+    },
+    {
+      "label": "🛡️ audit",
+      "type": "shell",
+      "command": "powershell",
+      "args": [
+        "-ExecutionPolicy",
+        "Bypass",
+        "-File",
+        "${workspaceFolder}\\scripts\\Audit-Dependencies.ps1"
+      ],
+      "options": { "cwd": "${workspaceFolder}" },
+      "problemMatcher": []
     }
   ]
 }

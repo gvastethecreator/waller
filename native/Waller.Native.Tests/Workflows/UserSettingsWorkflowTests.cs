@@ -26,7 +26,7 @@ public sealed class UserSettingsWorkflowTests
 
             Assert.True(result.Succeeded);
             Assert.Equal(AppThemePreference.Light, loaded.Theme);
-            Assert.Equal("es", loaded.Language);
+            Assert.Equal("en", loaded.Language);
             Assert.Equal(presetId, loaded.LastSelectedPresetId);
             Assert.Equal((1280, 720, -30, 45),
                 (loaded.WindowWidth, loaded.WindowHeight, loaded.WindowX, loaded.WindowY));
@@ -56,7 +56,7 @@ public sealed class UserSettingsWorkflowTests
 
             Assert.True(result.Succeeded);
             Assert.Equal(AppThemePreference.System, loaded.Theme);
-            Assert.Equal("es", loaded.Language);
+            Assert.Equal("en", loaded.Language);
             Assert.Equal(presetId, loaded.LastSelectedPresetId);
             Assert.Equal((1440, 900, 20, -10),
                 (loaded.WindowWidth, loaded.WindowHeight, loaded.WindowX, loaded.WindowY));
@@ -85,7 +85,7 @@ public sealed class UserSettingsWorkflowTests
 
             Assert.True(result.Succeeded);
             Assert.Equal(AppThemePreference.Light, loaded.Theme);
-            Assert.Equal("es", loaded.Language);
+            Assert.Equal("en", loaded.Language);
             Assert.Equal(presetId, loaded.LastSelectedPresetId);
             Assert.Equal((1360, 820, -80, 65),
                 (loaded.WindowWidth, loaded.WindowHeight, loaded.WindowX, loaded.WindowY));
@@ -119,7 +119,7 @@ public sealed class UserSettingsWorkflowTests
 
             Assert.All(results, result => Assert.True(result.Succeeded));
             Assert.Equal(AppThemePreference.Light, loaded.Theme);
-            Assert.Equal("es", loaded.Language);
+            Assert.Equal("en", loaded.Language);
             Assert.Equal(finalPresetId, loaded.LastSelectedPresetId);
             Assert.Equal((1500, 940, 12, 34),
                 (loaded.WindowWidth, loaded.WindowHeight, loaded.WindowX, loaded.WindowY));

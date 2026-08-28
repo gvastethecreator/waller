@@ -142,10 +142,8 @@ public sealed partial record LocalizedText(
         ArgumentNullException.ThrowIfNull(args);
 
         return string.Format(
-            AppLanguages.CultureFor(IsSpanish ? AppLanguages.Spanish : AppLanguages.English),
+            AppLanguages.CultureFor(AppLanguages.English),
             format,
             args);
     }
-
-    internal bool IsSpanish => ReferenceEquals(this, Spanish);
 }
