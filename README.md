@@ -106,11 +106,15 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Invoke-Native.ps1 -Task Packa
 
 `Package` creates a development-signed MSIX under `native/artifacts/`. It is for local install validation, not public distribution. Production signing, Store publication, and clean-machine qualification remain separate release gates.
 
+Microsoft Store preparation, Partner Center identity setup, `.msixupload` generation, certification notes, listing copy, and lifecycle evidence are documented in [`docs/store/README.md`](./docs/store/README.md). The Store build remains blocked until Waller has a reserved Partner Center identity.
+
 ## Local data
 
 - Presets and settings use package-local `LocalCache\Local\Waller` storage.
 - Rendered wallpapers use `%USERPROFILE%\.waller\rendered` so the Windows shell can read them.
 - Repository cleanup and build commands do not migrate or delete user data.
+
+See [`PRIVACY.md`](./PRIVACY.md) for the public data-access and retention policy.
 
 ## Documentation
 
@@ -119,6 +123,8 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Invoke-Native.ps1 -Task Packa
 - [`docs/QUALITY_AUDIT.md`](./docs/QUALITY_AUDIT.md) — maintenance gates, evidence, and known limits
 - [`docs/CHANGELOG_MAINTENANCE.md`](./docs/CHANGELOG_MAINTENANCE.md) — durable maintenance history
 - [`native/docs/README.md`](./native/docs/README.md) — native architecture and operations
+- [`docs/store/README.md`](./docs/store/README.md) — Microsoft Store submission runbook
+- [`PRIVACY.md`](./PRIVACY.md) — bilingual privacy policy
 - [`docs/architecture/winui-definitive-architecture-spec.md`](./docs/architecture/winui-definitive-architecture-spec.md) — approved architecture specification
 - [`docs/architecture/WORKPLAN.md`](./docs/architecture/WORKPLAN.md) — architecture execution tracker
 - [`docs/architecture/winui-definitive-architecture-report.md`](./docs/architecture/winui-definitive-architecture-report.md) — completed ten-ticket architecture report

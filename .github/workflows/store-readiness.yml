@@ -1,0 +1,94 @@
+name: Store readiness
+
+on:
+  pull_request:
+    paths:
+      - '.github/workflows/store-readiness.yml'
+      - 'PRIVACY.md'
+      - 'docs/store/**'
+      - 'native/Waller.Native.App/Package.appxmanifest'
+      - 'native/Waller.Native.App/Assets/**'
+      - 'native/scripts/BuildStoreUpload.ps1'
+      - 'native/scripts/SetStoreIdentity.ps1'
+      - 'native/scripts/TestStoreReadiness.ps1'
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/store-readiness.yml'
+      - 'PRIVACY.md'
+      - 'docs/store/**'
+      - 'native/Waller.Native.App/Package.appxmanifest'
+      - 'native/Waller.Native.App/Assets/**'
+      - 'native/scripts/BuildStoreUpload.ps1'
+      - 'native/scripts/SetStoreIdentity.ps1'
+      - 'native/scripts/TestStoreReadiness.ps1'
+  workflow_dispatch:
+    inputs:
+      platform:
+        description: Store package architecture
+        required: true
+        type: choice
+        default: x64
+        options:
+          - x64
+          - x86
+          - ARM64
+
+permissions:
+  contents: read
+
+concurrency:
+  group: waller-store-readiness-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    name: Validate Store structure
+    runs-on: windows-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Validate Store readiness
+        shell: pwsh
+        run: .\native\scripts\TestStoreReadiness.ps1 -EvidencePath artifacts\store-readiness.json
+
+      - name: Upload readiness evidence
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: Waller-store-readiness
+          path: artifacts/store-readiness.json
+          if-no-files-found: error
+
+  build-store-upload:
+    name: Build Store upload candidate
+    if: github.event_name == 'workflow_dispatch'
+    needs: validate
+    runs-on: windows-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up pinned .NET SDK
+        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+
+      - name: Add Visual Studio MSBuild to PATH
+        uses: microsoft/setup-msbuild@30375c66a4eea26614e0d39710365f22f8b0af57 # v3
+
+      - name: Build Store upload candidate
+        shell: pwsh
+        run: .\native\scripts\BuildStoreUpload.ps1 -Platform '${{ inputs.platform }}'
+
+      - name: Upload Store review bundle
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: Waller-store-${{ inputs.platform }}-${{ github.sha }}
+          path: native/artifacts/store/**
+          if-no-files-found: error
+          retention-days: 14
