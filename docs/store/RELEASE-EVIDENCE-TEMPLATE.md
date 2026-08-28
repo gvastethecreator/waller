@@ -76,7 +76,6 @@ Copy this file for each Store submission. Keep private account screenshots, cred
 | Apply cancellation | `[pass/fail]` | |
 | Settings round trip | `[pass/fail]` | |
 | English UI | `[pass/fail]` | |
-| Spanish UI | `[pass/fail]` | |
 | Upgrade from previous Store version | `[pass/fail/n-a]` | |
 | Presets/settings preserved | `[pass/fail/n-a]` | |
 | Uninstall | `[pass/fail]` | |

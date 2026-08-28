@@ -1,6 +1,6 @@
 # Waller Store listing source
 
-Review this copy against the submitted build and the current Partner Center field limits.
+Review this copy against the submitted build and the current Partner Center field limits. The app UI is English-only. The Spanish section is Partner Center locale copy for Spanish storefronts.
 
 ## English
 
@@ -31,7 +31,7 @@ Waller is local-first. It does not require an account and is not designed to upl
 - Save, load, rename, duplicate, and delete preset workflows
 - Per-monitor render output compatible with the Windows shell
 - Apply progress, cancellation, and clear error feedback
-- English and Spanish interface
+- English interface
 - Light and dark appearance
 - Keyboard-accessible native Windows UI
 
@@ -42,7 +42,7 @@ Initial Microsoft Store release of Waller.
 - Native WinUI multi-monitor wallpaper workflow
 - Local preset management
 - Per-monitor rendering and placement
-- English and Spanish UI
+- English UI
 
 Update this section for every later submission.
 
@@ -86,7 +86,7 @@ Waller funciona de forma local. No requiere una cuenta y no está diseñado para
 - Guardar, cargar, renombrar, duplicar y eliminar presets
 - Renderizado por monitor compatible con el shell de Windows
 - Progreso de aplicación, cancelación y errores claros
-- Interfaz en inglés y español
+- Interfaz en inglés
 - Apariencia clara y oscura
 - Interfaz nativa accesible mediante teclado
 
@@ -97,7 +97,7 @@ Primera publicación de Waller en Microsoft Store.
 - Flujo nativo WinUI para múltiples monitores
 - Gestión local de presets
 - Renderizado y colocación por monitor
-- Interfaz en inglés y español
+- Interfaz en inglés
 
 ## Screenshot plan
 
@@ -109,7 +109,7 @@ Recommended screenshots:
 2. **Monitor editor** — image source and placement controls.
 3. **Preset management** — saved presets and actions.
 4. **Apply state** — progress or completed result with clear monitor mapping.
-5. **Settings** — language and appearance.
+5. **Settings** — theme and cache.
 
 Checklist:
 

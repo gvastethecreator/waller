@@ -14,7 +14,7 @@ Waller is a local-first Windows wallpaper manager for single-monitor and multi-m
 
 ### Important tester notice
 
-The **Apply** action changes the certification machine's current desktop wallpaper. Test on a machine or profile where this change is acceptable. Waller's automated Apply smoke captures the previous wallpaper paths and restores them in a `finally` path, but a human certification session should still record the starting wallpaper configuration before testing.
+The **Apply** action changes the certification machine's current desktop wallpaper. Test on a machine or profile where this change is acceptable. Waller's automated Apply smoke captures the previous wallpaper paths and restores them in a `finally` path. A human certification session must record the starting wallpaper configuration before testing.
 
 ### Basic test path
 
@@ -27,7 +27,7 @@ The **Apply** action changes the certification machine's current desktop wallpap
 7. Use **Save** to create a preset. Saving does not change the desktop.
 8. Use **Apply** to render and apply the active session. Applying changes Windows wallpaper assignments.
 9. Open preset management and verify load, rename, duplicate, and delete behavior.
-10. Switch the UI between English and Spanish.
+10. Confirm the English UI.
 
 The app is fully testable with one monitor. A multi-monitor machine provides the most complete validation because each display can use an independent source and placement.
 
@@ -51,7 +51,7 @@ A tester can save, rename, duplicate, load, or delete presets without applying a
 
 ### Cancellation and errors
 
-Apply reports progress and supports cancellation. Missing or inaccessible files should produce a clear error without deleting the original file or corrupting saved presets.
+Apply reports progress and supports cancellation. Missing or inaccessible files produce a clear error without deleting the original file or corrupting saved presets.
 
 ### Update behavior
 
@@ -84,11 +84,11 @@ All primary functionality remains testable. Assign a local image or color, chang
 
 ### A selected image cannot be opened
 
-Use a normal local PNG or JPEG in a user-owned folder. Protected or unavailable paths should produce an error rather than trigger elevation.
+Use a normal local PNG or JPEG in a user-owned folder. Protected or unavailable paths produce an error rather than trigger elevation.
 
 ### The wallpaper appears unchanged
 
-Confirm Apply completed, the selected monitor assignment is not empty, and the source file is readable. Windows may briefly cache the previous visual while the shell refreshes.
+Confirm Apply completed, the selected monitor assignment is not empty, and the source file is readable. Windows can briefly cache the previous visual while the shell refreshes.
 
 ### Rendered files remain after uninstall or update
 

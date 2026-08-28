@@ -18,7 +18,7 @@ Direct/GitHub channel
 
 ## Current status
 
-Waller already has a packaged WinUI application, MSIX assets, a stable application ID, full-trust desktop execution, development signing, package inspection, update-policy guards, accessibility/localization checks, and packaged smoke tests.
+Waller already has a packaged WinUI application, MSIX assets, and a stable application ID. It also has full-trust desktop execution, development signing, package inspection, update-policy guards, accessibility and localization checks, and packaged smoke tests.
 
 The committed identity is still a development identity:
 
@@ -98,7 +98,7 @@ Recommended first-release values:
 - Support: issue tracker, support page, or monitored email.
 - Display mode: no immersive/XR declarations.
 - Minimum OS: Windows 10 version 1809.
-- Hardware: one or more Windows displays; multi-monitor setup recommended, not required unless product behavior says otherwise.
+- Hardware: one or more Windows displays. A multi-monitor setup is recommended. It is not required unless product behavior says otherwise.
 
 Waller reads monitor topology, local image paths, and wallpaper configuration. Publish a privacy policy even if no data is transmitted.
 
@@ -128,13 +128,13 @@ A package may show **Validated** while the Packages section remains **Incomplete
 
 Prepare English and Spanish listings from [`LISTING.md`](LISTING.md).
 
-At least one screenshot is required by Partner Center; prepare at least four current screenshots:
+Partner Center requires at least one screenshot. Prepare at least four current screenshots:
 
-1. monitor/session overview;
-2. per-monitor wallpaper source and placement;
-3. preset management;
-4. apply progress/result;
-5. optional English/Spanish or light/dark appearance screen.
+1. monitor/session overview
+2. per-monitor wallpaper source and placement
+3. preset management
+4. apply progress/result
+5. optional light/dark appearance screen
 
 All screenshots must use non-sensitive local paths and images licensed for promotional use.
 
@@ -194,7 +194,7 @@ powershell -ExecutionPolicy Bypass -File .\native\scripts\SetPackageVersion.ps1 
 | Reinstall | App starts cleanly and does not inherit corrupt registration |
 | Standard user | Normal operation requires no elevation |
 | Offline | All core wallpaper operations remain available |
-| English/Spanish | Both languages remain usable and complete |
+| English UI | The English interface remains usable and complete |
 
 The existing Apply smoke changes wallpaper and restores it in `finally`. Keep that safeguard and record the pre/post wallpaper paths for Store release evidence.
 

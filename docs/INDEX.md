@@ -1,6 +1,6 @@
-# Documentation Index
+# Documentation index
 
-Waller's definitive product is the WinUI 3 solution under `native/`. This index lists only active documentation and durable architecture records.
+Waller's definitive product is the WinUI 3 solution under `native/`. This index lists active documentation and durable architecture records.
 
 ## Product and contributor entry points
 
@@ -27,7 +27,6 @@ Waller's definitive product is the WinUI 3 solution under `native/`. This index 
 
 - [`architecture/winui-definitive-architecture-spec.md`](./architecture/winui-definitive-architecture-spec.md) — approved definitive-WinUI specification
 - [`architecture/WORKPLAN.md`](./architecture/WORKPLAN.md) — ten-ticket dependency tracker and evidence ledger
-- [`architecture/issues/`](./architecture/issues/) — implementation-ready architecture tickets
 - [`architecture/winui-definitive-architecture-report.md`](./architecture/winui-definitive-architecture-report.md) — completed batch, verification, and residual risk
 - [`architecture/winui-definitive-architecture-report.html`](./architecture/winui-definitive-architecture-report.html) — visual completion report
 
@@ -38,3 +37,7 @@ Waller's definitive product is the WinUI 3 solution under `native/`. This index 
 - [`../native/docs/adr/0003-prerender-per-monitor-wallpapers.md`](../native/docs/adr/0003-prerender-per-monitor-wallpapers.md) — per-monitor PNG rendering
 - [`../native/docs/adr/0004-presets-local-app-managed-json.md`](../native/docs/adr/0004-presets-local-app-managed-json.md) — local Preset persistence
 - [`../native/docs/adr/0005-apply-and-save-are-independent.md`](../native/docs/adr/0005-apply-and-save-are-independent.md) — independent Apply and Save semantics
+
+## Microsoft Store
+
+- [`store/README.md`](./store/README.md) — Store submission runbook
