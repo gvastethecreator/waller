@@ -1,5 +1,11 @@
 # Maintenance changelog
 
+## 2026-09-01
+
+- Cleaned repository metadata and moved operator planning notes out of the live documentation tree.
+- Kept product, setup, verification, packaging, store, contributor, and security pages.
+- Trimmed native testing and interop pages to current commands and failure modes.
+
 ## 2026-08-28
 
 - Added `AGENTS.md` as the canonical agent file and pointed Copilot catalogs

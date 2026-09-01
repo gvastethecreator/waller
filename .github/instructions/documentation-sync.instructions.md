@@ -4,7 +4,6 @@ name: "Documentation Sync"
 applyTo:
   - "AGENTS.md"
   - "README.md"
-  - "CONTEXT.md"
   - "docs/**/*.md"
   - "native/**/*.md"
   - ".github/**/*.md"
@@ -13,8 +12,8 @@ applyTo:
 
 Follow [`AGENTS.md`](../../AGENTS.md). Path-specific extras:
 
-- Update documentation in the same change when architecture, scripts, workflows, release steps, local-data behavior, or visible product behavior changes.
+- Update documentation in the same change when scripts, workflows, release steps, local-data behavior, or visible product behavior changes.
 - Keep `docs/INDEX.md` free of missing or obsolete links.
-- Use the terms in `CONTEXT.md` and commands that run from the repository root.
+- Use commands that run from the repository root.
 - Treat `native/` as the definitive product path.
 - Mark historical implementation comparisons explicitly; do not present retired technology as active.

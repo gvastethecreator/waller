@@ -4,22 +4,18 @@ Windows-only WinUI 3 wallpaper manager. Product lives in `native/`.
 
 ## Load when
 
-- Product terms: [`CONTEXT.md`](CONTEXT.md)
-- Module boundaries: [`native/docs/ARCHITECTURE.md`](native/docs/ARCHITECTURE.md)
 - Root commands and local data: [`README.md`](README.md)
 - Docs map: [`docs/INDEX.md`](docs/INDEX.md)
-- Store publication: [`docs/store/README.md`](docs/store/README.md)
+- Store submission: [`docs/store/README.md`](docs/store/README.md)
 - Contributor workflow: [`CONTRIBUTING.md`](CONTRIBUTING.md)
 
-## Architecture
+## Rules
 
-Dependency direction is `App -> Workflows -> Core`, with `App -> Core` for UI adapters and models.
-
+- Dependency direction is `App -> Workflows -> Core`, with `App -> Core` for UI adapters and models.
 - `Waller.Native.Core`: domain models, rendering, persistence, Windows contracts
 - `Waller.Native.Workflows`: XAML-free product use cases
 - `Waller.Native.App`: WinUI composition, projection, pickers, package identity
-
-Keep Windows-only behavior explicit. Route feature work through public Workflows seams.
+- Keep Windows-only behavior explicit. Route feature work through public Workflows seams.
 
 ## Verification
 

@@ -13,7 +13,7 @@
   <a href="LICENSE"><img alt="MIT license" src="https://shieldcn.dev/github/license/gvastethecreator/waller.svg?variant=secondary&size=xs" /></a>
 </p>
 
-Waller is a native Windows wallpaper manager for multi-monitor setups. The definitive product is the WinUI 3 application under `native/`, built with C# and .NET 10.
+Waller is a native Windows wallpaper manager for multi-monitor setups. The product is the WinUI 3 application under `native/`, built with C# and .NET 10.
 
 It keeps one editable **Active Session**, lets every **Monitor** use its own **Wallpaper Source** and placement, saves reusable local **Presets**, and applies rendered wallpapers through Windows `IDesktopWallpaper`.
 
@@ -42,8 +42,6 @@ These captures use an isolated proof package with three fictional monitors and a
 
 See [capture provenance](docs/assets/screenshots/README.md) for the isolation boundary and example-art source.
 
-The removed web/Tauri implementation remains available through Git history only.
-
 ## Solution map
 
 ```text
@@ -55,7 +53,7 @@ native/
   scripts/              verification, smoke, packaging, and diagnostic commands
 ```
 
-Dependency direction is `App -> Workflows -> Core`, with `App -> Core` for UI adapters. Tests reference Workflows and Core. Active domain language lives in [`CONTEXT.md`](./CONTEXT.md).
+Dependency direction is `App -> Workflows -> Core`, with `App -> Core` for UI adapters. Tests reference Workflows and Core.
 
 ## Requirements
 
@@ -118,16 +116,13 @@ See [`PRIVACY.md`](./PRIVACY.md) for the public data-access and retention policy
 
 ## Documentation
 
-- [`docs/INDEX.md`](./docs/INDEX.md) — active documentation map
-- [`docs/DEPENDENCY_UPDATES.md`](./docs/DEPENDENCY_UPDATES.md) — current NuGet versions and changelog review
-- [`docs/QUALITY_AUDIT.md`](./docs/QUALITY_AUDIT.md) — maintenance gates, evidence, and known limits
-- [`docs/CHANGELOG_MAINTENANCE.md`](./docs/CHANGELOG_MAINTENANCE.md) — durable maintenance history
-- [`native/docs/README.md`](./native/docs/README.md) — native architecture and operations
-- [`docs/store/README.md`](./docs/store/README.md) — Microsoft Store submission runbook
-- [`PRIVACY.md`](./PRIVACY.md) — bilingual privacy policy
-- [`docs/architecture/winui-definitive-architecture-spec.md`](./docs/architecture/winui-definitive-architecture-spec.md) — approved architecture specification
-- [`docs/architecture/WORKPLAN.md`](./docs/architecture/WORKPLAN.md) — architecture execution tracker
-- [`docs/architecture/winui-definitive-architecture-report.md`](./docs/architecture/winui-definitive-architecture-report.md) — completed ten-ticket architecture report
+- [`docs/INDEX.md`](./docs/INDEX.md) — documentation map
+- [`native/README.md`](./native/README.md) — native solution and commands
+- [`native/docs/TESTING.md`](./native/docs/TESTING.md) — verification and smoke
+- [`native/docs/PACKAGING.md`](./native/docs/PACKAGING.md) — packaging and install policy
+- [`docs/store/README.md`](./docs/store/README.md) — Microsoft Store submission
+- [`docs/CHANGELOG_MAINTENANCE.md`](./docs/CHANGELOG_MAINTENANCE.md) — maintenance history
+- [`PRIVACY.md`](./PRIVACY.md) — privacy policy
 
 ## Support
 
